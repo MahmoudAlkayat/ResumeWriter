@@ -1,35 +1,27 @@
 package ninjas.cs490Project;
 
+import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.UserRepository;
-import ninjas.cs490Project.repository.EducationRepository;
-import ninjas.cs490Project.repository.ResumeRepository;
-import ninjas.cs490Project.repository.PasswordResetTokenRepository;
-import ninjas.cs490Project.service.PasswordResetService;
+import ninjas.cs490Project.repository.EmailVerificationTokenRepository;
+import ninjas.cs490Project.service.EmailVerificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @SpringBootApplication
 public class Cs490ProjectApplication implements CommandLineRunner {
 
 	@Autowired
-	private EducationRepository educationRepository;
-
-	@Autowired
-	private ResumeRepository resumeRepository;
-
-	@Autowired
 	private UserRepository userRepository;
 
 	@Autowired
-	private PasswordResetService passwordResetService;
+	private EmailVerificationService emailVerificationService;
 
 	@Autowired
-	private PasswordResetTokenRepository tokenRepository;
+	private EmailVerificationTokenRepository verificationTokenRepository;
 
 	public static void main(String[] args) {
 		SpringApplication.run(Cs490ProjectApplication.class, args);
@@ -37,33 +29,41 @@ public class Cs490ProjectApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		// --- Step 1: Create a new User with an initial password.
-		User user = userRepository.findByEmail("belal919@live.com");
+
+		// 1. Find or create a test user
+		String testEmail = "cs490ninjas@gmail.com";
+		User user = userRepository.findByEmail(testEmail);
 		if (user == null) {
 			user = new User();
-			user.setUsername("testuser1");
-			user.setFirstName("Test");
-			user.setLastName("User");
-			user.setEmail("testuser1@example.com");
-			user.setPasswordHash("initialHashedPassword");
+			user.setUsername(testEmail);
+			user.setFirstName("cs490");
+			user.setLastName("Ninjas");
+			user.setEmail(testEmail);
+			user.setPasswordHash("someHashedPassword");
+			user.setIsVerified(false);
 			user = userRepository.save(user);
-			System.out.println("Created user with password: " + user.getPasswordHash());
+			System.out.println("Created new user with isVerified = false");
 		} else {
-			System.out.println("User already exists with password: " + user.getPasswordHash());
+			System.out.println("User already exists. Current isVerified = " + user.getIsVerified());
 		}
 
+		// 2. Generate a verification token and simulate sending email
+		emailVerificationService.createVerificationTokenForUser(user);
+		System.out.println("Verification token created. Check logs or console for the link.");
 
-		// --- Step 2: Create a reset token and send an email (simulated)
-		PasswordResetToken resetToken = passwordResetService.createPasswordResetTokenForUser(user.getEmail());
-		System.out.println("Reset token created: " + resetToken.getToken());
-
-
-		// --- Step 3: Retrieve and verify the token is in the database.
-		PasswordResetToken retrievedToken = tokenRepository.findByToken(resetToken.getToken());
-		if (retrievedToken != null && retrievedToken.getExpiryDate().isAfter(LocalDateTime.now())) {
-			System.out.println("Token is valid and stored in the database.");
+		// (Optional) 3. Demonstrate retrieving the token from the repository:
+		// (You might do this if you want to simulate verifying it here in CommandLineRunner.)
+		var existingToken = verificationTokenRepository.findByUser(user);
+		if (existingToken != null && existingToken.getExpiryDate().isAfter(LocalDateTime.now())) {
+			System.out.println("Verification token found in DB: " + existingToken.getToken());
 		} else {
-			System.out.println("Token is invalid or expired.");
+			System.out.println("No valid verification token found for user.");
 		}
+
+		// (Optional) 4. If you want to simulate verifying the user right away:
+		// user.setIsVerified(true);
+		// userRepository.save(user);
+		// verificationTokenRepository.delete(existingToken);
+		// System.out.println("User is now verified. isVerified = " + user.getIsVerified());
 	}
 }

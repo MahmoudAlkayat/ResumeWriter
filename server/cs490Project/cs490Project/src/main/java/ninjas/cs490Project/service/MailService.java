@@ -18,4 +18,12 @@ public class MailService {
         message.setText("Click the following link to reset your password: " + resetLink);
         mailSender.send(message);
     }
+    public void sendVerificationEmail(String toEmail, String verifyLink) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("Verify Your Account");
+        message.setText("Click the following link to verify your account: " + verifyLink);
+        mailSender.send(message);
+    }
+
 }

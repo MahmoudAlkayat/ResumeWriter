@@ -1,6 +1,6 @@
 package ninjas.cs490Project.repository;
 
-import ninjas.cs490Project.Skill;
+import ninjas.cs490Project.entity.Skill;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

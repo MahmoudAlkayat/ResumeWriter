@@ -1,7 +1,7 @@
 package ninjas.cs490Project.repository;
 
-import ninjas.cs490Project.PasswordResetToken;
-import ninjas.cs490Project.User;
+import ninjas.cs490Project.entity.PasswordResetToken;
+import ninjas.cs490Project.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,7 +1,7 @@
 package ninjas.cs490Project.service;
 
-import ninjas.cs490Project.PasswordResetToken;
-import ninjas.cs490Project.User;
+import ninjas.cs490Project.entity.PasswordResetToken;
+import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.PasswordResetTokenRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;

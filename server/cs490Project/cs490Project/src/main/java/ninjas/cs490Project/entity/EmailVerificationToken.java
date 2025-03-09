@@ -1,13 +1,12 @@
-package ninjas.cs490Project;
-
+package ninjas.cs490Project.entity;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
-
 @Entity
-@Table(name = "password_reset_tokens")
-public class PasswordResetToken {
+@Table(name = "email_verification_tokens")
+public class EmailVerificationToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,37 +15,44 @@ public class PasswordResetToken {
     @Column(nullable = false, unique = true)
     private String token;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(name = "expiry_date", nullable = false)
     private LocalDateTime expiryDate;
 
-    // Getters and Setters
+    // Getters and setters
 
-    public int getId(){
+    public int getId() {
         return id;
     }
-    public void setId(int id){
+
+    public void setId(int id) {
         this.id = id;
     }
-    public String getToken(){
+
+    public String getToken() {
         return token;
     }
-    public void setToken(String token){
+
+    public void setToken(String token) {
         this.token = token;
     }
-    public User getUser(){
+
+    public User getUser() {
         return user;
     }
-    public void setUser(User user){
+
+    public void setUser(User user) {
         this.user = user;
     }
-    public LocalDateTime getExpiryDate(){
+
+    public LocalDateTime getExpiryDate() {
         return expiryDate;
     }
-    public void setExpiryDate(LocalDateTime expiryDate){
+
+    public void setExpiryDate(LocalDateTime expiryDate) {
         this.expiryDate = expiryDate;
     }
 }

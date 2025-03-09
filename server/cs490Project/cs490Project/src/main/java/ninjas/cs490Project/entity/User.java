@@ -1,4 +1,4 @@
-package ninjas.cs490Project;
+package ninjas.cs490Project.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.UpdateTimestamp;

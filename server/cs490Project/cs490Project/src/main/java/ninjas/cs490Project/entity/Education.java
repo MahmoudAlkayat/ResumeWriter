@@ -1,6 +1,7 @@
-package ninjas.cs490Project;
+package ninjas.cs490Project.entity;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 
 @Entity

@@ -1,6 +1,6 @@
 package ninjas.cs490Project.repository;
 
-import ninjas.cs490Project.Resume;
+import ninjas.cs490Project.entity.Resume;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
