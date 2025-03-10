@@ -7,7 +7,8 @@ import { useState } from "react"
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [fullName, setFullName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -16,7 +17,7 @@ const Register: React.FC = () => {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullName || !email || !password || !confirmPassword) {
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
       setFormError("Please fill in all fields")
       return
     }
@@ -48,19 +49,36 @@ const Register: React.FC = () => {
           {formError && <div className="text-red-500 text-sm text-center">{formError}</div>}
           {/* Full Name Input */}
           <div className="relative">
-            <label htmlFor="fullName" className="text-sm font-medium text-gray-700 block mb-2">
-              Full Name
+            <label htmlFor="firstName" className="text-sm font-medium text-gray-700 block mb-2">
+              First Name
             </label>
             <div className="relative">
               <i className="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
               <input
-                id="fullName"
-                name="fullName"
+                id="firstName"
+                name="firstName"
                 type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 className="pl-10 pr-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                placeholder="Enter your full name"
+                placeholder="Enter your first name"
+              />
+            </div>
+          </div>
+          <div className="relative">
+            <label htmlFor="lastName" className="text-sm font-medium text-gray-700 block mb-2">
+              Last Name
+            </label>
+            <div className="relative">
+              <i className="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="pl-10 pr-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                placeholder="Enter your last name"
               />
             </div>
           </div>
