@@ -2,7 +2,8 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState } from "react";
-const App: React.FC = () => {
+
+const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +29,7 @@ const App: React.FC = () => {
           <Link href="/">
             <h1 className="text-4xl font-bold text-gray-800 mb-2">EliteResume</h1>
           </Link>
-          <p className="text-gray-600">Tailor your resume with ease</p>
+          <p className="text-gray-600">Login to get started</p>
         </div>
         {/* Form Section */}
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
@@ -199,4 +200,4 @@ const App: React.FC = () => {
     </div>
   );
 };
-export default App;
+export default Login;
