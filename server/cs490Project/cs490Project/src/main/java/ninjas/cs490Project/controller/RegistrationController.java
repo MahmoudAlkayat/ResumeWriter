@@ -2,8 +2,10 @@
 package ninjas.cs490Project.controller;
 
 import ninjas.cs490Project.dto.RegistrationRequest;
+import ninjas.cs490Project.entity.EmailVerificationToken;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.UserRepository;
+import ninjas.cs490Project.service.EmailVerificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +13,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")  // or "/auth" - your choice
 public class RegistrationController {
+
+    @Autowired
+    private EmailVerificationService emailVerificationService;
 
     @Autowired
     private UserRepository userRepository;
@@ -41,6 +46,10 @@ public class RegistrationController {
         user.setIsVerified(false);
 
         userRepository.save(user);
+
+        // send verification link
+        emailVerificationService.createVerificationTokenForUser(user);
+
 
         return ResponseEntity.ok("User registered successfully!");
     }

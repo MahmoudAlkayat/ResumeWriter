@@ -29,6 +29,5 @@ public class Cs490ProjectApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-
 	}
 }
