@@ -42,4 +42,3 @@ public class AuthController {
         return "Your account has been verified!";
     }
 }
-
