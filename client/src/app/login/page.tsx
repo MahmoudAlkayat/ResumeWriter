@@ -2,33 +2,36 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState } from "react";
+import { useToast } from "@/contexts/ToastProvider";
 
 const Login: React.FC = () => {
+  const { showError, showSuccess } = useToast();
+
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [formError, setFormError] = useState("");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setFormError("Please fill in all fields");
+      showError("Please enter your email and password");
       return;
     }
-    setFormError("");
     // Login logic here
   };
 
   const handleForgotPassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setFormError("Please enter your email address");
+      showError("Please enter your email address");
       return;
     }
-    setFormError("");
     // Forgot password logic here
+
+    showSuccess("Password reset email sent");
+    setTimeout(() => window.location.reload(), 3000);
   };
 
   return (
@@ -61,10 +64,6 @@ const Login: React.FC = () => {
           className="mt-8 space-y-6"
           onSubmit={isForgotPassword ? handleForgotPassword : handleLogin}
         >
-          {formError && (
-            <div className="text-red-500 text-sm text-center">{formError}</div>
-          )}
-
           {/* Email Input */}
           <div className="relative">
             <label

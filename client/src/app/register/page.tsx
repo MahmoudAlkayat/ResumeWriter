@@ -3,8 +3,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState } from "react";
 import { API_URL } from "@/lib/config"
+import { useToast } from "@/contexts/ToastProvider";
 
 const Register: React.FC = () => {
+  const { showError, showInfo } = useToast();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -13,7 +16,6 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [formError, setFormError] = useState("");
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -21,18 +23,17 @@ const Register: React.FC = () => {
 
     // Validate input locally
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      setFormError("Please fill in all fields");
+      showError("Please fill in all fields");
       return;
     }
     if (password !== confirmPassword) {
-      setFormError("Passwords do not match");
+      showError("Passwords do not match");
       return;
     }
     if (!agreeTerms) {
-      setFormError("You must agree to the Terms of Service and Privacy Policy");
+      showError("You must agree to the Terms of Service and Privacy Policy");
       return;
     }
-    setFormError("");
 
     try {
       const response = await fetch(`${API_URL}/api/register`, {
@@ -57,11 +58,11 @@ const Register: React.FC = () => {
 
       const successText = await response.text();
       console.log("Registration success:", successText);
-      alert("Registration successful! Please check your email to verify your account.");
+      showInfo("Registration successful! Please check your email to verify your account.");
       
     } catch (err: any) {
       console.error("Error during registration:", err);
-      setFormError(err.message);
+      showError(err.message);
     }
   };
 
@@ -77,7 +78,6 @@ const Register: React.FC = () => {
         </div>
         {/* Form Section */}
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
-          {formError && <div className="text-red-500 text-sm text-center">{formError}</div>}
           {/* First Name */}
           <div className="relative">
             <label htmlFor="firstName" className="text-sm font-medium text-gray-700 block mb-2">
