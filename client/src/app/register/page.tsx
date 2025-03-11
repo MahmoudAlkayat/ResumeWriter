@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState } from "react";
+import { API_URL } from "@/lib/config"
 
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +35,7 @@ const Register: React.FC = () => {
     setFormError("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/register", {
+      const response = await fetch(`${API_URL}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -53,10 +54,11 @@ const Register: React.FC = () => {
         console.error("Registration error:", errorText);
         throw new Error(errorText || "Registration failed");
       }
+
       const successText = await response.text();
       console.log("Registration success:", successText);
       alert("Registration successful! Please check your email to verify your account.");
-      // Optionally, redirect the user (e.g., using next/router)
+      
     } catch (err: any) {
       console.error("Error during registration:", err);
       setFormError(err.message);
