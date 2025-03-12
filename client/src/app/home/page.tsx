@@ -3,38 +3,41 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthProvider';
+import { useToast } from '@/contexts/ToastProvider';
 
 export default function HomePage() {
   const router = useRouter();
+  const { isAuthenticated, logout } = useAuth();
+  const { showInfo } = useToast();
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        router.push("/"); // Redirect to Landing Page if token is missing
+      if (!isAuthenticated) {
+        showInfo("You must logged in to view this page")
+        router.push("/")
       }
     };
 
     checkAuth(); // Check on initial render
 
-    const interval = setInterval(checkAuth, 5000); // Check every 5 seconds
-    window.addEventListener("storage", checkAuth); // Listen for token removal in other tabs
+    // const interval = setInterval(checkAuth, 5000); // Check every 5 seconds
+    // window.addEventListener("storage", checkAuth); // Listen for token removal in other tabs
 
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("storage", checkAuth);
-    };
+    // return () => {
+    //   clearInterval(interval);
+    //   window.removeEventListener("storage", checkAuth);
+    // };
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    router.push("/"); // Redirect to Landing Page after logout
+    logout()
   };
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen text-center p-4 bg-gradient-to-br from-blue-200 via-white to-gray-100 overflow-hidden">
       {/* Abstract AI-inspired background pattern */}
-      <div className="absolute inset-0 bg-[url('/ai-pattern.svg')] bg-cover bg-center opacity-10"></div>
+      {/* <div className="absolute inset-0 bg-[url('/ai-pattern.svg')] bg-cover bg-center opacity-10"></div> */}
       
       <h1 className="text-5xl font-extrabold text-black mb-4 drop-shadow-md">Welcome</h1>
       <p className="text-xl text-gray-800 mb-6 max-w-xl drop-shadow-sm">

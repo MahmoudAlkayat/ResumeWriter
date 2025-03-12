@@ -3,9 +3,14 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState } from "react";
 import { useToast } from "@/contexts/ToastProvider";
+import { useAuth } from "@/contexts/AuthProvider";
+import { API_URL } from "@/lib/config";
+import { useRouter } from "next/navigation";
 
 const Login: React.FC = () => {
   const { showError, showSuccess } = useToast();
+  const { login } = useAuth();
+  const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -13,13 +18,48 @@ const Login: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       showError("Please enter your email and password");
       return;
     }
-    // Login logic here
+
+    try {
+      //Temporary login logic
+      showSuccess("Login successful")
+      login()
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      router.push("/home")
+      return
+
+      //TODO: Implement login
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: "include" //Backend returns a session cookie
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData?.error || "Failed to login")
+      }
+
+      showSuccess("Login successful")
+      login()
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      router.push("/home")
+
+    } catch (error) {
+      if (error instanceof Error) {
+        showError(error.message || "An unknown error occurred");
+      } else {
+        showError("An unknown error occurred");
+      }
+    }
   };
 
   const handleForgotPassword = (e: React.FormEvent) => {

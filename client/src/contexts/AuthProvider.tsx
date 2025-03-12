@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {
@@ -16,18 +16,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = () => {
     setIsAuthenticated(true);
-    router.push("/home"); //Go to home page on login
   };
 
   const logout = () => {
     try {
-      //Call logout endpoint
+      //TODO: Call logout endpoint
     } catch (error) {
-      //Handle edge cases
+      //TODO: Handle edge cases
     }
     setIsAuthenticated(false);
     router.push("/"); //Go to landing page on logout
   };
+
+  useEffect(() => {
+    //TODO: Check for session cookie on component mount for persistent authentication
+  }, [])
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
