@@ -17,6 +17,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +27,7 @@ const Login: React.FC = () => {
     }
 
     try {
+      setIsLoading(true);
       //Temporary login logic
       showSuccess("Login successful")
       login()
@@ -59,19 +61,37 @@ const Login: React.FC = () => {
       } else {
         showError("An unknown error occurred");
       }
+    } finally {
     }
   };
 
-  const handleForgotPassword = (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       showError("Please enter your email address");
       return;
     }
-    // Forgot password logic here
 
-    showSuccess("Password reset email sent");
-    setTimeout(() => window.location.reload(), 3000);
+    try {
+      setIsLoading(true);
+      // Forgot password logic here
+      const response = await fetch(`${API_URL}`)
+
+      showSuccess("Password reset email sent");
+      setEmail(""); // Clear the email field
+      setTimeout(() => {
+        setIsForgotPassword(false); // Return to login view
+      }, 2000);
+      setTimeout(() => {}, 5000)
+    } catch (error) {
+      if (error instanceof Error) {
+        showError(error.message);
+      } else {
+        showError("An unexpected error occurred");
+      }
+    } finally {
+      setIsLoading(false)
+    }
   };
 
   return (
@@ -197,8 +217,16 @@ const Login: React.FC = () => {
             type="submit"
             variant="blue"
             className="w-full text-md h-full"
+            disabled={isLoading}
           >
-            {isForgotPassword ? "Send Reset Link" : "Sign in"}
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                {isForgotPassword ? "Sending..." : "Signing in..."}
+              </span>
+            ) : (
+              isForgotPassword ? "Send Reset Link" : "Sign in"
+            )}
           </Button>
 
           {/* Social Login */}

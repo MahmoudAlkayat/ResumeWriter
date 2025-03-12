@@ -16,6 +16,7 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,6 +37,7 @@ const Register: React.FC = () => {
     }
 
     try {
+      setIsLoading(true);
       const response = await fetch(`${API_URL}/api/register`, {
         method: "POST",
         headers: {
@@ -63,6 +65,8 @@ const Register: React.FC = () => {
     } catch (err: any) {
       console.error("Error during registration:", err);
       showError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -198,8 +202,20 @@ const Register: React.FC = () => {
             </label>
           </div>
           {/* Register Button */}
-          <Button type="submit" variant="blue" className="w-full text-md h-full">
-            Create Account
+          <Button 
+            type="submit" 
+            variant="blue" 
+            className="w-full text-md h-full"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                Registering...
+              </span>
+            ) : (
+              "Create Account"
+            )}
           </Button>
           {/* Social Registration */}
           <div className="mt-1">
