@@ -11,14 +11,35 @@ const Login: React.FC = () => {
   const [formError, setFormError] = useState("");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setFormError("Please fill in all fields");
       return;
     }
     setFormError("");
-    // Login logic here
+
+    try {
+      const response = await fetch("http://localhost:8080/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // Include credentials so that the HttpOnly cookie is set by the browser
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Login failed");
+      }
+
+      // On success, simply redirect to the home page.
+      window.location.href = "/home";
+    } catch (err: any) {
+      setFormError(err.message);
+    }
   };
 
   const handleForgotPassword = (e: React.FormEvent) => {
@@ -49,9 +70,7 @@ const Login: React.FC = () => {
               </h1>
             </Link>
             <p className="text-gray-600">
-              {isForgotPassword
-                ? "Reset your password"
-                : "Login to get started"}
+              {isForgotPassword ? "Reset your password" : "Login to get started"}
             </p>
           </div>
         </div>
@@ -112,17 +131,13 @@ const Login: React.FC = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"
                 >
-                  <i
-                    className={`fas ${
-                      showPassword ? "fa-eye-slash" : "fa-eye"
-                    }`}
-                  ></i>
+                  <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
                 </button>
               </div>
             </div>
           )}
 
-          {/* Remember Me & Forgot Password */}
+          {/* Remember Me & Forgot Password (only for login) */}
           {!isForgotPassword && (
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -179,36 +194,14 @@ const Login: React.FC = () => {
                 <Button
                   type="button"
                   onClick={() => {
-                    return;
-
-                    // Google OAuth2.0 configuration
-                    const clientId = "your-google-client-id";
-                    const redirectUri = encodeURIComponent(
-                      window.location.origin + "/auth/google/callback"
-                    );
-                    const scope = encodeURIComponent("email profile");
-                    const responseType = "code";
-                    const accessType = "offline";
-                    const prompt = "consent";
-
-                    // Construct Google OAuth URL
-                    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}&access_type=${accessType}&prompt=${prompt}`;
-
-                    // Redirect to Google sign-in page
-                    window.location.href = googleAuthUrl;
+                    // Google OAuth2.0 configuration would go here
+                    // For now, this is a placeholder.
                   }}
-                  className="text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100  cursor-pointer whitespace-nowrap text-gray-600"
+                  className="text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600"
                 >
                   <i className="fab fa-google mr-1"></i>
                   Google
                 </Button>
-                {/* <button
-                type="button"
-                className="!rounded-button w-full py-2 px-4 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer whitespace-nowrap"
-              >
-                <i className="fab fa-linkedin mr-2"></i>
-                LinkedIn
-              </button> */}
               </div>
             </div>
           )}
@@ -246,4 +239,5 @@ const Login: React.FC = () => {
     </div>
   );
 };
+
 export default Login;
