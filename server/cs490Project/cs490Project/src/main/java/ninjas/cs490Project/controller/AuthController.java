@@ -57,6 +57,12 @@ public class AuthController {
             return ResponseEntity.status(401).body("Invalid credentials");
         }
 
+        // check if the user's email has been verified
+
+        if(user.getIsVerified() == null || !user.getIsVerified()){
+            return ResponseEntity.status(403).body("Please Verify your email before logging in.");
+        }
+
         // Generate a JWT token
         String token = jwtService.generateToken(user);
 
