@@ -1,29 +1,19 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthProvider';
-import { useToast } from '@/contexts/ToastProvider';
 import { Background } from '@/components/ui/background';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function HomePage() {
-  const router = useRouter();
-  const { isAuthenticated, logout } = useAuth();
-  const { showInfo } = useToast();
-
-  useEffect(() => {
-    if (isAuthenticated === false) {
-      showInfo("You must be logged in to view this page");
-      setTimeout(() => router.push("/"), 100);
-    }
-  }, []);
+  const { logout } = useAuth();
 
   const handleLogout = () => {
     logout();
   };
 
   return (
+    <ProtectedRoute>
     <Background className="relative flex flex-col items-center justify-center h-screen text-center p-4">
       {/* Abstract AI-inspired background pattern */}
       {/* <div className="absolute inset-0 bg-[url('/ai-pattern.svg')] bg-cover bg-center opacity-10"></div> */}
@@ -41,5 +31,6 @@ export default function HomePage() {
         </Button>
       </div>
     </Background>
+    </ProtectedRoute>
   );
 }
