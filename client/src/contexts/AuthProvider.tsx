@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/contexts/ToastProvider";
 import { API_URL } from "@/lib/config";
+import LoadingScreen from "@/components/LoadingScreen";
 
 interface AuthContextType {
   isAuthenticated: boolean | null;
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
       {isAuthenticated === null ? (
-        <p>Loading...</p>
+        <LoadingScreen />
       ) : children}
     </AuthContext.Provider>
   );
