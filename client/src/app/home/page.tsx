@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,6 +34,14 @@ export default function HomePage() {
     logout()
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex flex-col items-center justify-center h-screen text-center p-4 bg-gradient-to-br from-blue-200 via-white to-gray-100 overflow-hidden">
       {/* Abstract AI-inspired background pattern */}
@@ -44,10 +52,16 @@ export default function HomePage() {
         You are successfully authenticated. Navigate freely within the application.
       </p>
       <div className="z-10">
-        <Button className="bg-red-600 text-white hover:bg-red-700 shadow-lg px-6 py-3 text-lg" onClick={handleLogout}>
+        <Button
+          className="bg-red-600 text-white hover:bg-red-700 shadow-lg px-6 py-3 text-lg"
+          onClick={handleLogout}
+        >
           Log Out
         </Button>
       </div>
+      {error && (
+        <p className="text-red-500 mt-4">{error}</p>
+      )}
     </div>
   );
 }
