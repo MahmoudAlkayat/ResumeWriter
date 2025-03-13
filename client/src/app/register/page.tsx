@@ -4,6 +4,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { API_URL } from "@/lib/config"
 import { useToast } from "@/contexts/ToastProvider";
+import { Background } from "@/components/ui/background";
 
 const Register: React.FC = () => {
   const { showError, showInfo } = useToast();
@@ -71,7 +72,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center py-12 px-4 bg-gradient-to-br from-blue-200 via-white to-gray-100 overflow-hidden">
+    <Background className="min-h-screen flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-xl">
         {/* Logo Section */}
         <div className="text-center">
@@ -259,7 +260,7 @@ const Register: React.FC = () => {
           </p>
         </div>
       </div>
-    </div>
+    </Background>
   );
 };
 
