@@ -12,35 +12,15 @@ export default function HomePage() {
   const { showInfo } = useToast();
 
   useEffect(() => {
-    const checkAuth = () => {
-      if (!isAuthenticated) {
-        showInfo("You must logged in to view this page")
-        router.push("/")
-      }
-    };
-
-    checkAuth(); // Check on initial render
-
-    // const interval = setInterval(checkAuth, 5000); // Check every 5 seconds
-    // window.addEventListener("storage", checkAuth); // Listen for token removal in other tabs
-
-    // return () => {
-    //   clearInterval(interval);
-    //   window.removeEventListener("storage", checkAuth);
-    // };
-  }, [router]);
+    if (isAuthenticated === false) {
+      showInfo("You must be logged in to view this page");
+      setTimeout(() => router.push("/"), 100);
+    }
+  }, []);
 
   const handleLogout = () => {
-    logout()
+    logout();
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <p>Loading...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen text-center p-4 bg-gradient-to-br from-blue-200 via-white to-gray-100 overflow-hidden">
@@ -59,9 +39,6 @@ export default function HomePage() {
           Log Out
         </Button>
       </div>
-      {error && (
-        <p className="text-red-500 mt-4">{error}</p>
-      )}
     </div>
   );
 }

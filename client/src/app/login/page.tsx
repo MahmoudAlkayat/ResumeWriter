@@ -28,15 +28,8 @@ const Login: React.FC = () => {
 
     try {
       setIsLoading(true);
-      //Temporary login logic
-      showSuccess("Login successful")
-      login()
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      router.push("/home")
-      return
 
-      //TODO: Implement login
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,7 +45,7 @@ const Login: React.FC = () => {
 
       showSuccess("Login successful")
       login()
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       router.push("/home")
 
     } catch (error) {
@@ -62,6 +55,7 @@ const Login: React.FC = () => {
         showError("An unknown error occurred");
       }
     } finally {
+      setIsLoading(false)
     }
   };
 

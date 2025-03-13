@@ -1,9 +1,11 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/contexts/ToastProvider";
+import { API_URL } from "@/lib/config";
 
 interface AuthContextType {
-  isAuthenticated: boolean;
+  isAuthenticated: boolean | null;
   login: () => void;
   logout: () => void;
 }
@@ -11,30 +13,62 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { showError, showSuccess } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
 
   const login = () => {
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
+  const logout = async () => {
     try {
-      //TODO: Call logout endpoint
+      const response = await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include"
+      });
+      if (!response.ok) {
+        throw new Error("Failed to logout");
+      } else {
+        setIsAuthenticated(false);
+        showSuccess("Successfully logged out");
+        router.push("/"); //Go to landing page on logout
+      }
     } catch (error) {
-      //TODO: Handle edge cases
+      if (error instanceof Error) {
+        showError(error.message);
+      } else {
+        showError("An unknown error occurred");
+      }
     }
-    setIsAuthenticated(false);
-    router.push("/"); //Go to landing page on logout
+  };
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, {
+        method: "GET",
+        credentials: "include"
+      });
+      if (response.ok) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+    } catch (error) {
+      showError("Failed to check authentication");
+      setIsAuthenticated(false);
+    }
   };
 
   useEffect(() => {
-    //TODO: Check for session cookie on component mount for persistent authentication
+    checkAuth();
   }, [])
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
-      {children}
+      {isAuthenticated === null ? (
+        <p>Loading...</p>
+      ) : children}
     </AuthContext.Provider>
   );
 };
