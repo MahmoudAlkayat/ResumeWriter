@@ -1,59 +1,122 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useToast } from "@/contexts/ToastProvider";
+import { useAuth } from "@/hooks/auth";
+import { API_URL } from "@/lib/config";
+import { useRouter } from "next/navigation";
+import { Background } from "@/components/ui/background";
+import { useSearchParams } from "next/navigation";
+import LoadingScreen from "@/components/LoadingScreen";
+import { useAuthRedirect } from "@/hooks/auth";
 
 const Login: React.FC = () => {
+  const { showError, showSuccess } = useToast();
+  const { login } = useAuth();
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [formError, setFormError] = useState("");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useRef(false);
+
+  const searchParams = useSearchParams();
+  const verified = searchParams.get("verified");
+
+  useEffect(() => {
+    if (verified === "true" && !isMounted.current) {
+      showSuccess("Your account has been verified");
+      isMounted.current = true;
+    }
+  }, [verified]);
+
+
+  //Redirect logic and avoiding initial page render
+  const { isAuthLoading } = useAuthRedirect({
+    redirectTo: '/home',
+    protectedRoute: false
+  });
+
+  if (isAuthLoading) {
+    return <LoadingScreen />;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setFormError("Please fill in all fields");
+      showError("Please enter your email and password");
       return;
     }
-    setFormError("");
 
     try {
-      const response = await fetch("http://localhost:8080/auth/login", {
+      setIsLoading(true);
+
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        // Include credentials so that the HttpOnly cookie is set by the browser
-        credentials: "include",
         body: JSON.stringify({ email, password }),
+        credentials: "include" //Backend returns a session cookie
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Login failed");
+        // const errorData = await response.json();
+        // throw new Error(errorData?.error || "Failed to login")
+        throw new Error("Incorrect login credentials")
       }
 
-      // On success, simply redirect to the home page.
-      window.location.href = "/home";
-    } catch (err: any) {
-      setFormError(err.message);
+      showSuccess("Login successful")
+      login()
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      router.push("/home")
+
+    } catch (error) {
+      if (error instanceof Error) {
+        showError(error.message || "An unknown error occurred");
+      } else {
+        showError("An unknown error occurred");
+      }
+    } finally {
+      setIsLoading(false)
     }
   };
 
-  const handleForgotPassword = (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setFormError("Please enter your email address");
+      showError("Please enter your email address");
       return;
     }
-    setFormError("");
-    // Forgot password logic here
+
+    try {
+      setIsLoading(true);
+      // Forgot password logic here
+      const response = await fetch(`${API_URL}`)
+
+      showSuccess("Password reset email sent");
+      setEmail(""); // Clear the email field
+      setTimeout(() => {
+        setIsForgotPassword(false); // Return to login view
+      }, 2000);
+      setTimeout(() => {}, 5000)
+    } catch (error) {
+      if (error instanceof Error) {
+        showError(error.message);
+      } else {
+        showError("An unexpected error occurred");
+      }
+    } finally {
+      setIsLoading(false)
+    }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center py-12 px-4 bg-gradient-to-br from-blue-200 via-white to-gray-100 overflow-hidden">
+    <Background className="min-h-screen flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-xl">
         {/* Logo Section */}
         <div className="relative flex items-center justify-center">
@@ -80,10 +143,6 @@ const Login: React.FC = () => {
           className="mt-8 space-y-6"
           onSubmit={isForgotPassword ? handleForgotPassword : handleLogin}
         >
-          {formError && (
-            <div className="text-red-500 text-sm text-center">{formError}</div>
-          )}
-
           {/* Email Input */}
           <div className="relative">
             <label
@@ -173,8 +232,16 @@ const Login: React.FC = () => {
             type="submit"
             variant="blue"
             className="w-full text-md h-full"
+            disabled={isLoading}
           >
-            {isForgotPassword ? "Send Reset Link" : "Sign in"}
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                {isForgotPassword ? "Sending..." : "Signing in..."}
+              </span>
+            ) : (
+              isForgotPassword ? "Send Reset Link" : "Sign in"
+            )}
           </Button>
 
           {/* Social Login */}
@@ -236,7 +303,7 @@ const Login: React.FC = () => {
           </p>
         </div>
       </div>
-    </div>
+    </Background>
   );
 };
 

@@ -1,9 +1,18 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { API_URL } from "@/lib/config"
+import { useToast } from "@/contexts/ToastProvider";
+import { Background } from "@/components/ui/background";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/auth";
+import LoadingScreen from "@/components/LoadingScreen";
+import { useAuthRedirect } from "@/hooks/auth";
 
 const Register: React.FC = () => {
+  const { showError, showInfo } = useToast();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -12,7 +21,17 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [formError, setFormError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  //Redirect logic and avoiding initial page render
+  const { isAuthLoading } = useAuthRedirect({
+    redirectTo: '/home',
+    protectedRoute: false
+  });
+
+  if (isAuthLoading) {
+    return <LoadingScreen />;
+  }
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -20,21 +39,21 @@ const Register: React.FC = () => {
 
     // Validate input locally
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      setFormError("Please fill in all fields");
+      showError("Please fill in all fields");
       return;
     }
     if (password !== confirmPassword) {
-      setFormError("Passwords do not match");
+      showError("Passwords do not match");
       return;
     }
     if (!agreeTerms) {
-      setFormError("You must agree to the Terms of Service and Privacy Policy");
+      showError("You must agree to the Terms of Service and Privacy Policy");
       return;
     }
-    setFormError("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/register", {
+      setIsLoading(true);
+      const response = await fetch(`${API_URL}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -53,18 +72,21 @@ const Register: React.FC = () => {
         console.error("Registration error:", errorText);
         throw new Error(errorText || "Registration failed");
       }
+
       const successText = await response.text();
       console.log("Registration success:", successText);
-      alert("Registration successful! Please check your email to verify your account.");
-      // Optionally, redirect the user (e.g., using next/router)
+      showInfo("Registration successful! Please check your email to verify your account.");
+      
     } catch (err: any) {
       console.error("Error during registration:", err);
-      setFormError(err.message);
+      showError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center py-12 px-4 bg-gradient-to-br from-blue-200 via-white to-gray-100 overflow-hidden">
+    <Background className="min-h-screen flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-xl">
         {/* Logo Section */}
         <div className="text-center">
@@ -75,7 +97,6 @@ const Register: React.FC = () => {
         </div>
         {/* Form Section */}
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
-          {formError && <div className="text-red-500 text-sm text-center">{formError}</div>}
           {/* First Name */}
           <div className="relative">
             <label htmlFor="firstName" className="text-sm font-medium text-gray-700 block mb-2">
@@ -196,8 +217,20 @@ const Register: React.FC = () => {
             </label>
           </div>
           {/* Register Button */}
-          <Button type="submit" variant="blue" className="w-full text-md h-full">
-            Create Account
+          <Button 
+            type="submit" 
+            variant="blue" 
+            className="w-full text-md h-full"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                Registering...
+              </span>
+            ) : (
+              "Create Account"
+            )}
           </Button>
           {/* Social Registration */}
           <div className="mt-1">
@@ -241,7 +274,7 @@ const Register: React.FC = () => {
           </p>
         </div>
       </div>
-    </div>
+    </Background>
   );
 };
 
