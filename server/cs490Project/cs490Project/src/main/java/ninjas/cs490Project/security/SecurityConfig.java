@@ -21,12 +21,14 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(withDefaults())  // uses the CorsConfigurationSource bean defined below
+                .cors(withDefaults()) // uses the CorsConfigurationSource bean defined below
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/register", "/login", "/auth/**").permitAll()
+                        // Add "/oauth/google/**" to your existing permit list:
+                        .requestMatchers("/api/register", "/login", "/auth/**", "/oauth/google/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable());
+
         return http.build();
     }
 
