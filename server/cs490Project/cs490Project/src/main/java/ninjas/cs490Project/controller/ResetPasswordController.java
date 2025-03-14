@@ -6,6 +6,7 @@ import ninjas.cs490Project.repository.PasswordResetTokenRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,9 @@ public class ResetPasswordController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
     /**
      * Endpoint to update the user's password using the token.
      * Expects a request parameter "token" and a JSON body with the new password.
@@ -32,9 +36,9 @@ public class ResetPasswordController {
         if (resetToken == null || resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             return ResponseEntity.badRequest().body("Invalid or expired reset token.");
         }
-        // Get the associated user and update the password (remember to hash the password in production)
+        // Get the associated user and update the password (hashing it with BCrypt)
         User user = resetToken.getUser();
-        user.setPasswordHash(request.getNewPassword());
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         // Delete the token so it cannot be used again
         tokenRepository.delete(resetToken);
