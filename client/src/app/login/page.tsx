@@ -270,11 +270,21 @@ const Login: React.FC = () => {
                 <Button
                   type="button"
                   onClick={() => {
-                    // Google OAuth2.0 configuration would go here
-                    // For now, this is a placeholder.
+                    // Step 1: Set your Google OAuth parameters
+                    const clientId = "1090175341224-fmv0448rh2t2km73hgs3mbmdqtr6l3ba.apps.googleusercontent.com";
+                    const redirectUri = encodeURIComponent("http://localhost:8080/oauth/google/callback");
+                    const scope = encodeURIComponent("profile email");
+                    const responseType = "code";
+                    const accessType = "offline";
+                    const prompt = "consent";
+
+                    // Step 2: Construct the Google authorization URL
+                    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}&access_type=${accessType}&prompt=${prompt}`;
+
+                    // Step 3: Redirect the user to Google
+                    window.location.href = googleAuthUrl;
                   }}
-                  className="text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600"
-                >
+                  className="text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
                   <i className="fab fa-google mr-1"></i>
                   Google
                 </Button>
