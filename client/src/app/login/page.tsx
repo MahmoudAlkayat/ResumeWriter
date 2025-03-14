@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 import { useToast } from "@/contexts/ToastProvider";
-import { useAuth } from "@/contexts/AuthProvider";
+import { useAuth } from "@/hooks/auth";
 import { API_URL } from "@/lib/config";
 import { useRouter } from "next/navigation";
 import { Background } from "@/components/ui/background";

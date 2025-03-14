@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthProvider';
+import { useAuth } from '@/hooks/auth';
 import { Background } from '@/components/ui/background';
 import { useAuthRedirect } from '@/hooks/auth';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -9,7 +9,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 export default function HomePage() {
   const { logout } = useAuth();
   const { isAuthLoading } = useAuthRedirect({
-    redirectTo: '/login'
+    redirectTo: '/'
   });
   if (isAuthLoading) {
     return <LoadingScreen />;

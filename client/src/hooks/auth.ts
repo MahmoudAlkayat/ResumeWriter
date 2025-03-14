@@ -1,7 +1,15 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useContext } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthProvider';
+import { AuthContext } from '@/contexts/AuthProvider';
 import { useToast } from '@/contexts/ToastProvider';
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
 
 interface UseAuthRedirectOptions {
   redirectTo: string;

@@ -6,7 +6,7 @@ import { API_URL } from "@/lib/config"
 import { useToast } from "@/contexts/ToastProvider";
 import { Background } from "@/components/ui/background";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthProvider";
+import { useAuth } from "@/hooks/auth";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useAuthRedirect } from "@/hooks/auth";
 
