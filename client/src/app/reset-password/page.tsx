@@ -1,101 +1,171 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import React, { useEffect, useState } from "react";
+import { useToast } from "@/contexts/ToastProvider";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Background } from "@/components/ui/background";
+import { API_URL } from "@/lib/config";
 
-import React, { useState, FormEvent } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button"; // Adjust import if needed
-
-const ResetPasswordPage: React.FC = () => {
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+const ResetPassword: React.FC = () => {
+  const { showError, showSuccess } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams()
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const token = searchParams.get("token");
+  
+  useEffect(() => {
     if (!token) {
-      setError("Missing reset token in the URL.");
+      showError("Invalid token");
+      router.push("/login");
+    }
+  }, [])
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newPassword || !confirmPassword) {
+      showError("Please enter a new password");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
+      showError("Passwords do not match");
       return;
     }
 
-    setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/auth/reset-password?token=${token}`, {
+      setIsLoading(true);
+
+      const response = await fetch(`${API_URL}/auth/reset-password?token=${token}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        // Include credentials if your backend sets HttpOnly cookies
-        credentials: "include",
         body: JSON.stringify({ newPassword }),
+        credentials: "include"
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || "Password reset failed.");
+        throw new Error(errorText || "Password reset failed")
       }
 
-      setSuccess("Password reset successfully. Redirecting to login...");
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
-    } catch (err: any) {
-      setError(err.message || "An error occurred.");
+      showSuccess("Password reset successful");
+      setNewPassword("");
+      setConfirmPassword("");
+      await new Promise(resolve => setTimeout(resolve, 500))
+      router.push("/login");
+    } catch (error) {
+      if (error instanceof Error) {
+        showError(error.message || "An unknown error occurred");
+      } else {
+        showError("An unknown error occurred");
+      }
+      await new Promise(resolve => setTimeout(resolve, 500))
+      router.push("/login");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <h1 className="text-3xl font-bold mb-4">Reset Password</h1>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      {success && <div className="text-green-500 mb-4">{success}</div>}
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-6 rounded-lg shadow">
-        <div className="mb-4">
-          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
-            New Password
-          </label>
-          <input
-            type="password"
-            id="newPassword"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            required
-          />
+    <Background className="min-h-screen flex items-center justify-center py-12 px-4">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-xl">
+        {/* Logo Section */}
+        <div className="relative flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-black font-bold text-2xl">Reset Your Password</p>
+          </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-            Confirm New Password
-          </label>
-          <input
-            type="password"
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            required
-          />
-        </div>
-        <Button type="submit" disabled={loading} className="w-full">
-          {loading ? "Resetting..." : "Reset Password"}
-        </Button>
-      </form>
-    </div>
+
+        {/* Form Section */}
+        <form className="mt-8 space-y-6" onSubmit={handleResetPassword}>
+          {/* New Password Input */}
+          <div className="relative">
+            <label
+              htmlFor="newPassword"
+              className="text-sm font-medium text-gray-700 block mb-2"
+            >
+              New Password
+            </label>
+            <div className="relative">
+              <i className="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <input
+                id="newPassword"
+                name="newPassword"
+                type={showPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="pl-10 pr-10 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                placeholder="Enter new password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"
+              >
+                <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password Input */}
+          <div className="relative">
+            <label
+              htmlFor="confirmPassword"
+              className="text-sm font-medium text-gray-700 block mb-2"
+            >
+              Confirm Password
+            </label>
+            <div className="relative">
+              <i className="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="pl-10 pr-10 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                placeholder="Confirm new password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"
+              >
+                <i className={`fas ${showConfirmPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+              </button>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+              variant={"blue"}
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  Resetting...
+                </span>
+              ) : (
+               "Reset Password" 
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </Background>
   );
 };
 
-export default ResetPasswordPage;
+export default ResetPassword;
