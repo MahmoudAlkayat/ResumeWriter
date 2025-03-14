@@ -1,5 +1,6 @@
 package ninjas.cs490Project.controller;
 
+import jakarta.servlet.http.HttpServletResponse;
 import ninjas.cs490Project.entity.EmailVerificationToken;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.EmailVerificationTokenRepository;
@@ -10,7 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.io.IOException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -30,23 +31,26 @@ public class AuthController {
     private JWTService jwtService;
 
     @GetMapping("/verify-email")
-    public String verifyEmail(@RequestParam("token") String token) {
+    public void verifyEmail(@RequestParam("token") String token, HttpServletResponse response) throws IOException {
         EmailVerificationToken verificationToken = tokenRepository.findByToken(token);
         if (verificationToken == null) {
-            return "Invalid verification token.";
+            // Redirect to login page with a failure indication (you can change the URL or query parameter as needed)
+            response.sendRedirect("http://localhost:3000/login?verification=invalid");
+            return;
         }
         if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            return "Token has expired. Please request a new verification email.";
+            // Token expired – redirect with a different query parameter
+            response.sendRedirect("http://localhost:3000/login?verification=expired");
+            return;
         }
         // Mark user as verified
         User user = verificationToken.getUser();
         user.setIsVerified(true);
         userRepository.save(user);
-
         // Optionally delete the token to prevent reuse
         tokenRepository.delete(verificationToken);
-
-        return "Your account has been verified!";
+        // Redirect to the login page after successful verification
+        response.sendRedirect("http://localhost:3000/login?verified=true");
     }
 
     @PostMapping("/login")
@@ -55,6 +59,12 @@ public class AuthController {
         User user = userRepository.findByEmail(request.getEmail());
         if (user == null || !user.getPasswordHash().equals(request.getPassword())) {
             return ResponseEntity.status(401).body("Invalid credentials");
+        }
+
+        // check if the user's email has been verified
+
+        if(user.getIsVerified() == null || !user.getIsVerified()){
+            return ResponseEntity.status(403).body("Please Verify your email before logging in.");
         }
 
         // Generate a JWT token
