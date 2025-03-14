@@ -3,7 +3,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/contexts/ToastProvider";
 import { API_URL } from "@/lib/config";
-import LoadingScreen from "@/components/LoadingScreen";
 
 interface AuthContextType {
   isAuthenticated: boolean | null;

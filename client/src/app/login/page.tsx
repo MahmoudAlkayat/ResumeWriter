@@ -9,10 +9,10 @@ import { useRouter } from "next/navigation";
 import { Background } from "@/components/ui/background";
 import { useSearchParams } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
+import { useAuthRedirect } from "@/hooks/auth";
 
 const Login: React.FC = () => {
   const { showError, showSuccess } = useToast();
-  const { isAuthenticated } = useAuth();
   const { login } = useAuth();
   const router = useRouter();
 
@@ -36,13 +36,12 @@ const Login: React.FC = () => {
 
 
   //Redirect logic and avoiding initial page render
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace('/home');
-    }
-  }, [isAuthenticated, router]);
+  const { isAuthLoading } = useAuthRedirect({
+    redirectTo: '/home',
+    protectedRoute: false
+  });
 
-  if (isAuthenticated === null || isAuthenticated) {
+  if (isAuthLoading) {
     return <LoadingScreen />;
   }
 

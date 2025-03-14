@@ -8,6 +8,7 @@ import { Background } from "@/components/ui/background";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthProvider";
 import LoadingScreen from "@/components/LoadingScreen";
+import { useAuthRedirect } from "@/hooks/auth";
 
 const Register: React.FC = () => {
   const { showError, showInfo } = useToast();
@@ -22,17 +23,13 @@ const Register: React.FC = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { isAuthenticated } = useAuth();
-  const router = useRouter();
-
   //Redirect logic and avoiding initial page render
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace('/home');
-    }
-  }, [isAuthenticated, router]);
+  const { isAuthLoading } = useAuthRedirect({
+    redirectTo: '/home',
+    protectedRoute: false
+  });
 
-  if (isAuthenticated === null || isAuthenticated) {
+  if (isAuthLoading) {
     return <LoadingScreen />;
   }
 

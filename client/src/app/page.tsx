@@ -1,23 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthProvider';
 import LoadingScreen from '@/components/LoadingScreen';
+import { useAuthRedirect } from '@/hooks/auth';
 
 export default function LandingPage() {
-  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  //Redirect logic and avoiding initial page render
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace('/home');
-    }
-  }, [isAuthenticated, router]);
+  const { isAuthLoading } = useAuthRedirect({
+    redirectTo: '/home',
+    protectedRoute: false
+  });
 
-  if (isAuthenticated === null || isAuthenticated) {
+  if (isAuthLoading) {
     return <LoadingScreen />;
   }
 

@@ -3,17 +3,24 @@
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthProvider';
 import { Background } from '@/components/ui/background';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuthRedirect } from '@/hooks/auth';
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function HomePage() {
   const { logout } = useAuth();
+  const { isAuthLoading } = useAuthRedirect({
+    redirectTo: '/login'
+  });
+  if (isAuthLoading) {
+    return <LoadingScreen />;
+  }
 
   const handleLogout = () => {
     logout();
   };
 
+
   return (
-    <ProtectedRoute>
     <Background className="relative flex flex-col items-center justify-center h-screen text-center p-4">
       {/* Abstract AI-inspired background pattern */}
       {/* <div className="absolute inset-0 bg-[url('/ai-pattern.svg')] bg-cover bg-center opacity-10"></div> */}
@@ -31,6 +38,5 @@ export default function HomePage() {
         </Button>
       </div>
     </Background>
-    </ProtectedRoute>
   );
 }
