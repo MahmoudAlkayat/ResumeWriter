@@ -133,7 +133,7 @@ const Login: React.FC = () => {
               </h1>
             </Link>
             <p className="text-gray-600">
-              {isForgotPassword ? "Reset your password" : "Login to get started"}
+              {isForgotPassword ? "Send a password reset link to your email" : "Login to get started"}
             </p>
           </div>
         </div>
