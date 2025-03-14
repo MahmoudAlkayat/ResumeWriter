@@ -6,6 +6,7 @@ import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.service.EmailVerificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,6 +18,9 @@ public class RegistrationController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest request) {
@@ -39,20 +43,20 @@ public class RegistrationController {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        user.setPasswordHash(request.getPassword());
+        // Hash the plain-text password using BCrypt
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setIsVerified(false);
 
         // Save the user in the database
         userRepository.save(user);
 
-        // Send the verification email (implementation hidden in the service)
+        // Send the verification email (if there's an error sending, we log it but still return success)
         try {
             emailVerificationService.createVerificationTokenForUser(user);
         } catch (Exception e) {
-            // Log the exception if needed
             System.err.println("Error sending verification email: " + e.getMessage());
-            // Do not return an error response; the user was created successfully.
         }
+
         return ResponseEntity.ok("User registered successfully! Please check your email to verify your account.");
     }
 }

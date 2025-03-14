@@ -10,9 +10,11 @@ import ninjas.cs490Project.service.oauth.GoogleOAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/oauth/google")
@@ -26,6 +28,9 @@ public class GoogleOAuthController {
 
     @Autowired
     private JWTService jwtService;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     @GetMapping("/callback")
     public void handleGoogleCallback(@RequestParam("code") String code,
@@ -47,8 +52,9 @@ public class GoogleOAuthController {
                 user.setLastName(googleUser.getLastName() != null ? googleUser.getLastName() : "");
                 user.setIsVerified(true);
 
-                // Provide a placeholder password so it's not null
-                user.setPasswordHash("GOOGLE_OAUTH");
+                // Generate a random password and hash it.
+                String randomPassword = UUID.randomUUID().toString();
+                user.setPasswordHash(passwordEncoder.encode(randomPassword));
 
                 userRepository.save(user);
             }
