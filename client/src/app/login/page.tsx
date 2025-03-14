@@ -67,7 +67,8 @@ const Login: React.FC = () => {
       if (!response.ok) {
         // const errorData = await response.json();
         // throw new Error(errorData?.error || "Failed to login")
-        throw new Error("Incorrect login credentials")
+        // throw new Error("Incorrect login credentials")
+        throw new Error(await response.text() || "Failed to login")
       }
 
       showSuccess("Login successful")

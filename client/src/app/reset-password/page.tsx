@@ -1,12 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/contexts/ToastProvider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Background } from "@/components/ui/background";
-import LoadingScreen from "@/components/LoadingScreen";
-import { useAuthRedirect } from "@/hooks/auth";
+import { API_URL } from "@/lib/config";
 
 const ResetPassword: React.FC = () => {
   const { showError, showSuccess } = useToast();
@@ -19,23 +17,14 @@ const ResetPassword: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
+  const token = searchParams.get("token");
+  
   useEffect(() => {
-    // const token = searchParams.get("token");
-    // if (!token) {
-    //   showError("Invalid token");
-    //   router.push("/login");
-    // }
+    if (!token) {
+      showError("Invalid token");
+      router.push("/login");
+    }
   }, [])
-
-  // Redirect logic and avoiding initial page render
-  const { isAuthLoading } = useAuthRedirect({
-    redirectTo: '/home',
-    protectedRoute: false
-  });
-
-  if (isAuthLoading) {
-    return <LoadingScreen />;
-  }
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,17 +42,24 @@ const ResetPassword: React.FC = () => {
     try {
       setIsLoading(true);
 
-      // TODO: Add API call to reset password
-      // const response = await fetch(`${API_URL}/auth/reset-password`, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({ newPassword }),
-      //   credentials: "include"
-      // });
+      const response = await fetch(`${API_URL}/auth/reset-password?token=${token}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ newPassword }),
+        credentials: "include"
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Password reset failed")
+      }
 
       showSuccess("Password reset successful");
+      setNewPassword("");
+      setConfirmPassword("");
+      await new Promise(resolve => setTimeout(resolve, 500))
       router.push("/login");
     } catch (error) {
       if (error instanceof Error) {
@@ -71,6 +67,8 @@ const ResetPassword: React.FC = () => {
       } else {
         showError("An unknown error occurred");
       }
+      await new Promise(resolve => setTimeout(resolve, 500))
+      router.push("/login");
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +152,14 @@ const ResetPassword: React.FC = () => {
               disabled={isLoading}
               variant={"blue"}
             >
-              {isLoading ? 'Resetting Password...' : 'Reset Password'}
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  Resetting...
+                </span>
+              ) : (
+               "Reset Password" 
+              )}
             </Button>
           </div>
         </form>
