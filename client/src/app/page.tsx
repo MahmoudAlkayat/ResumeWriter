@@ -19,10 +19,10 @@ export default function LandingPage() {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen text-center p-4 bg-gradient-to-br from-blue-200 via-white to-gray-100 overflow-hidden">
-      {/* Abstract AI-inspired background pattern */}
-      {/* <div className="absolute inset-0 bg-[url('/ai-pattern.svg')] bg-cover bg-center opacity-10"></div> */}
-      
-      <h1 className="text-5xl font-bold text-black mb-4 drop-shadow-md">Welcome to EliteResume</h1>
+      <h1 className="text-6xl font-bold text-black drop-shadow-md -mb-6">
+        Welcome to
+        <img src="/logo.svg" alt="Icon" className="inline h-30 mb-4" />
+      </h1>
       <p className="text-xl text-gray-800 mb-6 max-w-xl drop-shadow-sm">
         AI-powered resume and cover letter generation to streamline your job application process.
       </p>

@@ -1,0 +1,11 @@
+<svg width="64" height="64" viewBox="14 14 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g filter="url(#filter0_d_101_2)">
+    <!-- Document shape (Outline) -->
+    <path d="M44 16H20C17.7909 16 16 17.7909 16 20V44C16 46.2091 17.7909 48 20 48H44C46.2091 48 48 46.2091 48 44V20C48 17.7909 46.2091 16 44 16Z" fill="white" stroke="black" stroke-width="2"/>
+
+    <!-- Three horizontal lines (black) -->
+    <path d="M24 22H40V26H24V22Z" fill="black"/>
+    <path d="M24 30H40V34H24V30Z" fill="black"/>
+    <path d="M24 38H34V42H24V38Z" fill="black"/>
+  </g>
+</svg>
