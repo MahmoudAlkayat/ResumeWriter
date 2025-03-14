@@ -7,6 +7,7 @@ import LoadingScreen from "@/components/LoadingScreen";
 
 interface AuthContextType {
   isAuthenticated: boolean | null;
+  isLogout: boolean;
   login: () => void;
   logout: () => void;
 }
@@ -16,10 +17,12 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { showError, showSuccess } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isLogout, setIsLogout] = useState(false);
   const router = useRouter();
 
   const login = () => {
     setIsAuthenticated(true);
+    setIsLogout(false);
   };
 
   const logout = async () => {
@@ -31,8 +34,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!response.ok) {
         throw new Error("Failed to logout");
       } else {
+        setIsLogout(true);
         setIsAuthenticated(false);
-        showSuccess("Successfully logged out");
+        if (!isLogout) {
+          showSuccess("Successfully logged out");
+        }
         router.push("/"); //Go to landing page on logout
       }
     } catch (error) {
@@ -52,6 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       if (response.ok) {
         setIsAuthenticated(true);
+        setIsLogout(false);
       } else {
         setIsAuthenticated(false);
       }
@@ -66,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLogout, login, logout }}>
       {isAuthenticated === null ? (
         <LoadingScreen />
       ) : children}

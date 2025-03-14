@@ -1,12 +1,13 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useToast } from "@/contexts/ToastProvider";
 import { useAuth } from "@/contexts/AuthProvider";
 import { API_URL } from "@/lib/config";
 import { useRouter } from "next/navigation";
 import { Background } from "@/components/ui/background";
+import { useSearchParams } from "next/navigation";
 
 const Login: React.FC = () => {
   const { showError, showSuccess } = useToast();
@@ -19,6 +20,17 @@ const Login: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useRef(false);
+
+  const searchParams = useSearchParams();
+  const verified = searchParams.get("verified");
+
+  useEffect(() => {
+    if (verified === "true" && !isMounted.current) {
+      showSuccess("Your account has been verified");
+      isMounted.current = true;
+    }
+  }, [verified]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
