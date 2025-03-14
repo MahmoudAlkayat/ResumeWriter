@@ -92,18 +92,25 @@ const Login: React.FC = () => {
       showError("Please enter your email address");
       return;
     }
-
+  
     try {
       setIsLoading(true);
-      // Forgot password logic here
-      const response = await fetch(`${API_URL}`)
-
+      // Call the forgot-password endpoint with the email as a query parameter.
+      const response = await fetch(`${API_URL}/auth/forgot-password?email=${encodeURIComponent(email)}`, {
+        method: "POST",
+        credentials: "include",
+      });
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to send reset link");
+      }
+  
       showSuccess("Password reset email sent");
       setEmail(""); // Clear the email field
       setTimeout(() => {
         setIsForgotPassword(false); // Return to login view
       }, 2000);
-      setTimeout(() => {}, 5000)
     } catch (error) {
       if (error instanceof Error) {
         showError(error.message);
@@ -111,9 +118,10 @@ const Login: React.FC = () => {
         showError("An unexpected error occurred");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   };
+  
 
   return (
     <Background className="min-h-screen flex items-center justify-center py-12 px-4">

@@ -52,7 +52,7 @@ public class PasswordResetService {
         PasswordResetToken savedToken = tokenRepository.save(myToken);
 
         // Send email (or simulate sending email)
-        String resetLink = "http://localhost:8080/auth/reset-password?token=" + token;
+        String resetLink = "http://localhost:3000/reset-password?token=" + token;
         mailService.sendResetLink(user.getEmail(), resetLink);
 
         return savedToken;
