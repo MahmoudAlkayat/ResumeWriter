@@ -8,9 +8,11 @@ import { API_URL } from "@/lib/config";
 import { useRouter } from "next/navigation";
 import { Background } from "@/components/ui/background";
 import { useSearchParams } from "next/navigation";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const Login: React.FC = () => {
   const { showError, showSuccess } = useToast();
+  const { isAuthenticated } = useAuth();
   const { login } = useAuth();
   const router = useRouter();
 
@@ -31,6 +33,18 @@ const Login: React.FC = () => {
       isMounted.current = true;
     }
   }, [verified]);
+
+
+  //Redirect logic and avoiding initial page render
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/home');
+    }
+  }, [isAuthenticated, router]);
+
+  if (isAuthenticated === null || isAuthenticated) {
+    return <LoadingScreen />;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

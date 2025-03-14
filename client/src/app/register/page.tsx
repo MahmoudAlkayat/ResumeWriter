@@ -1,10 +1,13 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { API_URL } from "@/lib/config"
 import { useToast } from "@/contexts/ToastProvider";
 import { Background } from "@/components/ui/background";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthProvider";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const Register: React.FC = () => {
   const { showError, showInfo } = useToast();
@@ -18,6 +21,20 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  //Redirect logic and avoiding initial page render
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/home');
+    }
+  }, [isAuthenticated, router]);
+
+  if (isAuthenticated === null || isAuthenticated) {
+    return <LoadingScreen />;
+  }
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

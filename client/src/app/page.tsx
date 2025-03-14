@@ -1,52 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthProvider';
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function LandingPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null); 
-
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
+  //Redirect logic and avoiding initial page render
   useEffect(() => {
-    setLoading(true);
-    try {
-      // Simulate authentication check (replace with actual auth logic)
-      const user = localStorage.getItem('user');
-
-      setTimeout(() => {
-        if (user) {
-          setIsAuthenticated(true);
-          router.push('/home'); // Redirect to home if authenticated
-        } else {
-          setLoading(false);
-        }
-      }, 1500); // Simulate loading delay
-    } catch (err) {
-      console.error('Error checking authentication:', err);
-      setError('Failed to check authentication. Please try again.');
-      setLoading(false);
+    if (isAuthenticated) {
+      router.replace('/home');
     }
-  }, [router]);
+  }, [isAuthenticated, router]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <p className="text-5xl font-extrabold text-black mb-4 drop-shadow-md">Loading...</p>
-      </div>
-    ); // Show a loading state while checking auth
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-red-100">
-        <p className="text-2xl font-bold text-red-700 mb-4">Error</p>
-        <p className="text-lg text-gray-800">{error}</p>
-      </div>
-    ); // Display an error message if something goes wrong
+  if (isAuthenticated === null || isAuthenticated) {
+    return <LoadingScreen />;
   }
 
   return (

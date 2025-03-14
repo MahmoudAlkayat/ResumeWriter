@@ -20,6 +20,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isAuthenticated]);
 
+  //To avoid showing page content on initial load
   if (isAuthenticated !== true) {
     return <LoadingScreen />;
   }
