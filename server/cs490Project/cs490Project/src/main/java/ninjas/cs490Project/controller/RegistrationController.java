@@ -6,6 +6,7 @@ import ninjas.cs490Project.entity.EmailVerificationToken;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.service.EmailVerificationService;
+import ninjas.cs490Project.service.PasswordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,9 @@ public class RegistrationController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordService passwordService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest request) {
@@ -41,8 +45,8 @@ public class RegistrationController {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        // For demonstration, store the password in plain text or hashed
-        user.setPasswordHash(request.getPassword());
+        // Hash the password before storing
+        user.setPasswordHash(passwordService.hashPassword(request.getPassword()));
         user.setIsVerified(false);
 
         userRepository.save(user);

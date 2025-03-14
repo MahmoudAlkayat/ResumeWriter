@@ -5,6 +5,7 @@ import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.EmailVerificationTokenRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.service.JWTService;
+import ninjas.cs490Project.service.PasswordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -28,6 +29,9 @@ public class AuthController {
 
     @Autowired
     private JWTService jwtService;
+
+    @Autowired
+    private PasswordService passwordService;
 
     @GetMapping("/verify-email")
     public String verifyEmail(@RequestParam("token") String token) {
@@ -53,7 +57,7 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         // Find the user by email
         User user = userRepository.findByEmail(request.getEmail());
-        if (user == null || !user.getPasswordHash().equals(request.getPassword())) {
+        if (user == null || !passwordService.verifyPassword(request.getPassword(), user.getPasswordHash())) {
             return ResponseEntity.status(401).body("Invalid credentials");
         }
 
