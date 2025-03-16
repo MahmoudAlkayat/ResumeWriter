@@ -75,7 +75,7 @@ const Register: React.FC = () => {
 
       const successText = await response.text();
       console.log("Registration success:", successText);
-      showInfo("Registration successful! Please check your email to verify your account.");
+      showInfo("Registration successful! Please check your email or spam to verify your account.");
       
     } catch (err: any) {
       console.error("Error during registration:", err);
