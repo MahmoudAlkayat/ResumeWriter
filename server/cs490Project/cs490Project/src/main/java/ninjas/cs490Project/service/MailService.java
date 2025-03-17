@@ -59,8 +59,8 @@ public class MailService {
                     "            </tr>" +
                     "            <tr>" +
                     "              <td style=\"background-color: #f5f5f5; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;\">" +
-                    "                <p style=\"color: #999999; font-size: 13px; margin: 0;\">© 2025 Your Company. All rights reserved.</p>" +
-                    "                <p style=\"color: #999999; font-size: 12px; margin: 10px 0 0 0;\">123 Main Street, City, State, Country</p>" +
+                    "                <p style=\"color: #999999; font-size: 13px; margin: 0;\">© 2025 ResumeElite. All rights reserved.</p>" +
+                    "                <p style=\"color: #999999; font-size: 12px; margin: 10px 0 0 0;\">15 Greek Way, Newark, NJ, USA</p>" +
                     "              </td>" +
                     "            </tr>" +
                     "          </table>" +
@@ -129,8 +129,8 @@ public class MailService {
                     "            </tr>" +
                     "            <tr>" +
                     "              <td style=\"background-color: #f5f5f5; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;\">" +
-                    "                <p style=\"color: #999999; font-size: 13px; margin: 0;\">© 2025 Your Company. All rights reserved.</p>" +
-                    "                <p style=\"color: #999999; font-size: 12px; margin: 10px 0 0 0;\">123 Main Street, City, State, Country</p>" +
+                    "                <p style=\"color: #999999; font-size: 13px; margin: 0;\">©  ResumeElite. All rights reserved.</p>" +
+                    "                <p style=\"color: #999999; font-size: 12px; margin: 10px 0 0 0;\">15 Greek Way, Newark, NJ, USA</p>" +
                     "              </td>" +
                     "            </tr>" +
                     "          </table>" +
