@@ -1,7 +1,6 @@
 package ninjas.cs490Project.entity;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -15,7 +14,8 @@ public class Resume {
 
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    // Updated column definition to LONGTEXT to allow larger content.
+    @Column(columnDefinition = "LONGTEXT")
     private String content;
 
     @Column(name = "created_at")
@@ -23,6 +23,9 @@ public class Resume {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Lob
+    private byte[] fileContent;
 
     // Relationship: Many resumes belong to one user
     @ManyToOne(fetch = FetchType.LAZY)
@@ -86,6 +89,14 @@ public class Resume {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public byte[] getFileContent() {
+        return fileContent;
+    }
+
+    public void setFileContent(byte[] fileContent) {
+        this.fileContent = fileContent;
     }
 
     public User getUser() {

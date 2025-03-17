@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tailored Resume</title>
+    <style>
+        /* basic CSS or advanced styling here */
+    </style>
+</head>
+<body>
+<h1>Resume for [[${resumeData.firstName}]] [[${resumeData.lastName}]]</h1>
+<p>Email: [[${resumeData.email}]]</p>
+
+<h2>Skills Matched for [[${jobListing.title}]]</h2>
+<ul>
+    <li th:each="skill : ${matchingSkills}" th:text="${skill}"></li>
+</ul>
+
+<h2>Education</h2>
+<p th:text="${resumeData.education}"></p>
+
+<h2>Work History</h2>
+<p th:text="${resumeData.workHistory}"></p>
+
+<p>Additional job-tailored info here ...</p>
+</body>
+</html>
