@@ -33,8 +33,20 @@ public class GoogleOAuthController {
     private BCryptPasswordEncoder passwordEncoder;
 
     @GetMapping("/callback")
-    public void handleGoogleCallback(@RequestParam("code") String code,
+    public void handleGoogleCallback(@RequestParam(value = "code", required = false) String code,
+                                     @RequestParam(value = "error", required = false) String error,
                                      HttpServletResponse response) throws IOException {
+        // If there is an error parameter (e.g., user canceled), redirect to login
+        if (error != null) {
+            response.sendRedirect("http://localhost:3000/login?oauth=canceled");
+            return;
+        }
+        // If code is missing, redirect with error
+        if (code == null) {
+            response.sendRedirect("http://localhost:3000/login?oauth=error");
+            return;
+        }
+
         try {
             // 1) Exchange the authorization code for tokens
             GoogleTokenResponse tokenResponse = googleOAuthService.exchangeCodeForTokens(code);
@@ -65,9 +77,9 @@ public class GoogleOAuthController {
             // 5) Create an HttpOnly cookie with the JWT
             ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
                     .httpOnly(true)
-                    .secure(false)    // set true in production with HTTPS
+                    .secure(false) // set true in production with HTTPS
                     .path("/")
-                    .maxAge(24 * 60 * 60) // 1 day
+                    .maxAge(24 * 60 * 60) // token valid for 1 day
                     .build();
 
             // 6) Add the cookie to the response headers
@@ -77,7 +89,7 @@ public class GoogleOAuthController {
             response.sendRedirect("http://localhost:3000/home");
         } catch (Exception e) {
             e.printStackTrace();
-            // If there's an error, redirect or respond as needed
+            // If there's an error, redirect to login with an error parameter.
             response.sendRedirect("http://localhost:3000/login?oauth=error");
         }
     }
