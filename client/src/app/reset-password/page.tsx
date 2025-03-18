@@ -67,8 +67,8 @@ const ResetPassword: React.FC = () => {
       } else {
         showError("An unknown error occurred");
       }
-      await new Promise(resolve => setTimeout(resolve, 500))
-      router.push("/login");
+      // Removed the redirect to login page on error
+      // Removed the timeout promise
     } finally {
       setIsLoading(false);
     }

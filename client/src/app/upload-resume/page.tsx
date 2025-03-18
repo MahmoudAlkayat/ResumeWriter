@@ -102,11 +102,21 @@ export default function FileUploadPage() {
     }
   };
 
+  const navigateToHome = () => {
+    router.push("/");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="bg-blue-600 p-4">
-          <h1 className="text-white text-xl font-bold text-center">File Upload</h1>
+        <div className="bg-blue-600 p-4 flex justify-between items-center">
+          <h1 className="text-white text-xl font-bold">File Upload</h1>
+          <button
+            onClick={navigateToHome}
+            className="text-white bg-blue-700 hover:bg-blue-800 px-3 py-1 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Back to Home
+          </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6">
           <div className="mb-6">
@@ -173,7 +183,14 @@ export default function FileUploadPage() {
               <p className="text-sm">{message}</p>
             </div>
           )}
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={navigateToHome}
+              className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={isUploading || !file}
