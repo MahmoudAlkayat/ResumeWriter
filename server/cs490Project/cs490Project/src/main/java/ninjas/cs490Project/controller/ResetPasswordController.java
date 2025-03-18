@@ -34,15 +34,36 @@ public class ResetPasswordController {
         // Find the reset token
         PasswordResetToken resetToken = tokenRepository.findByToken(token);
         if (resetToken == null || resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body("Invalid or expired reset token.");
+            return ResponseEntity.badRequest().body("Invalid or expired reset token. Please request a new reset-password email!");
         }
         // Get the associated user and update the password (hashing it with BCrypt)
         User user = resetToken.getUser();
+        // Optionally, enforce password policies and prevent reuse of the old password here.
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            return ResponseEntity.badRequest().body("New password cannot be the same as the old password.");
+        }
+        // Enforce a simple password policy (e.g., minimum length, uppercase letter, digit, etc.)
+        if (!isValidPassword(request.getNewPassword())) {
+            return ResponseEntity.badRequest().body("Password must be at least 8 characters long and contain at least one uppercase letter and one digit.");
+        }
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         // Delete the token so it cannot be used again
         tokenRepository.delete(resetToken);
         return ResponseEntity.ok("Password reset successfully. Please log in with your new password.");
+    }
+
+    private boolean isValidPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+        if (!password.matches(".*[A-Z].*")) {
+            return false;
+        }
+        if (!password.matches(".*[0-9].*")) {
+            return false;
+        }
+        return true;
     }
 
     // DTO for the new password request
