@@ -2,6 +2,7 @@ package ninjas.cs490Project.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -14,9 +15,13 @@ public class Resume {
 
     private String title;
 
-    // Updated column definition to LONGTEXT to allow larger content.
+    // Store the extracted text from the PDF (LONGTEXT for large text)
     @Column(columnDefinition = "LONGTEXT")
     private String content;
+
+    // Raw PDF bytes
+    @Lob
+    private byte[] fileContent;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -24,37 +29,35 @@ public class Resume {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Lob
-    private byte[] fileContent;
-
-    // Relationship: Many resumes belong to one user
+    // Many resumes belong to one user
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // Relationship: Resume to skills (many-to-many)
+    // Many-to-Many with Skill
     @ManyToMany
     @JoinTable(
             name = "resume_skills",
             joinColumns = @JoinColumn(name = "resume_id"),
             inverseJoinColumns = @JoinColumn(name = "skill_id")
     )
-    private Set<Skill> skills;
+    private Set<Skill> skills = new HashSet<>();
 
-    // Relationship: One resume can have many work experiences
+    // One resume can have many education records
     @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<WorkExperience> workExperiences;
+    private Set<Education> educationRecords = new HashSet<>();
 
-    // Relationship: One resume can have many education records
+    // If you also have a WorkExperience entity
     @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<Education> educationRecords;
+    private Set<WorkExperience> workExperiences = new HashSet<>();
 
-    // Getters and Setters
+    // Getters and setters
 
     public int getId() {
         return id;
     }
 
+    // Optionally switch to Long if you prefer
     public void setId(int id) {
         this.id = id;
     }
@@ -75,6 +78,14 @@ public class Resume {
         this.content = content;
     }
 
+    public byte[] getFileContent() {
+        return fileContent;
+    }
+
+    public void setFileContent(byte[] fileContent) {
+        this.fileContent = fileContent;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -89,14 +100,6 @@ public class Resume {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public byte[] getFileContent() {
-        return fileContent;
-    }
-
-    public void setFileContent(byte[] fileContent) {
-        this.fileContent = fileContent;
     }
 
     public User getUser() {
@@ -115,19 +118,19 @@ public class Resume {
         this.skills = skills;
     }
 
-    public Set<WorkExperience> getWorkExperiences() {
-        return workExperiences;
-    }
-
-    public void setWorkExperiences(Set<WorkExperience> workExperiences) {
-        this.workExperiences = workExperiences;
-    }
-
     public Set<Education> getEducationRecords() {
         return educationRecords;
     }
 
     public void setEducationRecords(Set<Education> educationRecords) {
         this.educationRecords = educationRecords;
+    }
+
+    public Set<WorkExperience> getWorkExperiences() {
+        return workExperiences;
+    }
+
+    public void setWorkExperiences(Set<WorkExperience> workExperiences) {
+        this.workExperiences = workExperiences;
     }
 }

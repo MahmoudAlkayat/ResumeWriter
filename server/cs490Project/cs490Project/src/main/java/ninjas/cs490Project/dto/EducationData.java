@@ -1,49 +1,20 @@
-package ninjas.cs490Project.entity;
+package ninjas.cs490Project.dto;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "education")
-public class Education {
+/**
+ * Represents a single education record extracted from the resume.
+ */
+public class EducationData {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    @Column(nullable = false)
     private String institution;
-
     private String degree;
-
-    @Column(name = "field_of_study")
     private String fieldOfStudy;
+    private String description; // e.g. "Ying Wu College of Computing, Dean’s List..."
+    private Double gpa;         // store numeric GPA if found
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
-    @Column(name = "gpa")
-    private Double gpa;
-
-    @Column(name = "start_date")
     private LocalDate startDate;
-
-    @Column(name = "end_date")
     private LocalDate endDate;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false)
-    private Resume resume;
-
-    // Getters and Setters
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
 
     public String getInstitution() {
         return institution;
@@ -99,13 +70,5 @@ public class Education {
 
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
-    }
-
-    public Resume getResume() {
-        return resume;
-    }
-
-    public void setResume(Resume resume) {
-        this.resume = resume;
     }
 }
