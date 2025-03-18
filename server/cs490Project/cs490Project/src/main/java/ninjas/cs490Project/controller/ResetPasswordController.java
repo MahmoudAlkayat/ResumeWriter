@@ -34,7 +34,7 @@ public class ResetPasswordController {
         // Find the reset token
         PasswordResetToken resetToken = tokenRepository.findByToken(token);
         if (resetToken == null || resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body("Invalid or expired reset token.");
+            return ResponseEntity.badRequest().body("Invalid or expired reset token. Please request a new reset-password email!");
         }
         // Get the associated user and update the password (hashing it with BCrypt)
         User user = resetToken.getUser();
