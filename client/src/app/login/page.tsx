@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, Suspense } from "react";
 import { useToast } from "@/contexts/ToastProvider";
 import { useAuth } from "@/hooks/auth";
 import { API_URL } from "@/lib/config";
@@ -11,10 +11,13 @@ import { useSearchParams } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useAuthRedirect } from "@/hooks/auth";
 
-const Login: React.FC = () => {
+// Separate component for the login form content
+const LoginForm: React.FC = () => {
   const { showError, showSuccess } = useToast();
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const verified = searchParams.get("verified");
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -24,16 +27,12 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const isMounted = useRef(false);
 
-  const searchParams = useSearchParams();
-  const verified = searchParams.get("verified");
-
   useEffect(() => {
     if (verified === "true" && !isMounted.current) {
       showSuccess("Your account has been verified");
       isMounted.current = true;
     }
   }, [verified]);
-
 
   //Redirect logic and avoiding initial page render
   const { isAuthLoading } = useAuthRedirect({
@@ -323,6 +322,23 @@ const Login: React.FC = () => {
         </div>
       </div>
     </Background>
+  );
+};
+
+const Login: React.FC = () => {
+  const { isAuthLoading } = useAuthRedirect({
+    redirectTo: '/home',
+    protectedRoute: false
+  });
+
+  if (isAuthLoading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <LoginForm />
+    </Suspense>
   );
 };
 

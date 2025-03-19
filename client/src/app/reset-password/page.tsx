@@ -1,15 +1,17 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useToast } from "@/contexts/ToastProvider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Background } from "@/components/ui/background";
 import { API_URL } from "@/lib/config";
+import LoadingScreen from "@/components/LoadingScreen";
 
-const ResetPassword: React.FC = () => {
+const ResetPasswordForm: React.FC = () => {
   const { showError, showSuccess } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams()
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -17,14 +19,12 @@ const ResetPassword: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  const token = searchParams.get("token");
-  
   useEffect(() => {
     if (!token) {
       showError("Invalid token");
       router.push("/login");
     }
-  }, [])
+  }, [token, router, showError]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,8 +67,6 @@ const ResetPassword: React.FC = () => {
       } else {
         showError("An unknown error occurred");
       }
-      // Removed the redirect to login page on error
-      // Removed the timeout promise
     } finally {
       setIsLoading(false);
     }
@@ -165,6 +163,14 @@ const ResetPassword: React.FC = () => {
         </form>
       </div>
     </Background>
+  );
+};
+
+const ResetPassword: React.FC = () => {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 };
 
