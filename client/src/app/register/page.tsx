@@ -42,6 +42,19 @@ const Register: React.FC = () => {
       showError("Please fill in all fields");
       return;
     }
+    //Strong password check
+    if (password.length < 8) {
+      showError("Password must be at least 8 characters long.");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      showError("Password must contain at least one uppercase letter.");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      showError("Password must contain at least one number.");
+      return;
+    }
     if (password !== confirmPassword) {
       showError("Passwords do not match");
       return;
