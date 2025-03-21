@@ -1,12 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { API_URL } from "@/lib/config"
 import { useToast } from "@/contexts/ToastProvider";
 import { Background } from "@/components/ui/background";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/auth";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useAuthRedirect } from "@/hooks/auth";
 
@@ -272,7 +270,7 @@ const Register: React.FC = () => {
                     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}&access_type=${accessType}&prompt=${prompt}`;
 
                     // Step 3: Redirect the user to Google
-                    window.location.href = googleAuthUrl;
+                    window.location.replace(googleAuthUrl);
                   }}
                   className="w-full text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
                   <i className="fab fa-google mr-1"></i>
@@ -290,7 +288,7 @@ const Register: React.FC = () => {
 
                     const linkedinAuthUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=${responseType}&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
 
-                    window.location.href = linkedinAuthUrl;
+                    window.location.replace(linkedinAuthUrl);
                   }}
                   className="w-full text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
                   <i className="fab fa-linkedin mr-1"></i>

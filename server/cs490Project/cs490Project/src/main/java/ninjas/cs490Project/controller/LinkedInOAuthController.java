@@ -77,7 +77,7 @@ public class LinkedInOAuthController {
                     .build();
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-            response.sendRedirect("http://localhost:3000/home");
+            response.sendRedirect("http://localhost:3000/auth-success?oauth=linkedin");
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect("http://localhost:3000/login?oauth=error");

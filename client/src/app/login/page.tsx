@@ -18,6 +18,7 @@ const LoginForm: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const verified = searchParams.get("verified");
+  const verificationError = searchParams.get("verification");
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -33,6 +34,16 @@ const LoginForm: React.FC = () => {
       isMounted.current = true;
     }
   }, [verified]);
+
+  useEffect(() => {
+    if (verificationError) {
+      if (verificationError === "invalid") {
+        showError("Invalid verification token");
+      } else if (verificationError === "expired") {
+        showError("Verification token has expired");
+      }
+    }
+  }, [verificationError]);
 
   //Redirect logic and avoiding initial page render
   const { isAuthLoading } = useAuthRedirect({
@@ -73,7 +84,7 @@ const LoginForm: React.FC = () => {
       showSuccess("Login successful")
       login()
       await new Promise(resolve => setTimeout(resolve, 1000))
-      router.push("/home")
+      router.replace("/home")
 
     } catch (error) {
       if (error instanceof Error) {
@@ -282,7 +293,7 @@ const LoginForm: React.FC = () => {
                     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}&access_type=${accessType}&prompt=${prompt}`;
 
                     // Step 3: Redirect the user to Google
-                    window.location.href = googleAuthUrl;
+                    window.location.replace(googleAuthUrl)
                   }}
                   className="w-full text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
                   <i className="fab fa-google mr-1"></i>
@@ -300,7 +311,7 @@ const LoginForm: React.FC = () => {
 
                     const linkedinAuthUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=${responseType}&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
 
-                    window.location.href = linkedinAuthUrl;
+                    window.location.replace(linkedinAuthUrl);
                   }}
                   className="w-full text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
                   <i className="fab fa-linkedin mr-1"></i>

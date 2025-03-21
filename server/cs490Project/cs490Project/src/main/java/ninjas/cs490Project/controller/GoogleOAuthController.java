@@ -86,7 +86,7 @@ public class GoogleOAuthController {
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
             // 7) Redirect to your front-end home page
-            response.sendRedirect("http://localhost:3000/home");
+            response.sendRedirect("http://localhost:3000/auth-success?oauth=google");
         } catch (Exception e) {
             e.printStackTrace();
             // If there's an error, redirect to login with an error parameter.
