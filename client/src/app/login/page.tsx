@@ -265,7 +265,8 @@ const LoginForm: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <div className="mt-6 grid gap-3">
+              <div className="flex mt-6 gap-3 justify-center">
+              <div className="w-1/2">
                 <Button
                   type="button"
                   onClick={() => {
@@ -283,10 +284,29 @@ const LoginForm: React.FC = () => {
                     // Step 3: Redirect the user to Google
                     window.location.href = googleAuthUrl;
                   }}
-                  className="text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
+                  className="w-full text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
                   <i className="fab fa-google mr-1"></i>
                   Google
                 </Button>
+              </div>
+              <div className="w-1/2">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const clientId = "78n9xakju4t060";
+                    const redirectUri = encodeURIComponent("http://localhost:8080/oauth/linkedin/callback");
+                    const scope = encodeURIComponent("openid email profile");
+                    const responseType = "code";
+
+                    const linkedinAuthUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=${responseType}&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+
+                    window.location.href = linkedinAuthUrl;
+                  }}
+                  className="w-full text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
+                  <i className="fab fa-linkedin mr-1"></i>
+                  LinkedIn
+                </Button>
+              </div>
               </div>
             </div>
           )}
