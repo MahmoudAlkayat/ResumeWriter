@@ -93,6 +93,11 @@ const Register: React.FC = () => {
       const successText = await response.text();
       console.log("Registration success:", successText);
       showInfo("Registration successful! Please check your email or spam to verify your account.");
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
       
     } catch (err: any) {
       console.error("Error during registration:", err);
