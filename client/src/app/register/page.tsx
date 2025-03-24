@@ -40,6 +40,12 @@ const Register: React.FC = () => {
       showError("Please fill in all fields");
       return;
     }
+
+    // Email validation
+    if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+      showError("Please provide a valid email address");
+      return;
+    }
     //Strong password check
     if (password.length < 8) {
       showError("Password must be at least 8 characters long.");
