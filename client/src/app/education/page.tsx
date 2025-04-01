@@ -13,7 +13,7 @@ interface EducationEntry {
   institution: string;
   startDate: string;
   endDate: string;
-  gpa: number;
+  gpa?: number;
 }
 
 export default function EducationDisplay() {
@@ -57,10 +57,10 @@ export default function EducationDisplay() {
       <h2 className="text-4xl font-extrabold text-black mb-8 drop-shadow-md">Education History</h2>
       <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200">
         {error ? (
-          <Alert variant="destructive" className="max-w-lg mx-auto">
-            <AlertTitle>Error</AlertTitle>
-            {error}
-          </Alert>
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 max-w-lg mx-auto rounded-lg shadow-md">
+            <AlertTitle className="font-bold">Error</AlertTitle>
+            <p>{error}</p>
+          </div>
         ) : education.length === 0 ? (
           <p className="text-xl text-gray-800 drop-shadow-sm text-center">No education records found.</p>
         ) : (
