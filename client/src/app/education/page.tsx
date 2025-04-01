@@ -13,7 +13,7 @@ interface EducationEntry {
   institution: string;
   startDate: string;
   endDate: string;
-  gpa?: number;
+  gpa: number;
 }
 
 export default function EducationDisplay() {
