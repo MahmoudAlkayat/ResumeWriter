@@ -14,6 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @RestController
@@ -85,8 +87,16 @@ public class GoogleOAuthController {
             // 6) Add the cookie to the response headers
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-            // 7) Redirect to your front-end home page
-            response.sendRedirect("http://localhost:3000/auth-success?oauth=google");
+            // 7) Add user data to redirect URL
+            String userData = String.format("id=%s&email=%s&firstName=%s&lastName=%s",
+                URLEncoder.encode(String.valueOf(user.getId()), StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(user.getFirstName(), StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(user.getLastName(), StandardCharsets.UTF_8.toString())
+            );
+
+            // 8) Redirect with user data
+            response.sendRedirect("http://localhost:3000/auth-success?oauth=google&" + userData);
         } catch (Exception e) {
             e.printStackTrace();
             // If there's an error, redirect to login with an error parameter.
