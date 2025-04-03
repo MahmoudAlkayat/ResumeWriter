@@ -93,7 +93,13 @@ public class AuthController {
         String token = extractTokenFromCookies(request);
         if (token != null && jwtService.validateToken(token)) {
             String email = jwtService.extractUsername(token);
-            return ResponseEntity.ok("Authenticated as " + email);
+            User user = userRepository.findByEmail(email);
+            Map <String, String> userData = new HashMap<>();
+            userData.put("id", String.valueOf(user.getId()));
+            userData.put("email", user.getEmail());
+            userData.put("firstName", user.getFirstName());
+            userData.put("lastName", user.getLastName());
+            return ResponseEntity.ok(userData);
         } else {
             return ResponseEntity.status(401).body("Not authenticated");
         }

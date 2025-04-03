@@ -68,6 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       if (response.ok) {
         setIsAuthenticated(true);
+        setUser(await response.json());
         setIsLogout(false);
       } else {
         setIsAuthenticated(false);
@@ -76,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       showError("Failed to check authentication");
       setIsAuthenticated(false);
+      setUser(null);
     }
   };
 
