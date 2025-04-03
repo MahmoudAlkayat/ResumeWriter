@@ -11,7 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const router = useRouter();
     const isMounted = useRef(false);
     const { showInfo } = useToast();
@@ -68,7 +68,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                     </Link>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">John Doe</span>
+                    <span className="text-sm font-medium">{user?.firstName} {user?.lastName}</span>
                 </div>
             </nav>
 
