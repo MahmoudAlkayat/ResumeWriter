@@ -1,5 +1,6 @@
 package ninjas.cs490Project.controller;
 
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,25 +16,34 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
+
     @Autowired
     private EmailVerificationTokenRepository tokenRepository;
+
 
     @Autowired
     private UserRepository userRepository;
 
+
     @Autowired
     private JWTService jwtService;
 
+
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
 
     @GetMapping("/verify-email")
     public void verifyEmail(@RequestParam("token") String token, HttpServletResponse response) throws IOException {
@@ -53,11 +63,12 @@ public class AuthController {
         response.sendRedirect("http://localhost:3000/login?verified=true");
     }
 
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         // Find the user by email
         User user = userRepository.findByEmail(request.getEmail());
-        // Use BCrypt to verify the password instead of direct string comparison
+        // Use BCrypt to verify the password
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             return ResponseEntity.status(401).body("Invalid credentials");
         }
@@ -75,21 +86,35 @@ public class AuthController {
                 .maxAge(24 * 60 * 60) // token valid for 1 day
                 .build();
 
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body("Login successful");
     }
+
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
         String token = extractTokenFromCookies(request);
         if (token != null && jwtService.validateToken(token)) {
             String email = jwtService.extractUsername(token);
-            return ResponseEntity.ok("Authenticated as " + email);
-        } else {
-            return ResponseEntity.status(401).body("Not authenticated");
+            // Look up the user by email
+            User user = userRepository.findByEmail(email);
+            if (user != null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", user.getId());
+                response.put("email", user.getEmail());
+                response.put("username", user.getUsername());
+                response.put("firstName", user.getFirstName());
+                response.put("lastName", user.getLastName());
+                return ResponseEntity.ok(response);
+            }
         }
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Not authenticated");
+        return ResponseEntity.status(401).body(error);
     }
+
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
@@ -103,6 +128,7 @@ public class AuthController {
                 .body("Logged out");
     }
 
+
     // Helper method to extract the JWT from cookies
     private String extractTokenFromCookies(HttpServletRequest request) {
         if (request.getCookies() != null) {
@@ -115,10 +141,12 @@ public class AuthController {
         return null;
     }
 
+
     // DTO for login requests
     public static class LoginRequest {
         private String email;
         private String password;
+
 
         // Getters and setters
         public String getEmail() {
@@ -135,3 +163,4 @@ public class AuthController {
         }
     }
 }
+
