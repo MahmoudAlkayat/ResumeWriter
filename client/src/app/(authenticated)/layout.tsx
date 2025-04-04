@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useToast } from "@/contexts/ToastProvider";
 import NavBar from "@/components/NavBar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLogout } = useAuth();
@@ -25,11 +27,16 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     }
 
     return (
-        <>
-            <NavBar />
-            <main>
-                {children}
-            </main>
-        </>
+            <SidebarProvider className="flex flex-col" defaultOpen={false}>
+                <NavBar />
+                <div className="flex flex-1">
+                    <AppSidebar />
+                    <SidebarInset>
+                        <main>
+                            {children}
+                        </main>
+                    </SidebarInset>
+                </div>
+            </SidebarProvider>
     );
 }
