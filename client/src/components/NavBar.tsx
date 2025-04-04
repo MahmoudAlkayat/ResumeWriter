@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/auth";
 import { Button } from "@/components/ui/button";
-import {User, LogOut, UserCircle } from "lucide-react";
+import {User, LogOut } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -11,7 +11,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function NavBar() {
     const { user, logout } = useAuth();
@@ -20,18 +20,23 @@ export default function NavBar() {
         <nav className="sticky top-0 z-50 w-full bg-background">
             <div className="flex h-14 items-center px-4">
                 <div className="flex items-center">
-                    {/* <SidebarTrigger className="-ml-1" /> */}
-                    <Separator orientation="vertical" className="mr-2 h-4" />
-                    <Link href="/home" className="-ml-2">
+                    <Link href="/home">
                         <Image src="/logo.svg" alt="Logo" width={192} height={192} />
                     </Link>
                 </div>
                 <div className="flex-1" />
-                <div className="flex items-center gap-2">
                     <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="focus:outline-none">
-                                <UserCircle className="scale-200" />
+                            <Button 
+                                variant="ghost" 
+                                size="default"
+                                className="!h-auto focus:outline-none flex items-center gap-4 px-4 py-1 hover:bg-accent"
+                            >
+                                <Avatar className="size-8">
+                                    <AvatarImage src={`https://api.dicebear.com/9.x/initials/svg?seed=${user?.firstName}${user?.lastName}&backgroundType=gradientLinear`} />
+                                    <AvatarFallback>{user?.firstName[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-lg font-medium">{user?.firstName}</span>
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-36 mt-4 ">
@@ -60,7 +65,6 @@ export default function NavBar() {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                </div>
             </div>
         </nav>
     );
