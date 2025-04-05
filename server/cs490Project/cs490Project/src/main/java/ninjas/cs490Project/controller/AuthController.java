@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -75,9 +77,15 @@ public class AuthController {
                 .maxAge(24 * 60 * 60) // token valid for 1 day
                 .build();
 
+        Map<String, String> userData = new HashMap<>();
+        userData.put("id", String.valueOf(user.getId()));
+        userData.put("email", user.getEmail());
+        userData.put("firstName", user.getFirstName());
+        userData.put("lastName", user.getLastName());
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body("Login successful");
+                .body(userData);
     }
 
     @GetMapping("/me")
@@ -85,7 +93,13 @@ public class AuthController {
         String token = extractTokenFromCookies(request);
         if (token != null && jwtService.validateToken(token)) {
             String email = jwtService.extractUsername(token);
-            return ResponseEntity.ok("Authenticated as " + email);
+            User user = userRepository.findByEmail(email);
+            Map <String, String> userData = new HashMap<>();
+            userData.put("id", String.valueOf(user.getId()));
+            userData.put("email", user.getEmail());
+            userData.put("firstName", user.getFirstName());
+            userData.put("lastName", user.getLastName());
+            return ResponseEntity.ok(userData);
         } else {
             return ResponseEntity.status(401).body("Not authenticated");
         }
