@@ -81,8 +81,9 @@ const LoginForm: React.FC = () => {
         throw new Error(await response.text() || "Failed to login")
       }
 
-      showSuccess("Login successful")
-      login()
+      const user = await response.json();
+      showSuccess(`Welcome ${user.firstName}`);
+      login(user)
       await new Promise(resolve => setTimeout(resolve, 1000))
       router.replace("/home")
 
