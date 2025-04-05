@@ -4,13 +4,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Background } from "@/components/ui/background";
 import { UploadCloud } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { useToast } from "@/contexts/ToastProvider";
 import React from "react";
 
 export default function ResumeUploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState("");
+  const { showSuccess, showError } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -20,13 +21,13 @@ export default function ResumeUploadPage() {
     ) {
       setFile(selectedFile);
     } else {
-      toast.error("Only PDF and DOCX files are supported");
+      showError("Only PDF and DOCX files are supported");
     }
   };
 
   const handleUpload = async () => {
     if (!file) {
-      toast.error("Please select a resume file to upload");
+      showError("Please select a resume file to upload");
       return;
     }
 
@@ -48,10 +49,10 @@ export default function ResumeUploadPage() {
 
       await response.json();
       setStatus("Upload successful: Processing resume...");
-      toast.success("Resume uploaded successfully");
+      showSuccess("Resume uploaded successfully");
     } catch (error) {
       setStatus("Upload failed");
-      toast.error("Error uploading resume");
+      showError("Error uploading resume");
     } finally {
       setUploading(false);
     }
