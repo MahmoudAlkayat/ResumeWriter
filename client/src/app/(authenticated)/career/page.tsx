@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Background } from "@/components/ui/background";
-import LoadingScreen from "@/components/LoadingScreen";
 import { Pencil } from "lucide-react";
-import { AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/auth";
+import { useToast } from "@/contexts/ToastProvider";
+
 interface Job {
   id?: number; // For existing records
   title: string;
@@ -18,21 +17,12 @@ interface Job {
   responsibilities: string;
 }
 
-interface UserResponse {
-  id: number;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-}
-
 export default function CareerHistoryManager() {
   const { user } = useAuth();
-  const router = useRouter();
+  const { showError, showSuccess } = useToast();
 
   // Career history data
   const [careerHistory, setCareerHistory] = useState<Job[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   /**
    * editingIndex indicates which item is being edited:
@@ -63,8 +53,8 @@ export default function CareerHistoryManager() {
         const data = await res.json();
         setCareerHistory(data.jobs || []);
       } catch (err) {
-        if (err instanceof Error) setError(err.message);
-        else setError("An unknown error occurred");
+        if (err instanceof Error) showError(err.message);
+        else showError("An unknown error occurred");
       }
     }
     fetchCareerHistory();
@@ -102,7 +92,25 @@ export default function CareerHistoryManager() {
   // Handle save: CREATE (if adding new) or UPDATE (if editing)
   const handleSave = async () => {
     if (!user?.id) {
-      setError("Not authenticated");
+      showError("Not authenticated");
+      return;
+    }
+
+    // Validation
+    if (!formData.title || !formData.company || !formData.startDate || !formData.endDate) {
+      showError("Please fill in all fields");
+      return;
+    }
+
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      showError("Invalid date format");
+      return;
+    }
+    if (startDate > endDate) {
+      showError("Start date must be before end date");
       return;
     }
 
@@ -119,17 +127,18 @@ export default function CareerHistoryManager() {
           const errText = await res.text();
           throw new Error(errText || "Failed to create career record");
         }
+        showSuccess("Career record created successfully");
       } else {
         // Ensure editingIndex is not null and is >= 0
         if (editingIndex === null || editingIndex < 0) {
-          setError("Invalid index for update");
+          showError("Invalid index for update");
           return;
         }
         // Use a local var to ensure TypeScript knows this is a number
         const idx = editingIndex;
         const jobId = careerHistory[idx].id;
         if (!jobId) {
-          setError("Missing job ID");
+          showError("Missing job ID");
           return;
         }
         const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/${jobId}`, {
@@ -142,6 +151,7 @@ export default function CareerHistoryManager() {
           const errText = await res.text();
           throw new Error(errText || "Failed to update career record");
         }
+        showSuccess("Career record saved successfully");
       }
       // Refresh career history after saving
       if (user?.id) {
@@ -154,8 +164,8 @@ export default function CareerHistoryManager() {
         }
       }
     } catch (err) {
-      if (err instanceof Error) setError(err.message);
-      else setError("An unknown error occurred");
+      if (err instanceof Error) showError(err.message);
+      else showError("An unknown error occurred");
     } finally {
       setEditingIndex(null);
       setFormData({
@@ -171,12 +181,12 @@ export default function CareerHistoryManager() {
   // Handle deletion of a career record
   const handleDelete = async (index: number) => {
     if (!user?.id) {
-      setError("Not authenticated");
+      showError("Not authenticated");
       return;
     }
     const jobId = careerHistory[index].id;
     if (!jobId) {
-      setError("Invalid job ID");
+      showError("Invalid job ID");
       return;
     }
     try {
@@ -188,6 +198,7 @@ export default function CareerHistoryManager() {
         const errText = await res.text();
         throw new Error(errText || "Failed to delete career record");
       }
+      showSuccess("Career record deleted successfully");
       // Refresh career history after deletion
       if (user?.id) {
         const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
@@ -199,8 +210,8 @@ export default function CareerHistoryManager() {
         }
       }
     } catch (err) {
-      if (err instanceof Error) setError(err.message);
-      else setError("An unknown error occurred");
+      if (err instanceof Error) showError(err.message);
+      else showError("An unknown error occurred");
     }
   };
 
@@ -210,22 +221,8 @@ export default function CareerHistoryManager() {
         Career History
       </h2>
 
-      {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 max-w-lg mx-auto rounded-lg shadow-md">
-          <AlertTitle className="font-bold">Error</AlertTitle>
-          <p>{error}</p>
-        </div>
-      )}
-
-      {/* Button to start adding a new career entry */}
-      <div className="mb-6">
-        <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600">
-          Add New Career Entry
-        </Button>
-      </div>
-
       {/* List of Career Cards */}
-      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200">
+      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8">
         {careerHistory.length === 0 ? (
           <p className="text-xl text-gray-800 drop-shadow-sm text-center">
             No career history available.
@@ -342,10 +339,16 @@ export default function CareerHistoryManager() {
         )}
       </div>
 
+      <div className="mb-8">
+        <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600">
+          Add New Career Entry
+        </Button>
+      </div>
+
       {/* Inline form for adding a new career entry (if editingIndex is -1) */}
       {editingIndex === -1 && (
-        <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mt-6">
-          <h3 className="text-2xl font-bold mb-4">Add New Career Entry</h3>
+        <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200">
+          <h3 className="text-2xl font-bold mb-4">New Career Entry</h3>
           <div className="flex flex-col gap-2">
             <input
               className="border rounded p-2"
