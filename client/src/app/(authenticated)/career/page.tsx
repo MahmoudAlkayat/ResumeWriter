@@ -279,12 +279,13 @@ export default function CareerPage() {
 
   return (
     <Background className="relative flex flex-col items-center justify-start min-h-screen p-8 text-center">
-      <h2 className="text-4xl font-bold text-black mb-8 drop-shadow-md">
+      <h2 className="text-4xl font-bold text-primary mb-8 drop-shadow-md">
         Career History
       </h2>
 
       {/* List of Career Cards */}
-      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8">
+      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
+      dark:bg-neutral-900 dark:border-neutral-800">
         {careerHistory.length === 0 ? (
           <p className="text-xl text-gray-800 drop-shadow-sm text-center">
             No career history available.
@@ -296,41 +297,41 @@ export default function CareerPage() {
               return (
                 <Card
                   key={job.id ?? index}
-                  className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300"
+                  className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700"
                 >
                   <CardContent className="flex flex-col gap-3">
                     {isEditing ? (
                       <>
-                        <input
-                          className="border rounded p-2 mb-2"
+                        <Input
+                          className="dark:border-neutral-700"
                           name="title"
                           placeholder="Job Title"
                           value={formData.title}
                           onChange={handleFormChange}
                         />
-                        <input
-                          className="border rounded p-2 mb-2"
+                        <Input
+                          className="dark:border-neutral-700"
                           name="company"
                           placeholder="Company"
                           value={formData.company}
                           onChange={handleFormChange}
                         />
-                        <input
-                          className="border rounded p-2 mb-2"
+                        <Input
+                          className="dark:border-neutral-700"
                           name="startDate"
                           placeholder="Start Date (YYYY-MM-DD)"
                           value={formData.startDate}
                           onChange={handleFormChange}
                         />
-                        <input
-                          className="border rounded p-2 mb-2"
+                        <Input
+                          className="dark:border-neutral-700"
                           name="endDate"
                           placeholder="End Date (YYYY-MM-DD)"
                           value={formData.endDate}
                           onChange={handleFormChange}
                         />
-                        <textarea
-                          className="border rounded p-2 mb-2"
+                        <Textarea
+                          className="dark:border-neutral-700"
                           name="responsibilities"
                           placeholder="Responsibilities"
                           value={formData.responsibilities}
@@ -381,21 +382,21 @@ export default function CareerPage() {
                               </div>
                             </div>
                             <div className="w-full text-center">
-                              <h3 className="text-2xl font-bold text-black">
+                              <h3 className="text-2xl font-bold text-primary">
                                 {job.title}
                               </h3>
                             </div>
                           </div>
-                          <p className="text-lg text-gray-700 font-semibold">
+                          <p className="text-lg text-gray-700 dark:text-white font-semibold">
                             {job.company}
                           </p>
-                          <p className="text-md text-gray-500 italic mb-4">
+                          <p className="text-md text-gray-500 dark:text-gray-400 italic mb-4">
                             {new Date(job.startDate).toLocaleDateString()} -{" "}
                             {job.endDate
                               ? new Date(job.endDate).toLocaleDateString()
                               : "Present"}
                           </p>
-                          <p className="text-gray-700 leading-relaxed">
+                          <p className="text-gray-700 dark:text-white leading-relaxed">
                             {job.responsibilities}
                           </p>
                         </div>
@@ -411,7 +412,7 @@ export default function CareerPage() {
 
       {editingIndex == null && (
       <div className="mb-8">
-        <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600">
+        <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600 text-white">
           <PlusIcon style={{ scale: 1.35 }} />
         </Button>
       </div>
@@ -419,7 +420,7 @@ export default function CareerPage() {
 
       {/* Inline form for adding a new career entry (if editingIndex is -1) */}
       {editingIndex === -1 && (
-        <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200">
+        <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
           <h3 className="text-2xl font-bold mb-4">New Career Entry</h3>
           
           <Tabs value={activeTab} onValueChange={setActiveTab}>

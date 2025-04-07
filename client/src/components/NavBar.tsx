@@ -12,12 +12,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function NavBar() {
     const { user, logout } = useAuth();
 
     return (
-        <nav className="sticky top-0 z-50 w-full bg-background shadow-md">
+        <nav className="sticky top-0 z-50 w-full bg-background dark:bg-sidebar shadow-md">
             <div className="flex h-14 items-center px-4">
                 <div className="flex items-center">
                     <Link href="/home">
@@ -25,6 +26,8 @@ export default function NavBar() {
                     </Link>
                 </div>
                 <div className="flex-1" />
+                <div className="flex items-center gap-2">
+                    <ThemeToggle />
                     <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                             <Button 
@@ -39,7 +42,7 @@ export default function NavBar() {
                                 <span className="text-lg font-medium">{user?.firstName}</span>
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36 mt-4 ">
+                        <DropdownMenuContent align="end" className="w-36 mt-4">
                             <DropdownMenuLabel>
                                 <div className="flex flex-col items-center">
                                     {user?.firstName} {user?.lastName}
@@ -65,6 +68,7 @@ export default function NavBar() {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                </div>
             </div>
         </nav>
     );

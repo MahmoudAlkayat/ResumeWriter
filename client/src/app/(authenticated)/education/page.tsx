@@ -9,7 +9,7 @@ import { useToast } from "@/contexts/ToastProvider";
 import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
 import { Trash, Pencil, Plus } from "lucide-react";
 import LoadingScreen from "@/components/LoadingScreen";
-
+import { Input } from "@/components/ui/input";
 interface EducationEntry {
   id?: number; // for existing records
   degree: string;
@@ -254,12 +254,13 @@ export default function EducationManager() {
 
   return (
     <Background className="relative flex flex-col items-center justify-start min-h-screen p-8 text-center">
-      <h2 className="text-4xl font-bold text-black mb-8 drop-shadow-md">
+      <h2 className="text-4xl font-bold text-primary mb-8 drop-shadow-md">
         Education
       </h2>
 
       {/* List of Education Cards */}
-      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8">
+      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8
+      dark:bg-neutral-900 dark:border-neutral-800">
         {education.length === 0 ? (
           <p className="text-xl text-gray-800 drop-shadow-sm text-center">
             No education records found.
@@ -271,42 +272,42 @@ export default function EducationManager() {
               return (
                 <Card
                   key={edu.id ?? index}
-                  className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300"
+                  className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700"
                 >
                   <CardContent className="flex flex-col gap-3">
                     {isEditing ? (
                       // EDITING FORM
                       <>
-                        <input
-                          className="border rounded p-2 mb-2"
+                        <Input
+                          className="dark:border-neutral-700"
                           name="degree"
                           placeholder="Degree"
                           value={formData.degree}
                           onChange={handleFormChange}
                         />
-                        <input
-                          className="border rounded p-2 mb-2"
+                        <Input
+                          className="dark:border-neutral-700"
                           name="institution"
                           placeholder="Institution"
                           value={formData.institution}
                           onChange={handleFormChange}
                         />
-                        <input
-                          className="border rounded p-2 mb-2"
+                        <Input
+                          className="dark:border-neutral-700"
                           name="startDate"
                           placeholder="Start Date (YYYY-MM-DD)"
                           value={formData.startDate}
                           onChange={handleFormChange}
                         />
-                        <input
-                          className="border rounded p-2 mb-2"
+                        <Input
+                          className="dark:border-neutral-700"
                           name="endDate"
                           placeholder="End Date (YYYY-MM-DD)"
                           value={formData.endDate}
                           onChange={handleFormChange}
                         />
-                        <input
-                          className="border rounded p-2 mb-2"
+                        <Input
+                          className="dark:border-neutral-700"
                           type="number"
                           name="gpa"
                           step="0.01"
@@ -364,23 +365,23 @@ export default function EducationManager() {
                                     </div>
                                 </div>
                                 <div className="w-full text-center">
-                                    <h3 className="text-2xl font-bold text-black">
+                                    <h3 className="text-2xl font-bold text-primary">
                                         {edu.degree}
                                     </h3>
                                 </div>
                             </div>
                             
                             {/* Rest of the content */}
-                            <p className="text-lg text-gray-700 font-semibold">
+                            <p className="text-lg text-gray-700 dark:text-white font-semibold">
                                 {edu.institution}
                             </p>
-                            <p className="text-md text-gray-500 italic mb-4">
+                            <p className="text-md text-gray-500 dark text-white italic mb-4">
                                 {new Date(edu.startDate).toLocaleDateString()} -{" "}
                                 {edu.endDate
                                     ? new Date(edu.endDate).toLocaleDateString()
                                     : "Present"}
                             </p>
-                            <p className="text-gray-700 leading-relaxed">
+                            <p className="text-gray-700 dark:text-white leading-relaxed">
                                 {edu.description}
                             </p>
                         </div>
@@ -397,7 +398,7 @@ export default function EducationManager() {
       {/* Add New Education Button */}
       {editingIndex == null && (
         <div className="mb-8">
-          <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600">
+          <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600 text-white">
             <Plus style={{ scale: 1.35 }} />
         </Button>
       </div>
@@ -405,39 +406,34 @@ export default function EducationManager() {
 
       {/* If user clicked "Add New Education" (editingIndex = -1) => inline form */}
       {editingIndex === -1 && (
-        <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200">
+        <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 dark:bg-neutral-900 dark:border-neutral-800">
           <h3 className="text-2xl font-bold mb-4">New Education Entry</h3>
           <div className="flex flex-col gap-2">
-            <input
-              className="border rounded p-2"
+            <Input
               name="degree"
               placeholder="Degree"
               value={formData.degree}
               onChange={handleFormChange}
             />
-            <input
-              className="border rounded p-2"
+            <Input
               name="institution"
               placeholder="Institution"
               value={formData.institution}
               onChange={handleFormChange}
             />
-            <input
-              className="border rounded p-2"
+            <Input
               name="startDate"
               placeholder="Start Date (YYYY-MM-DD)"
               value={formData.startDate}
               onChange={handleFormChange}
             />
-            <input
-              className="border rounded p-2"
+            <Input
               name="endDate"
               placeholder="End Date (YYYY-MM-DD)"
               value={formData.endDate}
               onChange={handleFormChange}
             />
-            <input
-              className="border rounded p-2"
+            <Input
               type="number"
               name="gpa"
               step="0.01"

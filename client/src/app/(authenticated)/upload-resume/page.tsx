@@ -71,13 +71,13 @@ export default function ResumeUploadPage() {
 
   return (
     <Background className="relative flex flex-col items-center min-h-screen text-center p-8">
-      <h1 className="text-4xl font-bold text-black mb-4">Upload Your Resume</h1>
-      <p className="text-lg text-gray-700 mb-6">Supported formats: PDF, DOCX</p>
+      <h1 className="text-4xl font-bold text-foreground mb-4">Upload Your Resume</h1>
+      <p className="text-lg text-muted-foreground mb-6">Supported formats: PDF, DOCX</p>
 
-      <div className="flex flex-col items-center border-2 border-dashed border-gray-400 rounded-lg p-6 w-80 bg-white shadow-md">
+      <div className="flex flex-col items-center border-2 border-dashed border-gray-400 rounded-lg p-6 w-80 bg-white dark:bg-neutral-900 shadow-md">
         <label className="cursor-pointer flex flex-col items-center">
-          <UploadCloud size={40} className="text-gray-600 mb-2" />
-          <span className="text-gray-700">Click to upload or drag & drop</span>
+          <UploadCloud size={40} className="text-primary mb-2" />
+          <span className="text-primary">Click to upload or drag & drop</span>
           <input type="file" accept=".pdf,.docx" className="hidden" onChange={handleFileChange} />
         </label>
       </div>

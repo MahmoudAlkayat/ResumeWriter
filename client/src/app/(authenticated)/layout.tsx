@@ -7,6 +7,7 @@ import { useToast } from "@/contexts/ToastProvider";
 import NavBar from "@/components/NavBar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ThemeProvider } from "next-themes";
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLogout } = useAuth();
@@ -37,6 +38,12 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     }
 
     return (
+        <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
             <SidebarProvider className="flex flex-col" defaultOpen={false}>
                 <NavBar />
                 <div className="flex flex-1">
@@ -48,5 +55,6 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                     </SidebarInset>
                 </div>
             </SidebarProvider>
+        </ThemeProvider>
     );
 }
