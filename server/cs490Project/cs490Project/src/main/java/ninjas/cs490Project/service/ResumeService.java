@@ -50,10 +50,5 @@ public class ResumeService {
         return resumeRepository.save(resume);
     }
 
-
-    // Triggers asynchronous processing (e.g., GPT-based parsing) on the resume
-    public void processResumeAsync(Long resumeId, byte[] fileData) {
-        asyncResumeParser.parseResume(resumeId, fileData);
-    }
 }
 

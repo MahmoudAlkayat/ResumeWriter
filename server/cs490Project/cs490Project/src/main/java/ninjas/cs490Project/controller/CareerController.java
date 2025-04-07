@@ -2,7 +2,6 @@ package ninjas.cs490Project.controller;
 
 import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.entity.User;
-import ninjas.cs490Project.entity.Resume;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +11,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/resumes")
+@RequestMapping("/api/users/{userId}/career")
 public class CareerController {
 
     private final WorkExperienceRepository workExperienceRepository;
@@ -24,24 +23,51 @@ public class CareerController {
         this.userRepository = userRepository;
     }
 
-    /**
-     * GET /api/resumes/history?userId={userId}
-     * Retrieves all career records for the given user.
-     */
-    @GetMapping("/history")
-    public ResponseEntity<?> getCareerHistory(@RequestParam("userId") int userId) {
+    // ------------------------------
+    // Data Transfer Object (DTO)
+    // ------------------------------
+    public static class CareerRequest {
+        private String title;
+        private String company;
+        private String startDate;
+        private String endDate;
+        private String responsibilities;
+
+        // Getters and setters
+        public String getTitle() { return title; }
+        public void setTitle(String title) { this.title = title; }
+
+        public String getCompany() { return company; }
+        public void setCompany(String company) { this.company = company; }
+
+        public String getStartDate() { return startDate; }
+        public void setStartDate(String startDate) { this.startDate = startDate; }
+
+        public String getEndDate() { return endDate; }
+        public void setEndDate(String endDate) { this.endDate = endDate; }
+
+        public String getResponsibilities() { return responsibilities; }
+        public void setResponsibilities(String responsibilities) { this.responsibilities = responsibilities; }
+    }
+
+    // 1. GET all WorkExperience records for a user
+    @GetMapping
+    public ResponseEntity<?> getCareerHistory(@PathVariable("userId") int userId) {
+        // Ensure user exists
         User user = userRepository.findUserById(userId);
         if (user == null) {
+            // Return empty if user not found
             return ResponseEntity.ok(Collections.singletonMap("jobs", new ArrayList<>()));
         }
-        // Assuming WorkExperienceRepository has a method findByResumeUserId
-        List<WorkExperience> jobList = workExperienceRepository.findByResumeUserId(userId);
 
+        // Retrieve all WorkExperience for this user
+        List<WorkExperience> jobList = workExperienceRepository.findByUserId(userId);
+
+        // Convert to a DTO-like structure
         List<Map<String, Object>> jobsDtoList = new ArrayList<>();
         for (WorkExperience job : jobList) {
             Map<String, Object> jobMap = new HashMap<>();
             jobMap.put("id", job.getId());
-            // Map jobTitle to title, description to responsibilities
             jobMap.put("title", job.getJobTitle() != null ? job.getJobTitle() : "N/A");
             jobMap.put("company", job.getCompany() != null ? job.getCompany() : "N/A");
             jobMap.put("startDate", job.getStartDate() != null ? job.getStartDate().toString() : "N/A");
@@ -52,66 +78,18 @@ public class CareerController {
         return ResponseEntity.ok(Collections.singletonMap("jobs", jobsDtoList));
     }
 
-    // DTO for create/update requests
-    public static class CareerRequest {
-        private String title;
-        private String company;
-        private String startDate;
-        private String endDate;
-        private String responsibilities;
-
-        // Getters and setters
-        public String getTitle() {
-            return title;
-        }
-        public void setTitle(String title) {
-            this.title = title;
-        }
-        public String getCompany() {
-            return company;
-        }
-        public void setCompany(String company) {
-            this.company = company;
-        }
-        public String getStartDate() {
-            return startDate;
-        }
-        public void setStartDate(String startDate) {
-            this.startDate = startDate;
-        }
-        public String getEndDate() {
-            return endDate;
-        }
-        public void setEndDate(String endDate) {
-            this.endDate = endDate;
-        }
-        public String getResponsibilities() {
-            return responsibilities;
-        }
-        public void setResponsibilities(String responsibilities) {
-            this.responsibilities = responsibilities;
-        }
-    }
-
-    /**
-     * POST /api/resumes/career?userId={userId}
-     * Creates a new career record for the given user.
-     */
-    @PostMapping("/career")
-    public ResponseEntity<?> createCareer(@RequestParam("userId") int userId,
+    // 2. CREATE a new WorkExperience record for a user
+    @PostMapping
+    public ResponseEntity<?> createCareer(@PathVariable("userId") int userId,
                                           @RequestBody CareerRequest req) {
-        // 1. Find the user
         User user = userRepository.findUserById(userId);
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
-        // 2. Get the user's resume.
-        // For simplicity, assume the user has at least one resume.
-        Resume resume = user.getResumes().stream().findFirst()
-                .orElseThrow(() -> new RuntimeException("No resume found for user"));
 
-        // 3. Create the new WorkExperience record
+        // Create and populate a new WorkExperience entity
         WorkExperience job = new WorkExperience();
+        job.setUser(user);
         job.setJobTitle(req.getTitle());
         job.setCompany(req.getCompany());
         if (req.getStartDate() != null && !req.getStartDate().isEmpty()) {
@@ -121,24 +99,36 @@ public class CareerController {
             job.setEndDate(LocalDate.parse(req.getEndDate()));
         }
         job.setDescription(req.getResponsibilities());
-        job.setResume(resume);
 
+        // Save the entity
         workExperienceRepository.save(job);
         return ResponseEntity.ok("Created new career record");
     }
 
-    /**
-     * PUT /api/resumes/career/{jobId}
-     * Updates an existing career record.
-     */
-    @PutMapping("/career/{jobId}")
-    public ResponseEntity<?> updateCareer(@PathVariable("jobId") int jobId,
+    // 3. UPDATE an existing WorkExperience record for a user
+    @PutMapping("/{jobId}")
+    public ResponseEntity<?> updateCareer(@PathVariable("userId") int userId,
+                                          @PathVariable("jobId") int jobId,
                                           @RequestBody CareerRequest req) {
+        // Ensure user exists
+        User user = userRepository.findUserById(userId);
+        if (user == null) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+
+        // Check if the WorkExperience record exists
         Optional<WorkExperience> optionalJob = workExperienceRepository.findById(jobId);
-        if (!optionalJob.isPresent()) {
+        if (optionalJob.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+
         WorkExperience job = optionalJob.get();
+        // Ensure it belongs to the user in the path
+        if (job.getUser().getId() != userId) {
+            return ResponseEntity.badRequest().body("This record doesn't belong to the specified user");
+        }
+
+        // Update the record
         job.setJobTitle(req.getTitle());
         job.setCompany(req.getCompany());
         if (req.getStartDate() != null && !req.getStartDate().isEmpty()) {
@@ -153,21 +143,35 @@ public class CareerController {
         }
         job.setDescription(req.getResponsibilities());
 
+        // Save the changes
         workExperienceRepository.save(job);
         return ResponseEntity.ok("Updated career record");
     }
 
-    /**
-     * DELETE /api/resumes/career/{jobId}
-     * Deletes a career record.
-     */
-    @DeleteMapping("/career/{jobId}")
-    public ResponseEntity<?> deleteCareer(@PathVariable("jobId") int jobId) {
+    // 4. DELETE an existing WorkExperience record
+    @DeleteMapping("/{jobId}")
+    public ResponseEntity<?> deleteCareer(@PathVariable("userId") int userId,
+                                          @PathVariable("jobId") int jobId) {
+        // Ensure user exists
+        User user = userRepository.findUserById(userId);
+        if (user == null) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+
+        // Retrieve the record
         Optional<WorkExperience> optionalJob = workExperienceRepository.findById(jobId);
-        if (!optionalJob.isPresent()) {
+        if (optionalJob.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        workExperienceRepository.deleteById(jobId);
+
+        WorkExperience job = optionalJob.get();
+        // Check ownership
+        if (job.getUser().getId() != userId) {
+            return ResponseEntity.badRequest().body("This record doesn't belong to the specified user");
+        }
+
+        // Delete
+        workExperienceRepository.delete(job);
         return ResponseEntity.ok("Deleted career record");
     }
 }

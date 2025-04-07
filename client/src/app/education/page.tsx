@@ -67,9 +67,9 @@ export default function EducationManager() {
         const userData: UserResponse = await userRes.json();
         setUserId(userData.id);
 
-        // Fetch this user's education
+        // Fetch this user's education from the correct endpoint
         const eduRes = await fetch(
-          `http://localhost:8080/api/resumes/education?userId=${userData.id}`,
+          `http://localhost:8080/api/users/${userData.id}/education`,
           { credentials: "include" }
         );
         if (!eduRes.ok) {
@@ -115,6 +115,26 @@ export default function EducationManager() {
     }));
   };
 
+  // Helper: Refresh the education list
+  const refreshEducation = async () => {
+    if (!userId) return;
+    try {
+      const eduRes = await fetch(
+        `http://localhost:8080/api/users/${userId}/education`,
+        { credentials: "include" }
+      );
+      if (!eduRes.ok) throw new Error("Failed to fetch education");
+      const eduJson = await eduRes.json();
+      setEducation(eduJson.education || []);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
+    }
+  };
+
   // 5) Handle save: CREATE (if editingIndex = -1) or UPDATE
   const handleSave = async () => {
     if (!userId) {
@@ -124,9 +144,9 @@ export default function EducationManager() {
 
     try {
       if (editingIndex === -1) {
-        // CREATE a new record
+        // CREATE a new record using the correct endpoint
         const res = await fetch(
-          `http://localhost:8080/api/resumes/education?userId=${userId}`,
+          `http://localhost:8080/api/users/${userId}/education`,
           {
             method: "POST",
             credentials: "include",
@@ -150,9 +170,9 @@ export default function EducationManager() {
           setError("Missing education ID");
           return;
         }
-        // UPDATE existing record
+        // UPDATE existing record using the correct endpoint
         const res = await fetch(
-          `http://localhost:8080/api/resumes/education/${eduId}`,
+          `http://localhost:8080/api/users/${userId}/education/${eduId}`,
           {
             method: "PUT",
             credentials: "include",
@@ -176,7 +196,13 @@ export default function EducationManager() {
     } finally {
       // Clear editing state
       setEditingIndex(null);
-      setFormData({ degree: "", institution: "", startDate: "", endDate: "", gpa: 0 });
+      setFormData({
+        degree: "",
+        institution: "",
+        startDate: "",
+        endDate: "",
+        gpa: 0,
+      });
     }
   };
 
@@ -194,36 +220,19 @@ export default function EducationManager() {
     }
 
     try {
-      const res = await fetch(`http://localhost:8080/api/resumes/education/${eduId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const res = await fetch(
+        `http://localhost:8080/api/users/${userId}/education/${eduId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(errText || "Failed to delete education record");
       }
       // Refresh data
       await refreshEducation();
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred");
-      }
-    }
-  };
-
-  // Helper: Refresh the education list
-  const refreshEducation = async () => {
-    if (!userId) return;
-    try {
-      const eduRes = await fetch(
-        `http://localhost:8080/api/resumes/education?userId=${userId}`,
-        { credentials: "include" }
-      );
-      if (!eduRes.ok) throw new Error("Failed to fetch education");
-      const eduJson = await eduRes.json();
-      setEducation(eduJson.education || []);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
