@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Background } from "@/components/ui/background";
-import { Pencil } from "lucide-react";
+import { Pencil, PlusIcon, Trash } from "lucide-react";
 import { useAuth } from "@/hooks/auth";
 import { useToast } from "@/contexts/ToastProvider";
 import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
+import LoadingScreen from "@/components/LoadingScreen";
 
 interface Job {
   id?: number; // For existing records
@@ -22,7 +23,8 @@ export default function CareerHistoryManager() {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
   const { activeResumeId } = useResumeProcessing();
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   // Career history data
   const [careerHistory, setCareerHistory] = useState<Job[]>([]);
 
@@ -54,6 +56,7 @@ export default function CareerHistoryManager() {
       if (!res.ok) throw new Error("Failed to fetch career history");
       const data = await res.json();
       setCareerHistory(data.jobs || []);
+      setIsLoading(false);
     } catch (err) {
       if (err instanceof Error) showError(err.message);
       else showError("An unknown error occurred");
@@ -223,6 +226,12 @@ export default function CareerHistoryManager() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <LoadingScreen/>
+    )
+  }
+
   return (
     <Background className="relative flex flex-col items-center justify-start min-h-screen p-8 text-center">
       <h2 className="text-4xl font-bold text-black mb-8 drop-shadow-md">
@@ -242,7 +251,7 @@ export default function CareerHistoryManager() {
               return (
                 <Card
                   key={job.id ?? index}
-                  className="p-8 shadow-md rounded-xl bg-gray-50 border border-gray-300"
+                  className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300"
                 >
                   <CardContent className="flex flex-col gap-3">
                     {isEditing ? (
@@ -308,34 +317,42 @@ export default function CareerHistoryManager() {
                       </>
                     ) : (
                       <>
-                        <h3 className="text-2xl font-bold text-black">
-                          {job.title}
-                        </h3>
-                        <p className="text-lg text-gray-700 font-semibold">
-                          {job.company}
-                        </p>
-                        <p className="text-md text-gray-500 italic">
-                          {new Date(job.startDate).toLocaleDateString()} -{" "}
-                          {job.endDate
-                            ? new Date(job.endDate).toLocaleDateString()
-                            : "Present"}
-                        </p>
-                        <p className="text-gray-700 leading-relaxed">
-                          {job.responsibilities}
-                        </p>
-                        <div className="flex gap-3 mt-4">
-                          <Button
-                            onClick={() => handleEdit(index)}
-                            className="bg-blue-600 text-white hover:bg-blue-700"
-                          >
-                            <Pencil className="w-5 h-5 mr-2" /> Edit
-                          </Button>
-                          <Button
-                            onClick={() => handleDelete(index)}
-                            className="bg-red-600 text-white hover:bg-red-700"
-                          >
-                            Delete
-                          </Button>
+                        <div className="flex flex-col">
+                          <div className="relative flex items-center">
+                            <div className="absolute right-0">
+                              <div className="flex gap-3">
+                                <Button
+                                  onClick={() => handleEdit(index)}
+                                  className="bg-blue-600 text-white hover:bg-blue-700"
+                                >
+                              <Pencil size={16} />
+                            </Button>
+                            <Button
+                              onClick={() => handleDelete(index)}
+                              className="bg-red-600 text-white hover:bg-red-700"
+                              >
+                              <Trash size={16} />
+                            </Button>
+                              </div>
+                            </div>
+                            <div className="w-full text-center">
+                              <h3 className="text-2xl font-bold text-black">
+                                {job.title}
+                              </h3>
+                            </div>
+                          </div>
+                          <p className="text-lg text-gray-700 font-semibold">
+                            {job.company}
+                          </p>
+                          <p className="text-md text-gray-500 italic mb-4">
+                            {new Date(job.startDate).toLocaleDateString()} -{" "}
+                            {job.endDate
+                              ? new Date(job.endDate).toLocaleDateString()
+                              : "Present"}
+                          </p>
+                          <p className="text-gray-700 leading-relaxed">
+                            {job.responsibilities}
+                          </p>
                         </div>
                       </>
                     )}
@@ -347,11 +364,13 @@ export default function CareerHistoryManager() {
         )}
       </div>
 
+      {editingIndex == null && (
       <div className="mb-8">
-        <Button onClick={handleAdd} className={`${editingIndex !== null ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}`}>
-          {editingIndex !== null ? "Cancel" : "Add New Career Entry"}
+        <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600">
+          <PlusIcon style={{ scale: 1.35 }} />
         </Button>
       </div>
+      )}
 
       {/* Inline form for adding a new career entry (if editingIndex is -1) */}
       {editingIndex === -1 && (
@@ -399,7 +418,7 @@ export default function CareerHistoryManager() {
               Save New Career Entry
             </Button>
             <Button
-              variant="secondary"
+              className="bg-red-500 text-white hover:bg-red-600"
               onClick={() => {
                 setEditingIndex(null);
                 setFormData({

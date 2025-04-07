@@ -7,6 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/auth";
 import { useToast } from "@/contexts/ToastProvider";
 import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
+import { Trash, Pencil, Plus } from "lucide-react";
+import LoadingScreen from "@/components/LoadingScreen";
+
 interface EducationEntry {
   id?: number; // for existing records
   degree: string;
@@ -14,12 +17,14 @@ interface EducationEntry {
   startDate: string;
   endDate: string;
   gpa: number;
+  description: string;
 }
 
 export default function EducationManager() {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
   const { activeResumeId } = useResumeProcessing();
+  const [isLoading, setIsLoading] = useState(true);
 
   // Education data
   const [education, setEducation] = useState<EducationEntry[]>([]);
@@ -35,6 +40,7 @@ export default function EducationManager() {
     startDate: "",
     endDate: "",
     gpa: 0,
+    description: "",
   });
 
   async function fetchEducation() {
@@ -51,6 +57,7 @@ export default function EducationManager() {
       }
       const eduJson = await eduRes.json();
       setEducation(eduJson.education || []);
+      setIsLoading(false);
     } catch (err) {
       if (err instanceof Error) showError(err.message);
       else showError("An unknown error occurred");
@@ -69,7 +76,7 @@ export default function EducationManager() {
     onUpdate();
   },[activeResumeId])
 
-  // 2) Handle starting the “add” flow
+  // 2) Handle starting the "add" flow
   const handleAdd = () => {
     if (editingIndex == null) {
       setEditingIndex(-1); // -1 to indicate creating a new record
@@ -79,9 +86,10 @@ export default function EducationManager() {
         startDate: "",
         endDate: "",
         gpa: 0,
+        description: "",
       });
     }
-    if (editingIndex !== null) {
+    if (editingIndex == -1) {
       setEditingIndex(null); // null to indicate not in an add/edit flow
       setFormData({
         degree: "",
@@ -89,11 +97,12 @@ export default function EducationManager() {
         startDate: "",
         endDate: "",
         gpa: 0,
+        description: "",
       });
     }
   };
 
-  // 3) Handle starting the “edit” flow
+  // 3) Handle starting the "edit" flow
   const handleEdit = (index: number) => {
     setEditingIndex(index);
     setFormData(education[index]);
@@ -151,7 +160,7 @@ export default function EducationManager() {
         }
         showSuccess("Education record created successfully");
       } else {
-        // We’re editing an existing record. Make sure editingIndex isn't null or -1
+        // We're editing an existing record. Make sure editingIndex isn't null or -1
         if (editingIndex == null || editingIndex < 0) {
           showError("Invalid index for update");
           return;
@@ -195,6 +204,7 @@ export default function EducationManager() {
         startDate: "",
         endDate: "",
         gpa: 0,
+        description: "",
       });
     }
   };
@@ -236,6 +246,12 @@ export default function EducationManager() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <LoadingScreen/>
+    )
+  }
+
   return (
     <Background className="relative flex flex-col items-center justify-start min-h-screen p-8 text-center">
       <h2 className="text-4xl font-bold text-black mb-8 drop-shadow-md">
@@ -255,7 +271,7 @@ export default function EducationManager() {
               return (
                 <Card
                   key={edu.id ?? index}
-                  className="p-8 shadow-md rounded-xl bg-gray-50 border border-gray-300"
+                  className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300"
                 >
                   <CardContent className="flex flex-col gap-3">
                     {isEditing ? (
@@ -317,6 +333,7 @@ export default function EducationManager() {
                                 startDate: "",
                                 endDate: "",
                                 gpa: 0,
+                                description: "",
                               });
                             }}
                           >
@@ -327,29 +344,45 @@ export default function EducationManager() {
                     ) : (
                       // DISPLAY (NOT EDITING)
                       <>
-                        <h3 className="text-2xl font-bold text-black">
-                          {edu.degree}
-                        </h3>
-                        <p className="text-lg text-gray-700 font-semibold">
-                          {edu.institution}
-                        </p>
-                        <p className="text-md text-gray-500 italic">
-                          {edu.startDate} - {edu.endDate}
-                        </p>
-                        <p className="text-gray-700">GPA: {edu.gpa}</p>
-                        <div className="flex gap-3 mt-4">
-                          <Button
-                            onClick={() => handleEdit(index)}
-                            className="bg-blue-600 text-white hover:bg-blue-700"
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            onClick={() => handleDelete(index)}
-                            className="bg-red-600 text-white hover:bg-red-700"
-                          >
-                            Delete
-                          </Button>
+                        <div className="flex flex-col">
+                            {/* Title and buttons inline */}
+                            <div className="relative flex items-center">
+                                <div className="absolute right-0">
+                                    <div className="flex gap-3">
+                                        <Button
+                                            onClick={() => handleEdit(index)}
+                                            className="bg-blue-600 text-white hover:bg-blue-700"
+                                        >
+                                            <Pencil size={16} />
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleDelete(index)}
+                                            className="bg-red-600 text-white hover:bg-red-700"
+                                        >
+                                            <Trash size={16} />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div className="w-full text-center">
+                                    <h3 className="text-2xl font-bold text-black">
+                                        {edu.degree}
+                                    </h3>
+                                </div>
+                            </div>
+                            
+                            {/* Rest of the content */}
+                            <p className="text-lg text-gray-700 font-semibold">
+                                {edu.institution}
+                            </p>
+                            <p className="text-md text-gray-500 italic mb-4">
+                                {new Date(edu.startDate).toLocaleDateString()} -{" "}
+                                {edu.endDate
+                                    ? new Date(edu.endDate).toLocaleDateString()
+                                    : "Present"}
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                {edu.description}
+                            </p>
                         </div>
                       </>
                     )}
@@ -362,11 +395,13 @@ export default function EducationManager() {
       </div>
 
       {/* Add New Education Button */}
-      <div className="mb-8">
-        <Button onClick={handleAdd} className={`${editingIndex !== null ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}`}>
-          {editingIndex !== null ? "Cancel" : "Add New Education"}
+      {editingIndex == null && (
+        <div className="mb-8">
+          <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600">
+            <Plus style={{ scale: 1.35 }} />
         </Button>
       </div>
+      )}
 
       {/* If user clicked "Add New Education" (editingIndex = -1) => inline form */}
       {editingIndex === -1 && (
@@ -419,7 +454,7 @@ export default function EducationManager() {
               Save New Education
             </Button>
             <Button
-              variant="secondary"
+              className="bg-red-500 text-white hover:bg-red-600"
               onClick={() => {
                 setEditingIndex(null);
                 setFormData({
@@ -428,6 +463,7 @@ export default function EducationManager() {
                   startDate: "",
                   endDate: "",
                   gpa: 0,
+                  description: "",
                 });
               }}
             >
