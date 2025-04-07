@@ -63,7 +63,7 @@ public class ResumeController {
 
     @GetMapping("/{resumeId}/status")
     public SseEmitter subscribeToStatus(@PathVariable int resumeId) {
-        return notificationService.createEmitter(resumeId);
+        return notificationService.subscribeToResumeProcessing(resumeId);
     }
 
     /**

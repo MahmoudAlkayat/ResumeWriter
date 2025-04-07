@@ -175,11 +175,18 @@ public class AsyncResumeParser {
                 // Save all work experience entries in a batch
                 workExperienceRepository.saveAll(workExperiences);
                 logger.info("Saved {} work experience entries from freeform text.", workExperiences.size());
+                
+                // Notify success
+                notificationService.notifyCareerProcessingComplete(user.getId());
             } else {
                 logger.warn("No work experience entries found in parsed freeform text.");
+                // Notify error
+                notificationService.notifyCareerProcessingError(user.getId(), "No work experience entries could be extracted from the text. Please try again with more detailed information.");
             }
         } catch (Exception e) {
             logger.error("Error parsing freeform career", e);
+            // Notify error with the specific error message
+            notificationService.notifyCareerProcessingError(user.getId(), e.getMessage());
         }
     }
 }

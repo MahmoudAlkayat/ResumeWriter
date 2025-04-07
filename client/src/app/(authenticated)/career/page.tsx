@@ -22,10 +22,11 @@ interface Job {
   responsibilities: string;
 }
 
-export default function CareerHistoryManager() {
+export default function CareerPage() {
   const { user } = useAuth();
-  const { showError, showSuccess } = useToast();
+  const { showError, showSuccess, showInfo } = useToast();
   const { activeResumeId } = useResumeProcessing();
+  const { activeCareerUserId, setActiveCareerUserId } = useResumeProcessing();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("freeform");
   const [freeform, setFreeform] = useState("");
@@ -78,7 +79,7 @@ export default function CareerHistoryManager() {
       fetchCareerHistory();
     }
     onUpdate();
-  },[activeResumeId])
+  },[activeResumeId, activeCareerUserId])
 
   // Start "Add New Career" flow
   const handleAdd = () => {
@@ -260,9 +261,10 @@ export default function CareerHistoryManager() {
         throw new Error(errText || "Failed to create career record");
       }
 
-      showSuccess("Freeform entry submitted. Please wait while we process your entry.");
-      fetchCareerHistory();
+      showInfo("Freeform entry submitted. Please wait while we process your entry.");
+      setActiveCareerUserId(user.id);
       setFreeform("");
+      setEditingIndex(null);
     } catch (err) {
       if (err instanceof Error) showError(err.message);
       else showError("An unknown error occurred");
@@ -420,7 +422,7 @@ export default function CareerHistoryManager() {
         <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200">
           <h3 className="text-2xl font-bold mb-4">New Career Entry</h3>
           
-          <Tabs defaultValue="freeform" className="w-full" onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="freeform">Free-form</TabsTrigger>
               <TabsTrigger value="structured">Structured</TabsTrigger>

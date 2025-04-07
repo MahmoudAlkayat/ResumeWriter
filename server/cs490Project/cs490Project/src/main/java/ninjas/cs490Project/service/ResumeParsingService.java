@@ -203,6 +203,7 @@ public class ResumeParsingService {
         3. Description should be a clear, concise summary of responsibilities and achievements.
         4. If certain fields cannot be determined, use the default values provided.
         5. Always include all specified keys. Do not add extra properties. No null values.
+        6. You may reformat descriptions to ensure clarity but must not omit relevant information.
         
         Now parse the following career text and produce only a valid JSON response (no extra text or formatting):
         """ + text;
@@ -227,15 +228,36 @@ public class ResumeParsingService {
                 .block();
 
         // Parse the GPT response
-        GPTResponse gptResponseObj = objectMapper.readValue(rawGptResponse, GPTResponse.class);
-        String contentJson = gptResponseObj
-                .getChoices().get(0)
-                .getMessage()
-                .getContent();
+        GPTResponse gptResponseObj;
+        try {
+            gptResponseObj = objectMapper.readValue(rawGptResponse, GPTResponse.class);
+        } catch (Exception e) {
+            logger.error("Error parsing GPT response: {}", e.getMessage());
+            logger.error("Raw GPT response: {}", rawGptResponse);
+            throw new Exception("Failed to parse GPT response. Please try again.");
+        }
+
+        String contentJson;
+        try {
+            contentJson = gptResponseObj
+                    .getChoices().get(0)
+                    .getMessage()
+                    .getContent();
+        } catch (Exception e) {
+            logger.error("Error extracting content from GPT response: {}", e.getMessage());
+            logger.error("GPT response object: {}", gptResponseObj);
+            throw new Exception("Failed to extract content from GPT response. Please try again.");
+        }
 
         // Parse into ResumeParsingResult
-        ResumeParsingResult parsedResult = objectMapper.readValue(contentJson, ResumeParsingResult.class);
-        return parsedResult;
+        try {
+            ResumeParsingResult parsedResult = objectMapper.readValue(contentJson, ResumeParsingResult.class);
+            return parsedResult;
+        } catch (Exception e) {
+            logger.error("Error parsing freeform career JSON: {}", e.getMessage());
+            logger.error("Content JSON: {}", contentJson);
+            throw new Exception("Failed to parse career information. Please ensure your input contains clear work experience details.");
+        }
     }
 }
 

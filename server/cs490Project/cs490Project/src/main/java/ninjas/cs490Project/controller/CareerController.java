@@ -5,8 +5,11 @@ import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.service.AsyncResumeParser;
+import ninjas.cs490Project.service.ResumeProcessingNotificationService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -18,13 +21,16 @@ public class CareerController {
     private final WorkExperienceRepository workExperienceRepository;
     private final UserRepository userRepository;
     private final AsyncResumeParser asyncResumeParser;
+    private final ResumeProcessingNotificationService notificationService;
 
     public CareerController(WorkExperienceRepository workExperienceRepository,
                             UserRepository userRepository,
-                            AsyncResumeParser asyncResumeParser) {
+                            AsyncResumeParser asyncResumeParser,
+                            ResumeProcessingNotificationService notificationService) {
         this.workExperienceRepository = workExperienceRepository;
         this.userRepository = userRepository;
         this.asyncResumeParser = asyncResumeParser;
+        this.notificationService = notificationService;
     }
 
     // ------------------------------
@@ -107,6 +113,11 @@ public class CareerController {
         // Save the entity
         workExperienceRepository.save(job);
         return ResponseEntity.ok("Created new career record");
+    }
+
+    @GetMapping(value = "/status", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribeToCareerProcessingStatus(@PathVariable("userId") int userId) {
+        return notificationService.subscribeToCareerProcessing(userId);
     }
 
     @PostMapping("/freeform")
