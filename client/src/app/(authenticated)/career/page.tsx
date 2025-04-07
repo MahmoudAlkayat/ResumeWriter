@@ -7,6 +7,7 @@ import { Background } from "@/components/ui/background";
 import { Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/auth";
 import { useToast } from "@/contexts/ToastProvider";
+import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
 
 interface Job {
   id?: number; // For existing records
@@ -20,7 +21,8 @@ interface Job {
 export default function CareerHistoryManager() {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
-
+  const { activeResumeId } = useResumeProcessing();
+  
   // Career history data
   const [careerHistory, setCareerHistory] = useState<Job[]>([]);
 
@@ -42,23 +44,33 @@ export default function CareerHistoryManager() {
   });
 
   // 2) Fetch career history whenever userId is available
-  useEffect(() => {
-    async function fetchCareerHistory() {
-      if (!user?.id) return;
-      try {
-        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("Failed to fetch career history");
-        const data = await res.json();
-        setCareerHistory(data.jobs || []);
-      } catch (err) {
-        if (err instanceof Error) showError(err.message);
-        else showError("An unknown error occurred");
-      }
+  async function fetchCareerHistory() {
+    if (!user?.id) return;
+    try {
+      console.log("Fetching career history for user:", user.id);
+      const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch career history");
+      const data = await res.json();
+      setCareerHistory(data.jobs || []);
+    } catch (err) {
+      if (err instanceof Error) showError(err.message);
+      else showError("An unknown error occurred");
     }
+  }
+
+  useEffect(() => {
     fetchCareerHistory();
   }, [user?.id]);
+
+  useEffect(() => {
+    const onUpdate = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      fetchCareerHistory();
+    }
+    onUpdate();
+  },[activeResumeId])
 
   // Start "Add New Career" flow
   const handleAdd = () => {
@@ -166,15 +178,7 @@ export default function CareerHistoryManager() {
         showSuccess("Career record saved successfully");
       }
       // Refresh career history after saving
-      if (user?.id) {
-        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
-          credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setCareerHistory(data.jobs || []);
-        }
-      }
+      fetchCareerHistory();
     } catch (err) {
       if (err instanceof Error) showError(err.message);
       else showError("An unknown error occurred");
@@ -212,15 +216,7 @@ export default function CareerHistoryManager() {
       }
       showSuccess("Career record deleted successfully");
       // Refresh career history after deletion
-      if (user?.id) {
-        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
-          credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setCareerHistory(data.jobs || []);
-        }
-      }
+      fetchCareerHistory();
     } catch (err) {
       if (err instanceof Error) showError(err.message);
       else showError("An unknown error occurred");

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/contexts/ToastProvider";
-import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthProvider";
+import { ResumeProcessingProvider } from "@/contexts/ResumeProcessingProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,8 +37,10 @@ export default function RootLayout({
       >
         <ToastProvider>
         <AuthProvider>
-          <Toaster position="top-center" duration={3000} />
-          {children}
+          <ResumeProcessingProvider>
+            <Toaster position="top-center" duration={3000} />
+            {children}
+          </ResumeProcessingProvider>
         </AuthProvider>
         </ToastProvider>
       </body>

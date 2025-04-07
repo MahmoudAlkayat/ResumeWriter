@@ -33,16 +33,19 @@ public class AsyncResumeParser {
     private final ResumeParsingService resumeParsingService;
     private final WorkExperienceRepository workExperienceRepository;
     private final EducationRepository educationRepository;
+    private final ResumeProcessingNotificationService notificationService;
     private final ObjectMapper objectMapper;
 
     public AsyncResumeParser(ResumeRepository resumeRepository,
                              ResumeParsingService resumeParsingService,
                              WorkExperienceRepository workExperienceRepository,
-                             EducationRepository educationRepository) {
+                             EducationRepository educationRepository,
+                             ResumeProcessingNotificationService notificationService) {
         this.resumeRepository = resumeRepository;
         this.resumeParsingService = resumeParsingService;
         this.workExperienceRepository = workExperienceRepository;
         this.educationRepository = educationRepository;
+        this.notificationService = notificationService;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -130,6 +133,9 @@ public class AsyncResumeParser {
             } else {
                 logger.warn("No work experience entries found in parsed result.");
             }
+
+            // Notify that processing is complete
+            notificationService.notifyProcessingComplete(resume.getId());
         } catch (Exception e) {
             logger.error("Error processing resume with ID " + resume.getId(), e);
         }

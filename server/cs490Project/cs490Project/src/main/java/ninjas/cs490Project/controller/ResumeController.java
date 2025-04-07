@@ -15,11 +15,13 @@ import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.service.AsyncResumeParser;
 import ninjas.cs490Project.service.ResumeParsingService;
 import ninjas.cs490Project.service.ResumeService;
+import ninjas.cs490Project.service.ResumeProcessingNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -39,6 +41,7 @@ public class ResumeController {
     private final EducationRepository educationRepository;
     private final WorkExperienceRepository workExperienceRepository;
     private final AsyncResumeParser asyncResumeParser;
+    private final ResumeProcessingNotificationService notificationService;
 
     public ResumeController(UserRepository userRepository,
                             SkillRepository skillRepository,
@@ -46,7 +49,8 @@ public class ResumeController {
                             ResumeParsingService resumeParsingService,
                             EducationRepository educationRepository,
                             WorkExperienceRepository workExperienceRepository,
-                            AsyncResumeParser asyncResumeParser) {
+                            AsyncResumeParser asyncResumeParser,
+                            ResumeProcessingNotificationService notificationService) {
         this.userRepository = userRepository;
         this.skillRepository = skillRepository;
         this.resumeService = resumeService;
@@ -54,6 +58,12 @@ public class ResumeController {
         this.educationRepository = educationRepository;
         this.workExperienceRepository = workExperienceRepository;
         this.asyncResumeParser = asyncResumeParser;
+        this.notificationService = notificationService;
+    }
+
+    @GetMapping("/{resumeId}/status")
+    public SseEmitter subscribeToStatus(@PathVariable int resumeId) {
+        return notificationService.createEmitter(resumeId);
     }
 
     /**

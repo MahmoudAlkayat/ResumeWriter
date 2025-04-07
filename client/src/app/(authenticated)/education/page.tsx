@@ -6,7 +6,7 @@ import { Background } from "@/components/ui/background";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/auth";
 import { useToast } from "@/contexts/ToastProvider";
-
+import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
 interface EducationEntry {
   id?: number; // for existing records
   degree: string;
@@ -19,6 +19,7 @@ interface EducationEntry {
 export default function EducationManager() {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
+  const { activeResumeId } = useResumeProcessing();
 
   // Education data
   const [education, setEducation] = useState<EducationEntry[]>([]);
@@ -36,29 +37,37 @@ export default function EducationManager() {
     gpa: 0,
   });
 
+  async function fetchEducation() {
+  if (!user?.id) return;
+    try {
+      // Fetch this user's education from the correct endpoint
+      const eduRes = await fetch(
+        `http://localhost:8080/api/users/${user.id}/education`,
+        { credentials: "include" }
+      );
+      if (!eduRes.ok) {
+        const errText = await eduRes.text();
+        throw new Error(errText || "Failed to fetch education");
+      }
+      const eduJson = await eduRes.json();
+      setEducation(eduJson.education || []);
+    } catch (err) {
+      if (err instanceof Error) showError(err.message);
+      else showError("An unknown error occurred");
+    }
+  }
   // 1) On mount, check auth and fetch education
   useEffect(() => {
-    const fetchEducation = async () => {
-      if (!user?.id) return;
-      try {
-        // Fetch this user's education from the correct endpoint
-        const eduRes = await fetch(
-          `http://localhost:8080/api/users/${user.id}/education`,
-          { credentials: "include" }
-        );
-        if (!eduRes.ok) {
-          const errText = await eduRes.text();
-          throw new Error(errText || "Failed to fetch education");
-        }
-        const eduJson = await eduRes.json();
-        setEducation(eduJson.education || []);
-      } catch (err) {
-        if (err instanceof Error) showError(err.message);
-        else showError("An unknown error occurred");
-      }
-    }
     fetchEducation();
   }, [user?.id]);
+
+  useEffect(() => {
+    const onUpdate = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      fetchEducation();
+    }
+    onUpdate();
+  },[activeResumeId])
 
   // 2) Handle starting the “add” flow
   const handleAdd = () => {
@@ -97,26 +106,6 @@ export default function EducationManager() {
       ...prev,
       [name]: name === "gpa" ? Number(value) : value,
     }));
-  };
-
-  // Helper: Refresh the education list
-  const refreshEducation = async () => {
-    if (!user?.id) return;
-    try {
-      const eduRes = await fetch(
-        `http://localhost:8080/api/users/${user.id}/education`,
-        { credentials: "include" }
-      );
-      if (!eduRes.ok) throw new Error("Failed to fetch education");
-      const eduJson = await eduRes.json();
-      setEducation(eduJson.education || []);
-    } catch (err) {
-      if (err instanceof Error) {
-        showError(err.message);
-      } else {
-        showError("An unknown error occurred");
-      }
-    }
   };
 
   // 5) Handle save: CREATE (if editingIndex = -1) or UPDATE
@@ -190,7 +179,7 @@ export default function EducationManager() {
         showSuccess("Education record saved successfully");
       }
       // Refresh data from server
-      await refreshEducation();
+      await fetchEducation();
     } catch (err) {
       if (err instanceof Error) {
         showError(err.message);
@@ -237,7 +226,7 @@ export default function EducationManager() {
       }
       showSuccess("Education record deleted successfully");
       // Refresh data
-      await refreshEducation();
+      await fetchEducation();
     } catch (err) {
       if (err instanceof Error) {
         showError(err.message);

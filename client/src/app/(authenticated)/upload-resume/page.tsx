@@ -6,13 +6,15 @@ import { Background } from "@/components/ui/background";
 import { UploadCloud } from "lucide-react";
 import { useToast } from "@/contexts/ToastProvider";
 import { useAuth } from "@/hooks/auth";
+import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
 import React from "react";
 
 export default function ResumeUploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const { showSuccess, showError } = useToast();
+  const { showError, showInfo } = useToast();
   const { user } = useAuth();
+  const { setActiveResumeId } = useResumeProcessing();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -56,8 +58,9 @@ export default function ResumeUploadPage() {
         throw new Error(errorText || "Upload failed");
       }
 
-      await response.json();
-      showSuccess("Resume uploaded successfully. Please wait while we process your resume.");
+      const data = await response.json();
+      setActiveResumeId(data.resumeId); // Set the active resume ID in the context
+      showInfo("Resume uploaded. Please wait while we process your resume.");
     } catch (error) {
       showError("Error uploading resume");
     } finally {
