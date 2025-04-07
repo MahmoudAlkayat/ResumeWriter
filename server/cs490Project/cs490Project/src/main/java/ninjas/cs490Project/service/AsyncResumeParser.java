@@ -1,10 +1,14 @@
 package ninjas.cs490Project.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import ninjas.cs490Project.dto.EducationData;
 import ninjas.cs490Project.dto.ResumeParsingResult;
 import ninjas.cs490Project.dto.WorkExperienceData;
+import ninjas.cs490Project.entity.Education;
 import ninjas.cs490Project.entity.Resume;
 import ninjas.cs490Project.entity.WorkExperience;
+import ninjas.cs490Project.repository.EducationRepository;
 import ninjas.cs490Project.repository.ResumeRepository;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
 import org.apache.tika.Tika;
@@ -28,14 +32,17 @@ public class AsyncResumeParser {
     private final ResumeRepository resumeRepository;
     private final ResumeParsingService resumeParsingService;
     private final WorkExperienceRepository workExperienceRepository;
+    private final EducationRepository educationRepository;
     private final ObjectMapper objectMapper;
 
     public AsyncResumeParser(ResumeRepository resumeRepository,
                              ResumeParsingService resumeParsingService,
-                             WorkExperienceRepository workExperienceRepository) {
+                             WorkExperienceRepository workExperienceRepository,
+                             EducationRepository educationRepository) {
         this.resumeRepository = resumeRepository;
         this.resumeParsingService = resumeParsingService;
         this.workExperienceRepository = workExperienceRepository;
+        this.educationRepository = educationRepository;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -53,11 +60,47 @@ public class AsyncResumeParser {
             ResumeParsingResult parsingResult = resumeParsingService.parseKeyInformation(resumeText);
             logger.info("Parsed result: {}", objectMapper.writeValueAsString(parsingResult));
 
-            // Update the resume content (and possibly education or skills)
+            // Update the resume content
             resume.setContent(resumeText);
             resumeRepository.save(resume);
 
-            // Process work experience entries (mapped by User)
+            // Process education entries
+            List<EducationData> educationList = parsingResult.getEducationList();
+            if (educationList != null && !educationList.isEmpty()) {
+                logger.info("Found {} education entries.", educationList.size());
+                List<Education> educations = new ArrayList<>();
+
+                for (EducationData data : educationList) {
+                    Education edu = new Education();
+                    edu.setInstitution(data.getInstitution());
+                    edu.setDegree(data.getDegree());
+                    edu.setFieldOfStudy(data.getFieldOfStudy());
+                    edu.setDescription(data.getDescription());
+
+                    // Safe date parsing
+                    edu.setStartDate(
+                            data.getStartDate() != null
+                                    ? LocalDate.parse(data.getStartDate())
+                                    : LocalDate.of(2021, 9, 1)
+                    );
+                    edu.setEndDate(
+                            data.getEndDate() != null
+                                    ? LocalDate.parse(data.getEndDate())
+                                    : LocalDate.of(2025, 12, 1)
+                    );
+
+                    // Handle GPA
+                    Double gpaValue = data.getGpa();
+                    edu.setGpa(gpaValue);
+
+                    edu.setUser(resume.getUser());
+                    educations.add(edu);
+                }
+                educationRepository.saveAll(educations);
+                logger.info("Saved {} education entries.", educations.size());
+            }
+
+            // Process work experience entries
             List<WorkExperienceData> workExpList = parsingResult.getWorkExperienceList();
             if (workExpList != null && !workExpList.isEmpty()) {
                 logger.info("Found {} work experience entries.", workExpList.size());

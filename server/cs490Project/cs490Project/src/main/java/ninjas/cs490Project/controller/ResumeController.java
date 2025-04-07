@@ -36,11 +36,8 @@ public class ResumeController {
     private final SkillRepository skillRepository;
     private final ResumeService resumeService;
     private final ResumeParsingService resumeParsingService;
-
-    // Added repositories to save Education & WorkExperience directly to the user
     private final EducationRepository educationRepository;
     private final WorkExperienceRepository workExperienceRepository;
-
     private final AsyncResumeParser asyncResumeParser;
 
     public ResumeController(UserRepository userRepository,
@@ -83,7 +80,6 @@ public class ResumeController {
 
             // 2. Extract text via Tika and parse key information via GPT
             String extractedText = resumeParsingService.extractTextFromFile(file);
-            ResumeParsingResult parsedResult = resumeParsingService.parseKeyInformation(extractedText);
 
             // 3. Create and save a new Resume entity (for the file data)
             Resume resume = new Resume();
@@ -97,45 +93,10 @@ public class ResumeController {
             Resume savedResume = resumeService.storeResume(resume);
             logger.info("Resume uploaded and stored successfully with id: {}", savedResume.getId());
 
+            // Start async processing of the resume
             asyncResumeParser.parseResume(savedResume);
 
-            // 4. Create Education entries from the parsing result, tied to the User
-            for (EducationData eduData : parsedResult.getEducationList()) {
-                Education edu = new Education();
-                edu.setInstitution(eduData.getInstitution());
-                edu.setDegree(eduData.getDegree());
-                edu.setFieldOfStudy(eduData.getFieldOfStudy());
-                edu.setDescription(eduData.getDescription());
-
-                // Safe date parsing, fallback used if null
-                edu.setStartDate(
-                        eduData.getStartDate() != null
-                                ? LocalDate.parse(eduData.getStartDate())
-                                : LocalDate.of(2021, 9, 1)
-                );
-                edu.setEndDate(
-                        eduData.getEndDate() != null
-                                ? LocalDate.parse(eduData.getEndDate())
-                                : LocalDate.of(2025, 12, 1)
-                );
-
-                // Correctly handle the Double type by defaulting null to 0.0
-                Double gpaValue = eduData.getGpa();
-                if (gpaValue == null) {
-                    gpaValue = 0.0;
-                }
-                edu.setGpa(gpaValue);
-
-                // Instead of setResume(...), we link the user
-                edu.setUser(currentUser);
-
-                educationRepository.save(edu);
-            }
-
-            // (Optionally) create WorkExperience entries similarly,
-            // linking them to currentUser, not resume.
-
-            // Return success
+            // Return success with processing status
             Map<String, Object> response = new HashMap<>();
             response.put("resumeId", savedResume.getId());
             response.put("status", "processing");
