@@ -31,6 +31,24 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
         <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function () {
+                try {
+                  const theme = localStorage.getItem('theme');
+                  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                  if (theme === 'dark' || (!theme && systemPrefersDark) || theme === 'system' && systemPrefersDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (_) {}
+              })();
+              `,
+            }}
+          />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

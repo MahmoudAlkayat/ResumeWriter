@@ -82,9 +82,9 @@ export default function ResumeUploadPage() {
         </label>
       </div>
 
-      {file && <p className="text-gray-800 mt-4">Selected: <span className="text-blue-600">{file.name}</span></p>}
+      {file && <p className="text-foreground mt-4">Selected: <span className="text-blue-600">{file.name}</span></p>}
 
-      <Button className="mt-6 bg-blue-600 text-white px-6 py-2" onClick={handleUpload} disabled={uploading}>
+      <Button className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2" onClick={handleUpload} disabled={uploading}>
         {uploading ? "Uploading..." : "Upload Resume"}
       </Button>
     </Background>

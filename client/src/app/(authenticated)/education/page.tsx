@@ -262,7 +262,7 @@ export default function EducationManager() {
       <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8
       dark:bg-neutral-900 dark:border-neutral-800">
         {education.length === 0 ? (
-          <p className="text-xl text-gray-800 drop-shadow-sm text-center">
+          <p className="text-xl text-foreground drop-shadow-sm text-center">
             No education records found.
           </p>
         ) : (

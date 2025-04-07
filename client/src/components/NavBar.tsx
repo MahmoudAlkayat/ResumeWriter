@@ -2,7 +2,6 @@ import { useAuth } from "@/hooks/auth";
 import { Button } from "@/components/ui/button";
 import {User, LogOut } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
-
+import { Logo } from "@/components/Logo";
 export default function NavBar() {
     const { user, logout } = useAuth();
 
@@ -22,7 +21,7 @@ export default function NavBar() {
             <div className="flex h-14 items-center px-4">
                 <div className="flex items-center">
                     <Link href="/home">
-                        <Image src="/logo.svg" alt="Logo" width={192} height={192} />
+                        <Logo />
                     </Link>
                 </div>
                 <div className="flex-1" />
