@@ -4,6 +4,7 @@ import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.UserRepository;
+import ninjas.cs490Project.service.AsyncResumeParser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,11 +17,14 @@ public class CareerController {
 
     private final WorkExperienceRepository workExperienceRepository;
     private final UserRepository userRepository;
+    private final AsyncResumeParser asyncResumeParser;
 
     public CareerController(WorkExperienceRepository workExperienceRepository,
-                            UserRepository userRepository) {
+                            UserRepository userRepository,
+                            AsyncResumeParser asyncResumeParser) {
         this.workExperienceRepository = workExperienceRepository;
         this.userRepository = userRepository;
+        this.asyncResumeParser = asyncResumeParser;
     }
 
     // ------------------------------
@@ -103,6 +107,25 @@ public class CareerController {
         // Save the entity
         workExperienceRepository.save(job);
         return ResponseEntity.ok("Created new career record");
+    }
+
+    @PostMapping("/freeform")
+    public ResponseEntity<?> createFreeformCareer(@PathVariable("userId") int userId,
+                                                 @RequestBody Map<String, String> request) {
+        User user = userRepository.findUserById(userId);
+        if (user == null) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+
+        String text = request.get("text");
+        if (text == null || text.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Text field is required");
+        }
+
+        // Process the freeform text asynchronously
+        asyncResumeParser.parseFreeformCareer(text, user);
+        
+        return ResponseEntity.ok("Freeform career entry submitted for processing");
     }
 
     // 3. UPDATE an existing WorkExperience record for a user

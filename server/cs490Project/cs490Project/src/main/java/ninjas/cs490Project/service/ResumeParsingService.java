@@ -181,6 +181,62 @@ public class ResumeParsingService {
         // 7) Return the fully-parsed ResumeParsingResult
         return parsedResult;
     }
+
+    public ResumeParsingResult parseFreeformCareer(String text) throws Exception {
+        // Build your prompt for freeform career parsing
+        String prompt =
+        """
+        You are an assistant that parses freeform career text into a strict JSON structure. Your task is to extract work experience data exactly as specified below. Return only valid JSON, with no additional commentary, markdown, or backticks.
+        
+        Output a JSON object with exactly one key: "workExperienceList" which is an array of objects. Each object must include:
+        {
+          "company": string (default "N/A"),
+          "jobTitle": string (default "N/A"),
+          "startDate": string in YYYY-MM-DD format (default "2000-01-01"),
+          "endDate": string in YYYY-MM-DD format (default "N/A"),
+          "description": string (default "N/A")
+        }
+        
+        Rules:
+        1. Extract dates in YYYY-MM-DD format. If only year is available, use YYYY-01-01.
+        2. If end date is not specified but context suggests current position, use "N/A".
+        3. Description should be a clear, concise summary of responsibilities and achievements.
+        4. If certain fields cannot be determined, use the default values provided.
+        5. Always include all specified keys. Do not add extra properties. No null values.
+        
+        Now parse the following career text and produce only a valid JSON response (no extra text or formatting):
+        """ + text;
+
+        // Create the GPT request payload
+        GPTRequest gptRequest = new GPTRequest(
+                "gpt-4",
+                List.of(
+                        new Message("developer", "You are a helpful assistant."),
+                        new Message("user", prompt)
+                )
+        );
+
+        // Make the API call to get the raw JSON response
+        String rawGptResponse = webClient.post()
+                .uri("/chat/completions")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + gptApiKey)
+                .bodyValue(gptRequest)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        // Parse the GPT response
+        GPTResponse gptResponseObj = objectMapper.readValue(rawGptResponse, GPTResponse.class);
+        String contentJson = gptResponseObj
+                .getChoices().get(0)
+                .getMessage()
+                .getContent();
+
+        // Parse into ResumeParsingResult
+        ResumeParsingResult parsedResult = objectMapper.readValue(contentJson, ResumeParsingResult.class);
+        return parsedResult;
+    }
 }
 
 
