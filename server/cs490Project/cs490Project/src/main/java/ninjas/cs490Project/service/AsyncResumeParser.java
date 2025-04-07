@@ -7,6 +7,7 @@ import ninjas.cs490Project.dto.ResumeParsingResult;
 import ninjas.cs490Project.dto.WorkExperienceData;
 import ninjas.cs490Project.entity.Education;
 import ninjas.cs490Project.entity.Resume;
+import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.repository.EducationRepository;
 import ninjas.cs490Project.repository.ResumeRepository;
@@ -22,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class AsyncResumeParser {
@@ -138,6 +138,55 @@ public class AsyncResumeParser {
             notificationService.notifyProcessingComplete(resume.getId());
         } catch (Exception e) {
             logger.error("Error processing resume with ID " + resume.getId(), e);
+        }
+    }
+
+    @Async
+    @Transactional
+    public void parseFreeformCareer(String text, User user) {
+        try {
+            // Parse the freeform text using GPT
+            ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
+            logger.info("Parsed freeform career result: {}", objectMapper.writeValueAsString(parsingResult));
+
+            // Process work experience entries
+            List<WorkExperienceData> workExpList = parsingResult.getWorkExperienceList();
+            if (workExpList != null && !workExpList.isEmpty()) {
+                logger.info("Found {} work experience entries from freeform text.", workExpList.size());
+                List<WorkExperience> workExperiences = new ArrayList<>();
+
+                for (WorkExperienceData data : workExpList) {
+                    WorkExperience we = new WorkExperience();
+                    we.setCompany(data.getCompany());
+                    we.setJobTitle(data.getJobTitle());
+                    we.setStartDate(LocalDate.parse(data.getStartDate()));
+
+                    String endDateStr = data.getEndDate();
+                    if (endDateStr == null || endDateStr.trim().isEmpty() || endDateStr.equalsIgnoreCase("N/A")) {
+                        we.setEndDate(null);
+                    } else {
+                        we.setEndDate(LocalDate.parse(endDateStr));
+                    }
+
+                    we.setDescription(data.getDescription());
+                    we.setUser(user);
+                    workExperiences.add(we);
+                }
+                // Save all work experience entries in a batch
+                workExperienceRepository.saveAll(workExperiences);
+                logger.info("Saved {} work experience entries from freeform text.", workExperiences.size());
+                
+                // Notify success
+                notificationService.notifyCareerProcessingComplete(user.getId());
+            } else {
+                logger.warn("No work experience entries found in parsed freeform text.");
+                // Notify error
+                notificationService.notifyCareerProcessingError(user.getId(), "No work experience entries could be extracted from the text. Please try again with more detailed information.");
+            }
+        } catch (Exception e) {
+            logger.error("Error parsing freeform career", e);
+            // Notify error with the specific error message
+            notificationService.notifyCareerProcessingError(user.getId(), e.getMessage());
         }
     }
 }

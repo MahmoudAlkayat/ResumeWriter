@@ -9,6 +9,9 @@ import { useAuth } from "@/hooks/auth";
 import { useToast } from "@/contexts/ToastProvider";
 import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
 import LoadingScreen from "@/components/LoadingScreen";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 interface Job {
   id?: number; // For existing records
@@ -19,11 +22,14 @@ interface Job {
   responsibilities: string;
 }
 
-export default function CareerHistoryManager() {
+export default function CareerPage() {
   const { user } = useAuth();
-  const { showError, showSuccess } = useToast();
+  const { showError, showSuccess, showInfo } = useToast();
   const { activeResumeId } = useResumeProcessing();
+  const { activeCareerUserId, setActiveCareerUserId } = useResumeProcessing();
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("freeform");
+  const [freeform, setFreeform] = useState("");
 
   // Career history data
   const [careerHistory, setCareerHistory] = useState<Job[]>([]);
@@ -73,7 +79,7 @@ export default function CareerHistoryManager() {
       fetchCareerHistory();
     }
     onUpdate();
-  },[activeResumeId])
+  },[activeResumeId, activeCareerUserId])
 
   // Start "Add New Career" flow
   const handleAdd = () => {
@@ -220,6 +226,45 @@ export default function CareerHistoryManager() {
       showSuccess("Career record deleted successfully");
       // Refresh career history after deletion
       fetchCareerHistory();
+    } catch (err) {
+      if (err instanceof Error) showError(err.message);
+      else showError("An unknown error occurred");
+    }
+  };
+
+  // Handle freeform submission
+  const handleFreeformSubmit = async () => {
+    if (!user?.id) {
+      showError("Not authenticated");
+      return;
+    }
+
+    if (!freeform) {
+      showError("Please enter your career information");
+      return;
+    }
+
+    try {
+      const data = {
+        text: freeform
+      }
+
+      const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/freeform`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Failed to create career record");
+      }
+
+      showInfo("Freeform entry submitted. Please wait while we process your entry.");
+      setActiveCareerUserId(user.id);
+      setFreeform("");
+      setEditingIndex(null);
     } catch (err) {
       if (err instanceof Error) showError(err.message);
       else showError("An unknown error occurred");
@@ -376,46 +421,80 @@ export default function CareerHistoryManager() {
       {editingIndex === -1 && (
         <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200">
           <h3 className="text-2xl font-bold mb-4">New Career Entry</h3>
-          <div className="flex flex-col gap-2">
-            <input
-              className="border rounded p-2"
-              name="title"
-              placeholder="Job Title"
-              value={formData.title}
-              onChange={handleFormChange}
-            />
-            <input
-              className="border rounded p-2"
-              name="company"
-              placeholder="Company"
-              value={formData.company}
-              onChange={handleFormChange}
-            />
-            <input
-              className="border rounded p-2"
-              name="startDate"
-              placeholder="Start Date (YYYY-MM-DD)"
-              value={formData.startDate}
-              onChange={handleFormChange}
-            />
-            <input
-              className="border rounded p-2"
-              name="endDate"
-              placeholder="End Date (YYYY-MM-DD)"
-              value={formData.endDate}
-              onChange={handleFormChange}
-            />
-            <textarea
-              className="border rounded p-2"
-              name="responsibilities"
-              placeholder="Responsibilities"
-              value={formData.responsibilities}
-              onChange={handleFormChange}
-            />
-          </div>
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="freeform">Free-form</TabsTrigger>
+              <TabsTrigger value="structured">Structured</TabsTrigger>
+            </TabsList>
+            <TabsContent value="freeform">
+              <div className="flex flex-col gap-2">
+                <Textarea
+                  name="freeform"
+                  placeholder="Enter your career entry in free-form text"
+                  value={freeform}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                    setFreeform(e.target.value);
+                  }}
+                  className="min-h-[200px]"
+                />
+              </div>
+            </TabsContent>
+            <TabsContent value="structured">
+              <div className="flex flex-col gap-2">
+                <Input
+                  name="title"
+                  placeholder="Job Title"
+                  value={formData.title}
+                  onChange={handleFormChange}
+                />
+                <Input
+                  name="company"
+                  placeholder="Company"
+                  value={formData.company}
+                  onChange={handleFormChange}
+                />
+                <Input
+                  name="startDate"
+                  placeholder="Start Date (YYYY-MM-DD)"
+                  value={formData.startDate}
+                  onChange={handleFormChange}
+                />
+                <Input
+                  name="endDate"
+                  placeholder="End Date (YYYY-MM-DD)"
+                  value={formData.endDate}
+                  onChange={handleFormChange}
+                />
+                <Textarea
+                  name="responsibilities"
+                  placeholder="Enter your responsibilities"
+                  value={formData.responsibilities}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                    const lines = e.target.value.split('\n');
+                    const formattedLines = lines.map((line: string) => {
+                      if (line.trim() && !line.startsWith('•')) {
+                        return `• ${line.trim()}`;
+                      }
+                      return line;
+                    });
+                    setFormData(prev => ({
+                      ...prev,
+                      responsibilities: formattedLines.join('\n')
+                    }));
+                  }}
+                  className="min-h-[200px]"
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+
           <div className="flex gap-3 mt-4">
-            <Button onClick={handleSave} className="bg-green-600 text-white hover:bg-green-700">
-              Save New Career Entry
+            <Button 
+              onClick={activeTab === "freeform" ? handleFreeformSubmit : handleSave} 
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              Submit
             </Button>
             <Button
               className="bg-red-500 text-white hover:bg-red-600"
@@ -428,6 +507,7 @@ export default function CareerHistoryManager() {
                   endDate: "",
                   responsibilities: "",
                 });
+                setFreeform("");
               }}
             >
               Cancel
