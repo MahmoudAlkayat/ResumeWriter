@@ -17,7 +17,7 @@ const data = {
   navMain: [
     {
       title: "Resume",
-      url: "/resume",
+      url: "/upload-resume",
       icon: FileUser,
       isActive: true,
     },
