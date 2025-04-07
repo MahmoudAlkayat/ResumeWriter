@@ -7,6 +7,8 @@ import { Background } from "@/components/ui/background";
 import { AlertTitle } from "@/components/ui/alert";
 import LoadingScreen from "@/components/LoadingScreen";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/auth";
+
 
 interface EducationEntry {
   id?: number; // for existing records
@@ -26,16 +28,11 @@ interface UserResponse {
 }
 
 export default function EducationManager() {
-  const router = useRouter();
-
-  // Logged-in user ID (fetched via /auth/me)
-  const [userId, setUserId] = useState<number | null>(null);
+  const { user } = useAuth();
 
   // Education data
   const [education, setEducation] = useState<EducationEntry[]>([]);
 
-  // For controlling loading and error states
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Form state for adding or editing
@@ -53,40 +50,28 @@ export default function EducationManager() {
 
   // 1) On mount, check auth and fetch education
   useEffect(() => {
-    async function initPage() {
+    if (!user) return;
+    const fetchEducation = async () => {
       try {
-        // Check if user is logged in
-        const userRes = await fetch("http://localhost:8080/auth/me", {
-          credentials: "include",
-        });
-        if (!userRes.ok) {
-          // Not authenticated => redirect to /login
-          router.push("/login");
-          return;
-        }
-        const userData: UserResponse = await userRes.json();
-        setUserId(userData.id);
-
         // Fetch this user's education
+        console.log(user?.id);
         const eduRes = await fetch(
-          `http://localhost:8080/api/resumes/education?userId=${userData.id}`,
-          { credentials: "include" }
-        );
-        if (!eduRes.ok) {
-          const errText = await eduRes.text();
-          throw new Error(errText || "Failed to fetch education");
-        }
-        const eduJson = await eduRes.json();
-        setEducation(eduJson.education || []);
-      } catch (err) {
-        if (err instanceof Error) setError(err.message);
-        else setError("An unknown error occurred");
-      } finally {
-        setLoading(false);
+        `http://localhost:8080/api/resumes/education?userId=${user.id}`,
+        { credentials: "include" }
+      );
+      if (!eduRes.ok) {
+        const errText =  "hi";
+        throw new Error(errText || "Failed to fetch education");
       }
+      const eduJson =  await eduRes.json();
+      setEducation(eduJson.education || []);
+    } catch (err) {
+      if (err instanceof Error) setError(err.message);
+      else setError("An unknown error occurred");
     }
-    initPage();
-  }, [router]);
+    };
+    fetchEducation();
+  }, [user?.id]);
 
   // 2) Handle starting the “add” flow
   const handleAdd = () => {
@@ -117,7 +102,7 @@ export default function EducationManager() {
 
   // 5) Handle save: CREATE (if editingIndex = -1) or UPDATE
   const handleSave = async () => {
-    if (!userId) {
+    if (!user?.id) {
       setError("Not authenticated");
       return;
     }
@@ -126,7 +111,7 @@ export default function EducationManager() {
       if (editingIndex === -1) {
         // CREATE a new record
         const res = await fetch(
-          `http://localhost:8080/api/resumes/education?userId=${userId}`,
+          `http://localhost:8080/api/resumes/education?userId=${user.id}`,
           {
             method: "POST",
             credentials: "include",
@@ -182,7 +167,7 @@ export default function EducationManager() {
 
   // 6) Delete an existing record
   const handleDelete = async (index: number) => {
-    if (!userId) {
+    if (!user?.id) {
       setError("Not authenticated");
       return;
     }
@@ -215,10 +200,10 @@ export default function EducationManager() {
 
   // Helper: Refresh the education list
   const refreshEducation = async () => {
-    if (!userId) return;
+    if (!user?.id) return;
     try {
       const eduRes = await fetch(
-        `http://localhost:8080/api/resumes/education?userId=${userId}`,
+        `http://localhost:8080/api/resumes/education?userId=${user.id}`,
         { credentials: "include" }
       );
       if (!eduRes.ok) throw new Error("Failed to fetch education");
@@ -233,14 +218,10 @@ export default function EducationManager() {
     }
   };
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <Background className="relative flex flex-col items-center justify-start min-h-screen p-8 text-center">
       <h2 className="text-4xl font-extrabold text-black mb-8 drop-shadow-md">
-        Manage Education
+        Education
       </h2>
 
       {error && (

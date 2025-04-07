@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Background } from "@/components/ui/background";
 import { UploadCloud } from "lucide-react";
 import { useToast } from "@/contexts/ToastProvider";
+import { useAuth } from "@/hooks/auth";
 import React from "react";
-import { useRouter } from "next/navigation";
 
 export default function ResumeUploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState("");
   const { showSuccess, showError } = useToast();
+  const { user } = useAuth();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -31,19 +32,19 @@ export default function ResumeUploadPage() {
       showError("Please select a resume file to upload");
       return;
     }
-    if (!userId) {
-      toast.error("User not authenticated. Please log in.");
-      router.push("/login");
-      return;
-    }
 
     setUploading(true);
     setStatus("Uploading...");
 
     const formData = new FormData();
+    const id = user?.id;
+    if (!id) {
+      showError("User authentication failed, try again.");
+      return;
+    }
     formData.append("file", file);
     formData.append("title", file.name);
-    formData.append("userId", userId);
+    formData.append("userId", id.toString());
 
     try {
       const response = await fetch("http://localhost:8080/api/resumes/upload", {

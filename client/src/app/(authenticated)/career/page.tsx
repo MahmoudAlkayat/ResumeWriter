@@ -8,7 +8,7 @@ import { Background } from "@/components/ui/background";
 import LoadingScreen from "@/components/LoadingScreen";
 import { Pencil } from "lucide-react";
 import { AlertTitle } from "@/components/ui/alert";
-
+import { useAuth } from "@/hooks/auth";
 interface Job {
   id?: number; // For existing records
   title: string;
@@ -27,14 +27,11 @@ interface UserResponse {
 }
 
 export default function CareerHistoryManager() {
+  const { user } = useAuth();
   const router = useRouter();
-
-  // Logged-in user ID
-  const [userId, setUserId] = useState<number | null>(null);
 
   // Career history data
   const [careerHistory, setCareerHistory] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Form state for add/edit
@@ -48,35 +45,13 @@ export default function CareerHistoryManager() {
     responsibilities: "",
   });
 
-  // 1) On mount: check auth and set userId
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const userRes = await fetch("http://localhost:8080/auth/me", {
-          credentials: "include",
-        });
-        if (!userRes.ok) {
-          router.push("/login");
-          return;
-        }
-        const userData: UserResponse = await userRes.json();
-        setUserId(userData.id);
-      } catch (err) {
-        if (err instanceof Error) setError(err.message);
-        else setError("An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
-    }
-    checkAuth();
-  }, [router]);
-
   // 2) Fetch career history whenever userId is available
   useEffect(() => {
     async function fetchCareerHistory() {
-      if (!userId) return;
+      if (!user?.id) return;
       try {
-        const res = await fetch(`http://localhost:8080/api/resumes/history?userId=${userId}`, {
+        console.log(user?.id);
+        const res = await fetch(`http://localhost:8080/api/resumes/history?userId=${user.id}`, {
           credentials: "include",
         });
         if (!res.ok) throw new Error("Failed to fetch career history");
@@ -88,7 +63,7 @@ export default function CareerHistoryManager() {
       }
     }
     fetchCareerHistory();
-  }, [userId]);
+  }, [user?.id]);
 
   // Start "Add New Career" flow
   const handleAdd = () => {
@@ -119,7 +94,7 @@ export default function CareerHistoryManager() {
 
   // Handle save: CREATE (if adding new) or UPDATE (if editing)
   const handleSave = async () => {
-    if (!userId) {
+    if (!user?.id) {
       setError("Not authenticated");
       return;
     }
@@ -127,7 +102,7 @@ export default function CareerHistoryManager() {
     try {
       if (editingIndex === -1) {
         // Create new career record
-        const res = await fetch(`http://localhost:8080/api/resumes/career?userId=${userId}`, {
+        const res = await fetch(`http://localhost:8080/api/resumes/career?userId=${user.id}`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -160,8 +135,8 @@ export default function CareerHistoryManager() {
         }
       }
       // Refresh career history after saving
-      if (userId) {
-        const res = await fetch(`http://localhost:8080/api/resumes/history?userId=${userId}`, {
+      if (user?.id) {
+        const res = await fetch(`http://localhost:8080/api/resumes/history?userId=${user.id}`, {
           credentials: "include",
         });
         if (res.ok) {
@@ -186,7 +161,7 @@ export default function CareerHistoryManager() {
 
   // Handle deletion of a career record
   const handleDelete = async (index: number) => {
-    if (!userId) {
+    if (!user?.id) {
       setError("Not authenticated");
       return;
     }
@@ -205,8 +180,8 @@ export default function CareerHistoryManager() {
         throw new Error(errText || "Failed to delete career record");
       }
       // Refresh career history after deletion
-      if (userId) {
-        const res = await fetch(`http://localhost:8080/api/resumes/history?userId=${userId}`, {
+      if (user?.id) {
+        const res = await fetch(`http://localhost:8080/api/resumes/history?userId=${user.id}`, {
           credentials: "include",
         });
         if (res.ok) {
@@ -219,10 +194,6 @@ export default function CareerHistoryManager() {
       else setError("An unknown error occurred");
     }
   };
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
 
   return (
     <Background className="relative flex flex-col items-center justify-start min-h-screen p-8 text-center">

@@ -23,7 +23,17 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     }, [isAuthenticated, router, showInfo, isLogout]);
 
     if (isAuthenticated === null || isAuthenticated === false) {
-        return <LoadingScreen />;
+        return (
+            <SidebarProvider className="flex flex-col" defaultOpen={false}>
+                <NavBar />
+                <div className="flex flex-1">
+                    <AppSidebar />
+                    <SidebarInset>
+                        <LoadingScreen />
+                    </SidebarInset>
+                </div>
+            </SidebarProvider>
+        );
     }
 
     return (
