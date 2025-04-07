@@ -1,14 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Background } from "@/components/ui/background";
-import { AlertTitle } from "@/components/ui/alert";
-import LoadingScreen from "@/components/LoadingScreen";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/auth";
-
+import { useToast } from "@/contexts/ToastProvider";
 
 interface EducationEntry {
   id?: number; // for existing records
@@ -19,21 +16,12 @@ interface EducationEntry {
   gpa: number;
 }
 
-interface UserResponse {
-  id: number;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-}
-
 export default function EducationManager() {
   const { user } = useAuth();
+  const { showError, showSuccess } = useToast();
 
   // Education data
   const [education, setEducation] = useState<EducationEntry[]>([]);
-
-  const [error, setError] = useState<string | null>(null);
 
   // Form state for adding or editing
   // If editingIndex = -1 => we are ADDING a new record
@@ -50,8 +38,8 @@ export default function EducationManager() {
 
   // 1) On mount, check auth and fetch education
   useEffect(() => {
-    if (!user) return;
     const fetchEducation = async () => {
+      if (!user?.id) return;
       try {
         // Fetch this user's education from the correct endpoint
         const eduRes = await fetch(
@@ -65,8 +53,8 @@ export default function EducationManager() {
         const eduJson = await eduRes.json();
         setEducation(eduJson.education || []);
       } catch (err) {
-        if (err instanceof Error) setError(err.message);
-        else setError("An unknown error occurred");
+        if (err instanceof Error) showError(err.message);
+        else showError("An unknown error occurred");
       }
     }
     fetchEducation();
@@ -74,14 +62,26 @@ export default function EducationManager() {
 
   // 2) Handle starting the “add” flow
   const handleAdd = () => {
-    setEditingIndex(-1); // -1 to indicate creating a new record
-    setFormData({
-      degree: "",
-      institution: "",
-      startDate: "",
-      endDate: "",
-      gpa: 0,
-    });
+    if (editingIndex == null) {
+      setEditingIndex(-1); // -1 to indicate creating a new record
+      setFormData({
+        degree: "",
+        institution: "",
+        startDate: "",
+        endDate: "",
+        gpa: 0,
+      });
+    }
+    if (editingIndex !== null) {
+      setEditingIndex(null); // null to indicate not in an add/edit flow
+      setFormData({
+        degree: "",
+        institution: "",
+        startDate: "",
+        endDate: "",
+        gpa: 0,
+      });
+    }
   };
 
   // 3) Handle starting the “edit” flow
@@ -112,9 +112,9 @@ export default function EducationManager() {
       setEducation(eduJson.education || []);
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        showError(err.message);
       } else {
-        setError("An unknown error occurred");
+        showError("An unknown error occurred");
       }
     }
   };
@@ -122,7 +122,25 @@ export default function EducationManager() {
   // 5) Handle save: CREATE (if editingIndex = -1) or UPDATE
   const handleSave = async () => {
     if (!user?.id) {
-      setError("Not authenticated");
+      showError("Not authenticated");
+      return;
+    }
+
+    // Validation
+    if (!formData.degree || !formData.institution || !formData.startDate || !formData.endDate) {
+      showError("Please fill in all fields");
+      return;
+    }
+
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      showError("Invalid date format");
+      return;
+    }
+    if (startDate > endDate) {
+      showError("Start date must be before end date");
       return;
     }
 
@@ -142,16 +160,17 @@ export default function EducationManager() {
           const errText = await res.text();
           throw new Error(errText || "Failed to create new education record");
         }
+        showSuccess("Education record created successfully");
       } else {
         // We’re editing an existing record. Make sure editingIndex isn't null or -1
         if (editingIndex == null || editingIndex < 0) {
-          setError("Invalid index for update");
+          showError("Invalid index for update");
           return;
         }
 
         const eduId = education[editingIndex].id;
         if (!eduId) {
-          setError("Missing education ID");
+          showError("Missing education ID");
           return;
         }
         // UPDATE existing record using the correct endpoint
@@ -168,14 +187,15 @@ export default function EducationManager() {
           const errText = await res.text();
           throw new Error(errText || "Failed to update education record");
         }
+        showSuccess("Education record saved successfully");
       }
       // Refresh data from server
       await refreshEducation();
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        showError(err.message);
       } else {
-        setError("An unknown error occurred");
+        showError("An unknown error occurred");
       }
     } finally {
       // Clear editing state
@@ -193,13 +213,13 @@ export default function EducationManager() {
   // 6) Delete an existing record
   const handleDelete = async (index: number) => {
     if (!user?.id) {
-      setError("Not authenticated");
+      showError("Not authenticated");
       return;
     }
 
     const eduId = education[index].id;
     if (!eduId) {
-      setError("Invalid record ID");
+      showError("Invalid record ID");
       return;
     }
 
@@ -215,13 +235,14 @@ export default function EducationManager() {
         const errText = await res.text();
         throw new Error(errText || "Failed to delete education record");
       }
+      showSuccess("Education record deleted successfully");
       // Refresh data
       await refreshEducation();
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        showError(err.message);
       } else {
-        setError("An unknown error occurred");
+        showError("An unknown error occurred");
       }
     }
   };
@@ -232,22 +253,8 @@ export default function EducationManager() {
         Education
       </h2>
 
-      {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 max-w-lg mx-auto rounded-lg shadow-md">
-          <AlertTitle className="font-bold">Error</AlertTitle>
-          <p>{error}</p>
-        </div>
-      )}
-
-      {/* Add New Education Button */}
-      <div className="mb-6">
-        <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600">
-          Add New Education
-        </Button>
-      </div>
-
       {/* List of Education Cards */}
-      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200">
+      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8">
         {education.length === 0 ? (
           <p className="text-xl text-gray-800 drop-shadow-sm text-center">
             No education records found.
@@ -365,10 +372,17 @@ export default function EducationManager() {
         )}
       </div>
 
+      {/* Add New Education Button */}
+      <div className="mb-8">
+        <Button onClick={handleAdd} className={`${editingIndex !== null ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}`}>
+          {editingIndex !== null ? "Cancel" : "Add New Education"}
+        </Button>
+      </div>
+
       {/* If user clicked "Add New Education" (editingIndex = -1) => inline form */}
       {editingIndex === -1 && (
-        <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mt-6">
-          <h3 className="text-2xl font-bold mb-4">Add New Education</h3>
+        <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200">
+          <h3 className="text-2xl font-bold mb-4">New Education Entry</h3>
           <div className="flex flex-col gap-2">
             <input
               className="border rounded p-2"
@@ -411,7 +425,7 @@ export default function EducationManager() {
           <div className="flex gap-3 mt-4">
             <Button
               onClick={handleSave}
-              className="bg-green-600 text-white hover:bg-green-700"
+              className="bg-green-500 text-white hover:bg-green-600"
             >
               Save New Education
             </Button>

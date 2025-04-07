@@ -62,14 +62,26 @@ export default function CareerHistoryManager() {
 
   // Start "Add New Career" flow
   const handleAdd = () => {
-    setEditingIndex(-1);
-    setFormData({
-      title: "",
-      company: "",
-      startDate: "",
-      endDate: "",
-      responsibilities: "",
-    });
+    if (editingIndex == null) {
+      setEditingIndex(-1);
+      setFormData({
+        title: "",
+        company: "",
+        startDate: "",
+        endDate: "",
+        responsibilities: "",
+      });
+    }
+    if (editingIndex !== null) {
+      setEditingIndex(null);
+      setFormData({
+        title: "",
+        company: "",
+        startDate: "",
+        endDate: "",
+        responsibilities: "",
+      });
+    }
   };
 
   // Start "Edit" flow for a specific job
@@ -340,8 +352,8 @@ export default function CareerHistoryManager() {
       </div>
 
       <div className="mb-8">
-        <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600">
-          Add New Career Entry
+        <Button onClick={handleAdd} className={`${editingIndex !== null ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}`}>
+          {editingIndex !== null ? "Cancel" : "Add New Career Entry"}
         </Button>
       </div>
 
