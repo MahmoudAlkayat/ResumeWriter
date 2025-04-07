@@ -249,7 +249,7 @@ export default function EducationManager() {
 
   return (
     <Background className="relative flex flex-col items-center justify-start min-h-screen p-8 text-center">
-      <h2 className="text-4xl font-extrabold text-black mb-8 drop-shadow-md">
+      <h2 className="text-4xl font-bold text-black mb-8 drop-shadow-md">
         Education
       </h2>
 

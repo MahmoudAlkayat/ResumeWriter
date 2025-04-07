@@ -17,7 +17,7 @@ export default function NavBar() {
     const { user, logout } = useAuth();
 
     return (
-        <nav className="sticky top-0 z-50 w-full bg-background">
+        <nav className="sticky top-0 z-50 w-full bg-background shadow-md">
             <div className="flex h-14 items-center px-4">
                 <div className="flex items-center">
                     <Link href="/home">
