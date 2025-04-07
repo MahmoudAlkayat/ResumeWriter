@@ -34,9 +34,15 @@ export default function CareerHistoryManager() {
   const [careerHistory, setCareerHistory] = useState<Job[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state for add/edit
-  // editingIndex === -1 means "adding new", valid index means "editing", and null means not in add/edit mode
+  /**
+   * editingIndex indicates which item is being edited:
+   *  -1 => adding new,
+   *  >=0 => editing that index,
+   *  null => neither adding nor editing.
+   */
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  // The form data for either add or edit
   const [formData, setFormData] = useState<Job>({
     title: "",
     company: "",
@@ -50,8 +56,7 @@ export default function CareerHistoryManager() {
     async function fetchCareerHistory() {
       if (!user?.id) return;
       try {
-        console.log(user?.id);
-        const res = await fetch(`http://localhost:8080/api/resumes/history?userId=${user.id}`, {
+        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
           credentials: "include",
         });
         if (!res.ok) throw new Error("Failed to fetch career history");
@@ -84,7 +89,9 @@ export default function CareerHistoryManager() {
   };
 
   // Handle changes in the form fields (input & textarea)
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -102,7 +109,7 @@ export default function CareerHistoryManager() {
     try {
       if (editingIndex === -1) {
         // Create new career record
-        const res = await fetch(`http://localhost:8080/api/resumes/career?userId=${user.id}`, {
+        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -113,17 +120,19 @@ export default function CareerHistoryManager() {
           throw new Error(errText || "Failed to create career record");
         }
       } else {
-        // Ensure editingIndex is valid (non-null and >= 0)
-        if (editingIndex == null || editingIndex < 0) {
+        // Ensure editingIndex is not null and is >= 0
+        if (editingIndex === null || editingIndex < 0) {
           setError("Invalid index for update");
           return;
         }
-        const jobId = careerHistory[editingIndex].id;
+        // Use a local var to ensure TypeScript knows this is a number
+        const idx = editingIndex;
+        const jobId = careerHistory[idx].id;
         if (!jobId) {
           setError("Missing job ID");
           return;
         }
-        const res = await fetch(`http://localhost:8080/api/resumes/career/${jobId}`, {
+        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/${jobId}`, {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -136,7 +145,7 @@ export default function CareerHistoryManager() {
       }
       // Refresh career history after saving
       if (user?.id) {
-        const res = await fetch(`http://localhost:8080/api/resumes/history?userId=${user.id}`, {
+        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
           credentials: "include",
         });
         if (res.ok) {
@@ -171,7 +180,7 @@ export default function CareerHistoryManager() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:8080/api/resumes/career/${jobId}`, {
+      const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/${jobId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -181,7 +190,7 @@ export default function CareerHistoryManager() {
       }
       // Refresh career history after deletion
       if (user?.id) {
-        const res = await fetch(`http://localhost:8080/api/resumes/history?userId=${user.id}`, {
+        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
           credentials: "include",
         });
         if (res.ok) {
@@ -226,7 +235,10 @@ export default function CareerHistoryManager() {
             {careerHistory.map((job, index) => {
               const isEditing = editingIndex === index;
               return (
-                <Card key={job.id ?? index} className="p-8 shadow-md rounded-xl bg-gray-50 border border-gray-300">
+                <Card
+                  key={job.id ?? index}
+                  className="p-8 shadow-md rounded-xl bg-gray-50 border border-gray-300"
+                >
                   <CardContent className="flex flex-col gap-3">
                     {isEditing ? (
                       <>
@@ -266,7 +278,10 @@ export default function CareerHistoryManager() {
                           onChange={handleFormChange}
                         />
                         <div className="flex gap-3 mt-4">
-                          <Button onClick={handleSave} className="bg-blue-600 text-white hover:bg-blue-700">
+                          <Button
+                            onClick={handleSave}
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                          >
                             Save
                           </Button>
                           <Button
@@ -288,18 +303,32 @@ export default function CareerHistoryManager() {
                       </>
                     ) : (
                       <>
-                        <h3 className="text-2xl font-bold text-black">{job.title}</h3>
-                        <p className="text-lg text-gray-700 font-semibold">{job.company}</p>
+                        <h3 className="text-2xl font-bold text-black">
+                          {job.title}
+                        </h3>
+                        <p className="text-lg text-gray-700 font-semibold">
+                          {job.company}
+                        </p>
                         <p className="text-md text-gray-500 italic">
                           {new Date(job.startDate).toLocaleDateString()} -{" "}
-                          {job.endDate ? new Date(job.endDate).toLocaleDateString() : "Present"}
+                          {job.endDate
+                            ? new Date(job.endDate).toLocaleDateString()
+                            : "Present"}
                         </p>
-                        <p className="text-gray-700 leading-relaxed">{job.responsibilities}</p>
+                        <p className="text-gray-700 leading-relaxed">
+                          {job.responsibilities}
+                        </p>
                         <div className="flex gap-3 mt-4">
-                          <Button onClick={() => handleEdit(index)} className="bg-blue-600 text-white hover:bg-blue-700">
+                          <Button
+                            onClick={() => handleEdit(index)}
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                          >
                             <Pencil className="w-5 h-5 mr-2" /> Edit
                           </Button>
-                          <Button onClick={() => handleDelete(index)} className="bg-red-600 text-white hover:bg-red-700">
+                          <Button
+                            onClick={() => handleDelete(index)}
+                            className="bg-red-600 text-white hover:bg-red-700"
+                          >
                             Delete
                           </Button>
                         </div>
@@ -362,7 +391,13 @@ export default function CareerHistoryManager() {
               variant="secondary"
               onClick={() => {
                 setEditingIndex(null);
-                setFormData({ title: "", company: "", startDate: "", endDate: "", responsibilities: "" });
+                setFormData({
+                  title: "",
+                  company: "",
+                  startDate: "",
+                  endDate: "",
+                  responsibilities: "",
+                });
               }}
             >
               Cancel

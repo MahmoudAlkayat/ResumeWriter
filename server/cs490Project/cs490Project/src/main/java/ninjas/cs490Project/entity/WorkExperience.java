@@ -26,16 +26,16 @@ public class WorkExperience {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // Instead of mapping to Resume, we now map directly to User.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false)
-    private Resume resume;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     // Getters and Setters
 
     public int getId() {
         return id;
     }
-
     public void setId(int id) {
         this.id = id;
     }
@@ -43,7 +43,6 @@ public class WorkExperience {
     public String getCompany() {
         return company;
     }
-
     public void setCompany(String company) {
         this.company = company;
     }
@@ -51,7 +50,6 @@ public class WorkExperience {
     public String getJobTitle() {
         return jobTitle;
     }
-
     public void setJobTitle(String jobTitle) {
         this.jobTitle = jobTitle;
     }
@@ -59,7 +57,6 @@ public class WorkExperience {
     public LocalDate getStartDate() {
         return startDate;
     }
-
     public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
     }
@@ -67,7 +64,6 @@ public class WorkExperience {
     public LocalDate getEndDate() {
         return endDate;
     }
-
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
     }
@@ -75,16 +71,14 @@ public class WorkExperience {
     public String getDescription() {
         return description;
     }
-
     public void setDescription(String description) {
         this.description = description;
     }
 
-    public Resume getResume() {
-        return resume;
+    public User getUser() {
+        return user;
     }
-
-    public void setResume(Resume resume) {
-        this.resume = resume;
+    public void setUser(User user) {
+        this.user = user;
     }
 }

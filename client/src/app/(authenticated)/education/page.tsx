@@ -53,23 +53,22 @@ export default function EducationManager() {
     if (!user) return;
     const fetchEducation = async () => {
       try {
-        // Fetch this user's education
-        console.log(user?.id);
+        // Fetch this user's education from the correct endpoint
         const eduRes = await fetch(
-        `http://localhost:8080/api/resumes/education?userId=${user.id}`,
-        { credentials: "include" }
-      );
-      if (!eduRes.ok) {
-        const errText =  "hi";
-        throw new Error(errText || "Failed to fetch education");
+          `http://localhost:8080/api/users/${user.id}/education`,
+          { credentials: "include" }
+        );
+        if (!eduRes.ok) {
+          const errText = await eduRes.text();
+          throw new Error(errText || "Failed to fetch education");
+        }
+        const eduJson = await eduRes.json();
+        setEducation(eduJson.education || []);
+      } catch (err) {
+        if (err instanceof Error) setError(err.message);
+        else setError("An unknown error occurred");
       }
-      const eduJson =  await eduRes.json();
-      setEducation(eduJson.education || []);
-    } catch (err) {
-      if (err instanceof Error) setError(err.message);
-      else setError("An unknown error occurred");
     }
-    };
     fetchEducation();
   }, [user?.id]);
 
@@ -100,6 +99,26 @@ export default function EducationManager() {
     }));
   };
 
+  // Helper: Refresh the education list
+  const refreshEducation = async () => {
+    if (!user?.id) return;
+    try {
+      const eduRes = await fetch(
+        `http://localhost:8080/api/users/${user.id}/education`,
+        { credentials: "include" }
+      );
+      if (!eduRes.ok) throw new Error("Failed to fetch education");
+      const eduJson = await eduRes.json();
+      setEducation(eduJson.education || []);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
+    }
+  };
+
   // 5) Handle save: CREATE (if editingIndex = -1) or UPDATE
   const handleSave = async () => {
     if (!user?.id) {
@@ -109,9 +128,9 @@ export default function EducationManager() {
 
     try {
       if (editingIndex === -1) {
-        // CREATE a new record
+        // CREATE a new record using the correct endpoint
         const res = await fetch(
-          `http://localhost:8080/api/resumes/education?userId=${user.id}`,
+          `http://localhost:8080/api/users/${user.id}/education`,
           {
             method: "POST",
             credentials: "include",
@@ -135,9 +154,9 @@ export default function EducationManager() {
           setError("Missing education ID");
           return;
         }
-        // UPDATE existing record
+        // UPDATE existing record using the correct endpoint
         const res = await fetch(
-          `http://localhost:8080/api/resumes/education/${eduId}`,
+          `http://localhost:8080/api/users/${user.id}/education/${eduId}`,
           {
             method: "PUT",
             credentials: "include",
@@ -161,7 +180,13 @@ export default function EducationManager() {
     } finally {
       // Clear editing state
       setEditingIndex(null);
-      setFormData({ degree: "", institution: "", startDate: "", endDate: "", gpa: 0 });
+      setFormData({
+        degree: "",
+        institution: "",
+        startDate: "",
+        endDate: "",
+        gpa: 0,
+      });
     }
   };
 
@@ -179,36 +204,19 @@ export default function EducationManager() {
     }
 
     try {
-      const res = await fetch(`http://localhost:8080/api/resumes/education/${eduId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const res = await fetch(
+        `http://localhost:8080/api/users/${user.id}/education/${eduId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(errText || "Failed to delete education record");
       }
       // Refresh data
       await refreshEducation();
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred");
-      }
-    }
-  };
-
-  // Helper: Refresh the education list
-  const refreshEducation = async () => {
-    if (!user?.id) return;
-    try {
-      const eduRes = await fetch(
-        `http://localhost:8080/api/resumes/education?userId=${user.id}`,
-        { credentials: "include" }
-      );
-      if (!eduRes.ok) throw new Error("Failed to fetch education");
-      const eduJson = await eduRes.json();
-      setEducation(eduJson.education || []);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

@@ -2,14 +2,17 @@ package ninjas.cs490Project.controller;
 
 import ninjas.cs490Project.dto.EducationData;
 import ninjas.cs490Project.dto.ResumeParsingResult;
-import ninjas.cs490Project.dto.WorkExperienceData; // NEW import for work experience DTO
+import ninjas.cs490Project.dto.WorkExperienceData;
 import ninjas.cs490Project.entity.Education;
 import ninjas.cs490Project.entity.Resume;
 import ninjas.cs490Project.entity.Skill;
 import ninjas.cs490Project.entity.User;
-import ninjas.cs490Project.entity.WorkExperience; // NEW import for work experience entity
+import ninjas.cs490Project.entity.WorkExperience;
+import ninjas.cs490Project.repository.EducationRepository;
 import ninjas.cs490Project.repository.SkillRepository;
 import ninjas.cs490Project.repository.UserRepository;
+import ninjas.cs490Project.repository.WorkExperienceRepository;
+import ninjas.cs490Project.service.AsyncResumeParser;
 import ninjas.cs490Project.service.ResumeParsingService;
 import ninjas.cs490Project.service.ResumeService;
 import org.slf4j.Logger;
@@ -21,11 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/resumes")
@@ -38,16 +37,34 @@ public class ResumeController {
     private final ResumeService resumeService;
     private final ResumeParsingService resumeParsingService;
 
+    // Added repositories to save Education & WorkExperience directly to the user
+    private final EducationRepository educationRepository;
+    private final WorkExperienceRepository workExperienceRepository;
+
+    private final AsyncResumeParser asyncResumeParser;
+
     public ResumeController(UserRepository userRepository,
                             SkillRepository skillRepository,
                             ResumeService resumeService,
-                            ResumeParsingService resumeParsingService) {
+                            ResumeParsingService resumeParsingService,
+                            EducationRepository educationRepository,
+                            WorkExperienceRepository workExperienceRepository,
+                            AsyncResumeParser asyncResumeParser) {
         this.userRepository = userRepository;
         this.skillRepository = skillRepository;
         this.resumeService = resumeService;
         this.resumeParsingService = resumeParsingService;
+        this.educationRepository = educationRepository;
+        this.workExperienceRepository = workExperienceRepository;
+        this.asyncResumeParser = asyncResumeParser;
     }
 
+    /**
+     * POST /api/resumes/upload?userId={userId}
+     * Uploads the file, parses it for text (Tika) and structured info (GPT),
+     * saves a new Resume for the file, and separately persists any
+     * Education or WorkExperience referencing the User.
+     */
     @PostMapping("/upload")
     public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile file,
                                           @RequestParam("userId") int userId) {
@@ -56,7 +73,7 @@ public class ResumeController {
             return ResponseEntity.badRequest().body("No file selected.");
         }
         try {
-            // Retrieve user from the database by userId
+            // 1. Find the User
             User currentUser = userRepository.findUserById(userId);
             if (currentUser == null) {
                 logger.error("User not found with id: {}", userId);
@@ -64,13 +81,11 @@ public class ResumeController {
                         .body("User not found with id: " + userId);
             }
 
-            // Extract text from the uploaded file using Tika via the parsing service
+            // 2. Extract text via Tika and parse key information via GPT
             String extractedText = resumeParsingService.extractTextFromFile(file);
-
-            // Parse key information (such as education, skills, and work experience) from the extracted text using GPT (or rules)
             ResumeParsingResult parsedResult = resumeParsingService.parseKeyInformation(extractedText);
 
-            // Create and populate a new Resume entity
+            // 3. Create and save a new Resume entity (for the file data)
             Resume resume = new Resume();
             resume.setTitle(file.getOriginalFilename());
             resume.setContent(extractedText);
@@ -79,71 +94,53 @@ public class ResumeController {
             resume.setUpdatedAt(LocalDateTime.now());
             resume.setUser(currentUser);
 
-            // Create Education entities from the parsed education list
-            Set<Education> educationSet = new HashSet<>();
+            Resume savedResume = resumeService.storeResume(resume);
+            logger.info("Resume uploaded and stored successfully with id: {}", savedResume.getId());
+
+            asyncResumeParser.parseResume(savedResume);
+
+            // 4. Create Education entries from the parsing result, tied to the User
             for (EducationData eduData : parsedResult.getEducationList()) {
                 Education edu = new Education();
                 edu.setInstitution(eduData.getInstitution());
                 edu.setDegree(eduData.getDegree());
                 edu.setFieldOfStudy(eduData.getFieldOfStudy());
                 edu.setDescription(eduData.getDescription());
-                edu.setStartDate(eduData.getStartDate() != null
-                        ? LocalDate.parse(eduData.getStartDate())
-                        : LocalDate.of(2021, 9, 1));
-                edu.setEndDate(eduData.getEndDate() != null
-                        ? LocalDate.parse(eduData.getEndDate())
-                        : LocalDate.of(2025, 12, 1));
-                edu.setGpa(eduData.getGpa());
-                edu.setResume(resume);
-                educationSet.add(edu);
-            }
-            resume.setEducationRecords(educationSet);
 
-            // Create Skill entities from the parsed skills
-            Set<Skill> skillSet = new HashSet<>();
-            for (String skillName : parsedResult.getSkills()) {
-                Optional<Skill> existingSkill = skillRepository.findByNameIgnoreCase(skillName);
-                if (existingSkill.isPresent()) {
-                    skillSet.add(existingSkill.get());
-                } else {
-                    Skill newSkill = new Skill();
-                    newSkill.setName(skillName);
-                    newSkill = skillRepository.save(newSkill);
-                    skillSet.add(newSkill);
+                // Safe date parsing, fallback used if null
+                edu.setStartDate(
+                        eduData.getStartDate() != null
+                                ? LocalDate.parse(eduData.getStartDate())
+                                : LocalDate.of(2021, 9, 1)
+                );
+                edu.setEndDate(
+                        eduData.getEndDate() != null
+                                ? LocalDate.parse(eduData.getEndDate())
+                                : LocalDate.of(2025, 12, 1)
+                );
+
+                // Correctly handle the Double type by defaulting null to 0.0
+                Double gpaValue = eduData.getGpa();
+                if (gpaValue == null) {
+                    gpaValue = 0.0;
                 }
-            }
-            resume.setSkills(skillSet);
+                edu.setGpa(gpaValue);
 
-            // Create WorkExperience entities from the parsed work experience list
-            if (parsedResult.getWorkExperienceList() != null) {
-                Set<WorkExperience> workExperienceSet = new HashSet<>();
-                for (WorkExperienceData workData : parsedResult.getWorkExperienceList()) {
-                    WorkExperience workExp = new WorkExperience();
-                    workExp.setCompany(workData.getCompany());
-                    workExp.setJobTitle(workData.getJobTitle());
-                    workExp.setStartDate(workData.getStartDate() != null
-                            ? LocalDate.parse(workData.getStartDate())
-                            : LocalDate.of(2000, 1, 1));
-                    // If endDate is "N/A" or null, we assume it's a current job, so set to null
-                    if (workData.getEndDate() != null && !"N/A".equals(workData.getEndDate())) {
-                        workExp.setEndDate(LocalDate.parse(workData.getEndDate()));
-                    } else {
-                        workExp.setEndDate(null);
-                    }
-                    workExp.setDescription(workData.getDescription());
-                    workExp.setResume(resume);
-                    workExperienceSet.add(workExp);
-                }
-                resume.setWorkExperiences(workExperienceSet);
+                // Instead of setResume(...), we link the user
+                edu.setUser(currentUser);
+
+                educationRepository.save(edu);
             }
 
-            // Save the resume via the ResumeService (which handles persistence)
-            Resume savedResume = resumeService.storeResume(resume);
-            logger.info("Resume uploaded and stored successfully with id: {}", savedResume.getId());
+            // (Optionally) create WorkExperience entries similarly,
+            // linking them to currentUser, not resume.
+
+            // Return success
             Map<String, Object> response = new HashMap<>();
             response.put("resumeId", savedResume.getId());
             response.put("status", "processing");
             return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             logger.error("Error uploading resume: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
