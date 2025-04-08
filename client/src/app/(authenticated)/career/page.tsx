@@ -390,7 +390,7 @@ export default function CareerPage() {
                           <p className="text-lg text-gray-700 dark:text-white font-semibold">
                             {job.company}
                           </p>
-                          <p className="text-md text-gray-500 dark:text-gray-400 italic mb-4">
+                          <p className="text-md text-gray-500 dark:text-muted-foreground italic mb-4">
                             {new Date(job.startDate).toLocaleDateString()} -{" "}
                             {job.endDate
                               ? new Date(job.endDate).toLocaleDateString()

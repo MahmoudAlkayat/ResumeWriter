@@ -10,6 +10,7 @@ import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
 import { Trash, Pencil, Plus } from "lucide-react";
 import LoadingScreen from "@/components/LoadingScreen";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 interface EducationEntry {
   id?: number; // for existing records
   degree: string;
@@ -114,6 +115,14 @@ export default function EducationManager() {
     setFormData((prev) => ({
       ...prev,
       [name]: name === "gpa" ? Number(value) : value,
+    }));
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
     }));
   };
 
@@ -316,6 +325,14 @@ export default function EducationManager() {
                           onChange={handleFormChange}
                         />
 
+                        <Textarea
+                          className="dark:border-neutral-700"
+                          name="description"
+                          placeholder="Description"
+                          value={formData.description}
+                          onChange={handleTextareaChange}
+                        />
+
                         <div className="flex gap-3 mt-4">
                           <Button
                             onClick={handleSave}
@@ -375,12 +392,14 @@ export default function EducationManager() {
                             <p className="text-lg text-gray-700 dark:text-white font-semibold">
                                 {edu.institution}
                             </p>
-                            <p className="text-md text-gray-500 dark text-white italic mb-4">
-                                {new Date(edu.startDate).toLocaleDateString()} -{" "}
-                                {edu.endDate
-                                    ? new Date(edu.endDate).toLocaleDateString()
-                                    : "Present"}
-                            </p>
+                            <div className="flex items-center justify-center gap-2 text-md text-gray-500 dark:text-muted-foreground italic mb-4">
+                                <span>{new Date(edu.startDate).toLocaleDateString()} -{" "}
+                                    {edu.endDate
+                                        ? new Date(edu.endDate).toLocaleDateString()
+                                        : "Present"}</span>
+                                <span className="text-gray-400">•</span>
+                                <span>GPA: {edu.gpa}</span>
+                            </div>
                             <p className="text-gray-700 dark:text-white leading-relaxed">
                                 {edu.description}
                             </p>
@@ -440,6 +459,12 @@ export default function EducationManager() {
               placeholder="GPA"
               value={String(formData.gpa)}
               onChange={handleFormChange}
+            />
+            <Textarea
+              name="description"
+              placeholder="Description"
+              value={formData.description}
+              onChange={handleTextareaChange}
             />
           </div>
           <div className="flex gap-3 mt-4">
