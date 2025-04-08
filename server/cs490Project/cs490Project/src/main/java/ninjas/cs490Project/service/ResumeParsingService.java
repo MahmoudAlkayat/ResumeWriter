@@ -199,7 +199,7 @@ public class ResumeParsingService {
         
         Rules:
         1. Extract dates in YYYY-MM-DD format. If only year is available, use YYYY-01-01.
-        2. If end date is not specified but context suggests current position, use "N/A".
+        2. If end date is not specified but context suggests current position, use "Present".
         3. Description should be a clear, concise summary of responsibilities and achievements.
         4. If certain fields cannot be determined, use the default values provided.
         5. Always include all specified keys. Do not add extra properties. No null values.

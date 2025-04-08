@@ -164,6 +164,8 @@ public class AsyncResumeParser {
                     String endDateStr = data.getEndDate();
                     if (endDateStr == null || endDateStr.trim().isEmpty() || endDateStr.equalsIgnoreCase("N/A")) {
                         we.setEndDate(null);
+                    } else if (endDateStr.equalsIgnoreCase("Present")) {
+                        we.setEndDate(LocalDate.now());
                     } else {
                         we.setEndDate(LocalDate.parse(endDateStr));
                     }
