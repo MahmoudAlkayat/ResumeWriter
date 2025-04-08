@@ -37,12 +37,12 @@ export default function RootLayout({
                 (function () {
                 try {
                   const theme = localStorage.getItem('theme');
-                  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-                  if (theme === 'dark' || (!theme && systemPrefersDark) || theme === 'system' && systemPrefersDark) {
+                  
+                  if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   } else {
                     document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
                   }
                 } catch (_) {}
               })();
