@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "@/components/Logo";
 import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
+import Image from "next/image";
 
 export default function NavBar() {
     const { user, logout } = useAuth();
@@ -23,6 +24,7 @@ export default function NavBar() {
         <nav className="sticky top-0 z-50 w-full bg-background dark:bg-sidebar shadow-md">
             <div className="flex h-14 items-center px-4">
                 <div className="flex items-center gap-2">
+                    <Image src="/logo.png" alt="Logo" width={48} height={48} />
                     <Link href="/home">
                         <Logo />
                     </Link>
