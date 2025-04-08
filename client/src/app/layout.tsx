@@ -5,6 +5,7 @@ import { ToastProvider } from "@/contexts/ToastProvider";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { ResumeProcessingProvider } from "@/contexts/ResumeProcessingProvider";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "next-themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,34 +32,23 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
         <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-        <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                (function () {
-                try {
-                  const theme = localStorage.getItem('theme');
-                  
-                  if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                    localStorage.setItem('theme', 'light');
-                  }
-                } catch (_) {}
-              })();
-              `,
-            }}
-          />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
         <ToastProvider>
         <AuthProvider>
             <Toaster position="top-center" duration={3000} />
             {children}
         </AuthProvider>
         </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

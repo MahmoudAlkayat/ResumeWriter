@@ -26,27 +26,11 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
 
     if (isAuthenticated === null || isAuthenticated === false) {
         return (
-            <SidebarProvider className="flex flex-col" defaultOpen={false}>
-                <ResumeProcessingProvider>
-                <NavBar />
-                <div className="flex flex-1">
-                    <AppSidebar />
-                    <SidebarInset>
-                        <LoadingScreen />
-                    </SidebarInset>
-                </div>
-                </ResumeProcessingProvider>
-            </SidebarProvider>
+            <LoadingScreen />
         );
     }
 
     return (
-        <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
             <SidebarProvider className="flex flex-col" defaultOpen={false}>
                 <ResumeProcessingProvider>
                 <NavBar />
@@ -60,6 +44,5 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                 </div>
                 </ResumeProcessingProvider>
             </SidebarProvider>
-        </ThemeProvider>
     );
 }

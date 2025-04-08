@@ -74,16 +74,22 @@ const LoginForm: React.FC = () => {
         credentials: "include" //Backend returns a session cookie
       });
 
+      const profileResponse = await fetch(`${API_URL}/api/profile`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include"
+      });
+
       if (!response.ok) {
-        // const errorData = await response.json();
-        // throw new Error(errorData?.error || "Failed to login")
-        // throw new Error("Incorrect login credentials")
         throw new Error(await response.text() || "Failed to login")
       }
 
       const user = await response.json();
+      const profile = await profileResponse.json();
       showSuccess(`Welcome ${user.firstName}`);
-      login(user)
+      login(user, profile.themePreference)
       await new Promise(resolve => setTimeout(resolve, 1000))
       router.replace("/home")
 
