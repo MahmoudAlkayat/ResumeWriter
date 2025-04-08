@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 interface EducationEntry {
   id?: number; // for existing records
   degree: string;
+  fieldOfStudy: string;
   institution: string;
   startDate: string;
   endDate: string;
@@ -38,6 +39,7 @@ export default function EducationManager() {
   const [formData, setFormData] = useState<EducationEntry>({
     degree: "",
     institution: "",
+    fieldOfStudy: "",
     startDate: "",
     endDate: "",
     gpa: 0,
@@ -84,6 +86,7 @@ export default function EducationManager() {
       setFormData({
         degree: "",
         institution: "",
+        fieldOfStudy: "",
         startDate: "",
         endDate: "",
         gpa: 0,
@@ -95,6 +98,7 @@ export default function EducationManager() {
       setFormData({
         degree: "",
         institution: "",
+        fieldOfStudy: "",
         startDate: "",
         endDate: "",
         gpa: 0,
@@ -134,7 +138,7 @@ export default function EducationManager() {
     }
 
     // Validation
-    if (!formData.degree || !formData.institution || !formData.startDate || !formData.endDate) {
+    if (!formData.degree || !formData.institution || !formData.fieldOfStudy || !formData.startDate || !formData.endDate) {
       showError("Please fill in all fields");
       return;
     }
@@ -210,6 +214,7 @@ export default function EducationManager() {
       setFormData({
         degree: "",
         institution: "",
+        fieldOfStudy: "",
         startDate: "",
         endDate: "",
         gpa: 0,
@@ -303,6 +308,13 @@ export default function EducationManager() {
                         />
                         <Input
                           className="dark:border-neutral-700"
+                          name="fieldOfStudy"
+                          placeholder="Field of Study"
+                          value={formData.fieldOfStudy}
+                          onChange={handleFormChange}
+                        />
+                        <Input
+                          className="dark:border-neutral-700"
                           name="startDate"
                           placeholder="Start Date (YYYY-MM-DD)"
                           value={formData.startDate}
@@ -348,6 +360,7 @@ export default function EducationManager() {
                               setFormData({
                                 degree: "",
                                 institution: "",
+                                fieldOfStudy: "",
                                 startDate: "",
                                 endDate: "",
                                 gpa: 0,
@@ -383,7 +396,7 @@ export default function EducationManager() {
                                 </div>
                                 <div className="w-full text-center">
                                     <h3 className="text-2xl font-bold text-primary">
-                                        {edu.degree}
+                                        {edu.degree} - {edu.fieldOfStudy}
                                     </h3>
                                 </div>
                             </div>
@@ -441,6 +454,12 @@ export default function EducationManager() {
               onChange={handleFormChange}
             />
             <Input
+              name="fieldOfStudy"
+              placeholder="Field of Study"
+              value={formData.fieldOfStudy}
+              onChange={handleFormChange}
+            />
+            <Input
               name="startDate"
               placeholder="Start Date (YYYY-MM-DD)"
               value={formData.startDate}
@@ -481,6 +500,7 @@ export default function EducationManager() {
                 setFormData({
                   degree: "",
                   institution: "",
+                  fieldOfStudy: "",
                   startDate: "",
                   endDate: "",
                   gpa: 0,
