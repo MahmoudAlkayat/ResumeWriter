@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/auth";
 import { Button } from "@/components/ui/button";
-import {User, LogOut } from "lucide-react";
+import {User, LogOut, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
     DropdownMenu,
@@ -12,16 +12,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "@/components/Logo";
+import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
+
 export default function NavBar() {
     const { user, logout } = useAuth();
+    const { activeResumeId, activeCareerUserId } = useResumeProcessing();
+    const isProcessing = activeResumeId !== null || activeCareerUserId !== null;
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-background dark:bg-sidebar shadow-md">
             <div className="flex h-14 items-center px-4">
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                     <Link href="/home">
                         <Logo />
                     </Link>
+                    {isProcessing && (
+                        <div className="flex items-center gap-2 text-md text-green-600 ml-8">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Processing {activeResumeId ? "Resume Upload" : "Career Entry"}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="flex-1" />
                 <div className="flex items-center gap-2">

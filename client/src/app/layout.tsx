@@ -55,10 +55,8 @@ export default function RootLayout({
       >
         <ToastProvider>
         <AuthProvider>
-          <ResumeProcessingProvider>
             <Toaster position="top-center" duration={3000} />
             {children}
-          </ResumeProcessingProvider>
         </AuthProvider>
         </ToastProvider>
       </body>

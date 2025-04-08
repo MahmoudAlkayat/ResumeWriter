@@ -8,6 +8,7 @@ import NavBar from "@/components/NavBar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "next-themes";
+import { ResumeProcessingProvider } from "@/contexts/ResumeProcessingProvider";
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLogout } = useAuth();
@@ -26,6 +27,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     if (isAuthenticated === null || isAuthenticated === false) {
         return (
             <SidebarProvider className="flex flex-col" defaultOpen={false}>
+                <ResumeProcessingProvider>
                 <NavBar />
                 <div className="flex flex-1">
                     <AppSidebar />
@@ -33,6 +35,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                         <LoadingScreen />
                     </SidebarInset>
                 </div>
+                </ResumeProcessingProvider>
             </SidebarProvider>
         );
     }
@@ -45,6 +48,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
         disableTransitionOnChange
       >
             <SidebarProvider className="flex flex-col" defaultOpen={false}>
+                <ResumeProcessingProvider>
                 <NavBar />
                 <div className="flex flex-1">
                     <AppSidebar />
@@ -54,6 +58,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                         </main>
                     </SidebarInset>
                 </div>
+                </ResumeProcessingProvider>
             </SidebarProvider>
         </ThemeProvider>
     );
