@@ -1,16 +1,16 @@
 services:
-  # frontend:
-  #   build:
-  #     context: ./client
-  #     dockerfile: Dockerfile
-  #     # args:
-  #     #   - NEXT_PUBLIC_API_URL=http://backend:8080
-  #   ports:
-  #     - "3000:3000"
-  #   networks:
-  #     - resumewriter
-  #   depends_on:
-  #     - backend
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      # args:
+      #   - NEXT_PUBLIC_API_URL=http://backend:8080
+    ports:
+      - "3000:3000"
+    networks:
+      - resumewriter
+    depends_on:
+      - backend
 
   backend:
     build:
