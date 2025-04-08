@@ -3,7 +3,9 @@ package ninjas.cs490Project.controller;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import ninjas.cs490Project.dto.GoogleOAuthUser;
+import ninjas.cs490Project.entity.Profile;
 import ninjas.cs490Project.entity.User;
+import ninjas.cs490Project.repository.ProfileRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.service.JWTService;
 import ninjas.cs490Project.service.oauth.GoogleOAuthService;
@@ -27,6 +29,9 @@ public class GoogleOAuthController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ProfileRepository profileRepository;
 
     @Autowired
     private JWTService jwtService;
@@ -73,6 +78,14 @@ public class GoogleOAuthController {
                 userRepository.save(user);
             }
 
+            String themePreference;
+            Profile profile = profileRepository.findByUser(user);
+            if (profile != null && profile.getThemePreference() != null) {
+                themePreference = profile.getThemePreference();
+            } else {
+                themePreference = "light";
+            }
+
             // 4) Optionally generate a local JWT for your session
             String jwt = jwtService.generateToken(user);
 
@@ -88,11 +101,12 @@ public class GoogleOAuthController {
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
             // 7) Add user data to redirect URL
-            String userData = String.format("id=%s&email=%s&firstName=%s&lastName=%s",
+            String userData = String.format("id=%s&email=%s&firstName=%s&lastName=%s&themePreference=%s",
                 URLEncoder.encode(String.valueOf(user.getId()), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getFirstName(), StandardCharsets.UTF_8.toString()),
-                URLEncoder.encode(user.getLastName(), StandardCharsets.UTF_8.toString())
+                URLEncoder.encode(user.getLastName(), StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(themePreference, StandardCharsets.UTF_8.toString())
             );
 
             // 8) Redirect with user data

@@ -2,7 +2,9 @@ package ninjas.cs490Project.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import ninjas.cs490Project.dto.LinkedInOAuthUser;
+import ninjas.cs490Project.entity.Profile;
 import ninjas.cs490Project.entity.User;
+import ninjas.cs490Project.repository.ProfileRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.service.JWTService;
 import ninjas.cs490Project.service.oauth.LinkedInOAuthService;
@@ -26,6 +28,9 @@ public class LinkedInOAuthController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ProfileRepository profileRepository;
 
     @Autowired
     private JWTService jwtService;
@@ -69,6 +74,14 @@ public class LinkedInOAuthController {
                 userRepository.save(user);
             }
 
+            String themePreference;
+            Profile profile = profileRepository.findByUser(user);
+            if (profile != null && profile.getThemePreference() != null) {
+                themePreference = profile.getThemePreference();
+            } else {
+                themePreference = "light";
+            }
+
             // Generate JWT and set cookie
             String jwt = jwtService.generateToken(user);
             ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
@@ -85,7 +98,8 @@ public class LinkedInOAuthController {
                 URLEncoder.encode(String.valueOf(user.getId()), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getFirstName(), StandardCharsets.UTF_8.toString()),
-                URLEncoder.encode(user.getLastName(), StandardCharsets.UTF_8.toString())
+                URLEncoder.encode(user.getLastName(), StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(themePreference, StandardCharsets.UTF_8.toString())
             );
             
             response.sendRedirect("http://localhost:3000/auth-success?oauth=linkedin&" + userData);
