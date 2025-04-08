@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/contexts/ToastProvider";
 import { useTheme } from "next-themes";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -114,7 +115,11 @@ export default function ProfilePage() {
     <Background className="relative flex flex-col items-center justify-start min-h-screen p-8 text-center">
       <div className="w-full max-w-4xl space-y-8">
         {/* Header Section */}
-        <div className="text-center">
+        <div className="flex flex-col items-center justify-center gap-2">
+            <Avatar className="size-16">
+                <AvatarImage src={`https://api.dicebear.com/9.x/initials/svg?seed=${user?.firstName}${user?.lastName}&backgroundType=gradientLinear`} />
+                <AvatarFallback>{user?.firstName[0]}</AvatarFallback>
+            </Avatar>
           <h1 className="text-4xl font-bold text-primary mb-4 drop-shadow-md">
             {user?.firstName} {user?.lastName}
           </h1>
