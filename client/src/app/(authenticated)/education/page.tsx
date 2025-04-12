@@ -406,10 +406,10 @@ export default function EducationManager() {
                                 {edu.institution}
                             </p>
                             <div className="flex items-center justify-center gap-2 text-md text-gray-500 dark:text-muted-foreground italic mb-4">
-                                <span>{new Date(edu.startDate).toLocaleDateString()} -{" "}
-                                    {edu.endDate
-                                        ? new Date(edu.endDate).toLocaleDateString()
-                                        : "Present"}</span>
+                                <span>{edu.startDate ? new Date(edu.startDate).toISOString().slice(0, 10) : ""} -{" "}
+                                    {edu.endDate === "Present"
+                                        ? edu.endDate
+                                        : new Date(edu.endDate).toISOString().slice(0, 10)}</span>
                                 <span className="text-gray-400">•</span>
                                 <span>GPA: {edu.gpa}</span>
                             </div>

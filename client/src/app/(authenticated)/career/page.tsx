@@ -61,6 +61,7 @@ export default function CareerPage() {
       });
       if (!res.ok) throw new Error("Failed to fetch career history");
       const data = await res.json();
+      console.log("Career history:", data.jobs);
       setCareerHistory(data.jobs || []);
       setIsLoading(false);
     } catch (err) {
@@ -391,10 +392,10 @@ export default function CareerPage() {
                             {job.company}
                           </p>
                           <p className="text-md text-gray-500 dark:text-muted-foreground italic mb-4">
-                            {new Date(job.startDate).toLocaleDateString()} -{" "}
-                            {job.endDate
-                              ? new Date(job.endDate).toLocaleDateString()
-                              : "Present"}
+                            {job.startDate ? new Date(job.startDate).toISOString().slice(0, 10) : ""} -{" "}
+                            {job.endDate === "Present"
+                              ? job.endDate
+                              : new Date(job.endDate).toISOString().slice(0, 10)}
                           </p>
                           <p className="text-gray-700 dark:text-white leading-relaxed">
                             {job.responsibilities}
