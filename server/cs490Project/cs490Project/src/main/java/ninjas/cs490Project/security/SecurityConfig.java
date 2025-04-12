@@ -1,21 +1,33 @@
 package ninjas.cs490Project.security;
 
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+
 import java.util.List;
 
+
 import static org.springframework.security.config.Customizer.withDefaults;
+
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final JWTAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JWTAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -24,13 +36,15 @@ public class SecurityConfig {
                 .cors(withDefaults()) // uses the CorsConfigurationSource bean defined below
                 .authorizeHttpRequests(auth -> auth
                         // Add "/oauth/google/**" to your existing permit list:
-                        .requestMatchers("/api/register", "/login", "/auth/**", "/oauth/**").permitAll()
+                        .requestMatchers("/api/register", "/login", "/auth/**", "/oauth/**","/api/resumes/**","/api/users/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form.disable());
+                .formLogin(form -> form.disable())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -41,8 +55,10 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }
+
