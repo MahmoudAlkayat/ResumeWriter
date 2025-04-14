@@ -17,9 +17,15 @@ const data = {
   navMain: [
     {
       title: "Resume",
-      url: "/upload-resume",
+      url: "",
       icon: FileUser,
       isActive: true,
+      items: [
+        {
+          title: "Upload",
+          url: "/upload-resume",
+        }
+      ],
     },
     {
       title: "Career",
