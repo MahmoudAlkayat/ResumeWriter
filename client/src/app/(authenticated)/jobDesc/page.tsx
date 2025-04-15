@@ -1,39 +1,35 @@
 'use client';
 
+import { Background } from '@/components/ui/background';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/contexts/ToastProvider';
 import { useState } from 'react';
 
 export default function JobDescriptionForm() {
   const [text, setText] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
+  const { showSuccess, showError } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!text.trim()) {
-      setError('Job description cannot be empty.');
+      showError('Job description cannot be empty.');
       return;
     }
 
     if (text.trim().length < 100) {
-      setError('Job description must be at least 100 characters.');
+      showError('Job description must be at least 100 characters.');
       return;
     }
 
-    setStatus('loading');
-    setError(null);
-
     try {
-      const token = localStorage.getItem('JWT_SECRET');
-      if (!token) throw new Error('Authentication required.');
-
-      const response = await fetch('/api/jobs/submit', {
+      setLoading(true);
+      const response = await fetch('http://localhost:8080/api/jobs/submit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: "include",
         body: JSON.stringify({ text }),
       });
 
@@ -43,55 +39,41 @@ export default function JobDescriptionForm() {
       }
 
       const data = await response.json();
+      showSuccess('Job description submitted successfully!');
       setJobId(data.jobId);
-      setStatus('success');
       setText('');
     } catch (err: any) {
-      setError(err.message);
-      setStatus('error');
+      showError('Error submitting job description');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-xl mx-auto p-6 bg-background border border-border rounded-2xl shadow-sm"
-    >
-      <h2 className="text-2xl font-semibold text-foreground mb-4 drop-shadow-sm">Submit Job Description</h2>
+    <Background className="relative flex flex-col items-center min-h-screen text-center p-8">
+      <h1 className="text-4xl font-bold text-foreground mb-8">Submit a Job Description</h1>
+      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-4 border border-gray-200 mb-8 
+      dark:bg-neutral-900 dark:border-neutral-800">
+        <Textarea
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+          }}
+          placeholder="Paste or type the job description here (minimum 100 characters)..."
+          className="w-full p-3 border border-input bg-muted text-foreground rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-ring h-[300px] overflow-y-auto"
+          minLength={100}
+        />
+      </div>
 
-      <textarea
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          setError(null);
-        }}
-        placeholder="Paste or type the job description here (minimum 100 characters)..."
-        rows={8}
-        className="w-full p-3 border border-input bg-muted text-foreground rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-ring"
-        minLength={100}
-        required
-      />
-
-      <button
+      <Button
         type="submit"
-        disabled={status === 'loading'}
-        className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors"
+        disabled={loading || !text.trim()}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+        onClick={handleSubmit}
       >
-        {status === 'loading' ? 'Submitting...' : 'Submit'}
-      </button>
-
-      {status === 'success' && jobId && (
-        <div className="mt-4 p-4 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-lg">
-          <p className="font-medium">Job description submitted successfully!</p>
-          <p className="text-sm mt-1">Job ID: {jobId}</p>
-        </div>
-      )}
-
-      {status === 'error' && error && (
-        <div className="mt-4 p-4 bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300 rounded-lg">
-          <p className="font-medium">Error: {error}</p>
-        </div>
-      )}
-    </form>
+          {loading ? 'Submitting...' : 'Submit'}
+        </Button>
+    </Background>
   );
 }
