@@ -11,7 +11,9 @@ import { NavMain } from "@/components/nav-main"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
 } from "@/components/ui/sidebar"
+import { StatusDialog } from "@/components/StatusDialog"
 
 const data = {
   navMain: [
@@ -46,6 +48,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
+      <SidebarFooter>
+        <StatusDialog />
+      </SidebarFooter>
     </Sidebar>
   )
 }
