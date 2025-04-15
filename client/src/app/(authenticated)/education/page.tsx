@@ -51,7 +51,7 @@ export default function EducationManager() {
     try {
       // Fetch this user's education from the correct endpoint
       const eduRes = await fetch(
-        `http://localhost:8080/api/users/${user.id}/education`,
+        `http://localhost:8080/api/resumes/education`,
         { credentials: "include" }
       );
       if (!eduRes.ok) {
@@ -159,7 +159,7 @@ export default function EducationManager() {
       if (editingIndex === -1) {
         // CREATE a new record using the correct endpoint
         const res = await fetch(
-          `http://localhost:8080/api/users/${user.id}/education`,
+          `http://localhost:8080/api/resumes/education`,
           {
             method: "POST",
             credentials: "include",
@@ -186,7 +186,7 @@ export default function EducationManager() {
         }
         // UPDATE existing record using the correct endpoint
         const res = await fetch(
-          `http://localhost:8080/api/users/${user.id}/education/${eduId}`,
+          `http://localhost:8080/api/resumes/education/${eduId}`,
           {
             method: "PUT",
             credentials: "include",
@@ -238,7 +238,7 @@ export default function EducationManager() {
 
     try {
       const res = await fetch(
-        `http://localhost:8080/api/users/${user.id}/education/${eduId}`,
+        `http://localhost:8080/api/resumes/education/${eduId}`,
         {
           method: "DELETE",
           credentials: "include",

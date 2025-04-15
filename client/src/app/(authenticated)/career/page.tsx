@@ -56,7 +56,7 @@ export default function CareerPage() {
     if (!user?.id) return;
     try {
       console.log("Fetching career history for user:", user.id);
-      const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
+      const res = await fetch(`http://localhost:8080/api/resumes/career`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch career history");
@@ -151,7 +151,7 @@ export default function CareerPage() {
     try {
       if (editingIndex === -1) {
         // Create new career record
-        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
+        const res = await fetch(`http://localhost:8080/api/resumes/career`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -175,7 +175,7 @@ export default function CareerPage() {
           showError("Missing job ID");
           return;
         }
-        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/${jobId}`, {
+        const res = await fetch(`http://localhost:8080/api/resumes/career/${jobId}`, {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -216,7 +216,7 @@ export default function CareerPage() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/${jobId}`, {
+      const res = await fetch(`http://localhost:8080/api/resumes/career/${jobId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -250,7 +250,7 @@ export default function CareerPage() {
         text: freeform
       }
 
-      const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/freeform`, {
+      const res = await fetch(`http://localhost:8080/api/resumes/career/freeform`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

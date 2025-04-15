@@ -60,10 +60,12 @@ export function ResumeProcessingProvider({ children }: { children: React.ReactNo
 
     // Handle career processing notifications
     useEffect(() => {
+        //TODO: Implement when freeform DB table is created
+        return;
         if (!activeCareerUserId) return;
 
         console.log('Connecting to SSE for career processing userId:', activeCareerUserId);
-        const eventSource = new EventSource(`http://localhost:8080/api/users/${activeCareerUserId}/career/status`);
+        const eventSource = new EventSource(`http://localhost:8080/api/resumes/career/${activeCareerUserId}/status`);
 
         eventSource.onopen = () => {
             console.log('Career SSE connection opened');

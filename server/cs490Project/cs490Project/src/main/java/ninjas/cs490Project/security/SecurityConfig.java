@@ -36,7 +36,8 @@ public class SecurityConfig {
                 .cors(withDefaults()) // uses the CorsConfigurationSource bean defined below
                 .authorizeHttpRequests(auth -> auth
                         // Add "/oauth/google/**" to your existing permit list:
-                        .requestMatchers("/api/register", "/login", "/auth/**", "/oauth/**","/api/resumes/**","/api/users/**").permitAll()
+                        .requestMatchers("/api/register", "/auth/**", "/oauth/**").permitAll()
+                        .requestMatchers("/api/resumes/**", "/api/profile/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

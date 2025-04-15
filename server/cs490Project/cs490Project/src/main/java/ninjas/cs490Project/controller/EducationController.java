@@ -5,13 +5,14 @@ import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.EducationRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/users/{userId}/education")
+@RequestMapping("/api/resumes/education")
 public class EducationController {
 
     private final EducationRepository educationRepository;
@@ -60,15 +61,15 @@ public class EducationController {
 
     // 1. GET all education for a user
     @GetMapping
-    public ResponseEntity<?> getAllEducation(@PathVariable("userId") int userId) {
+    public ResponseEntity<?> getAllEducation(Authentication authentication) {
         // Ensure user exists
-        User user = userRepository.findUserById(userId);
+        User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.ok(Collections.singletonMap("education", new ArrayList<>()));
         }
 
         // Find all Education entries for this user
-        List<Education> educationList = educationRepository.findByUserId(userId);
+        List<Education> educationList = educationRepository.findByUserId(user.getId());
 
         // Convert to a DTO-like format
         List<Map<String, Object>> eduDtoList = new ArrayList<>();
@@ -89,10 +90,10 @@ public class EducationController {
 
     // 2. CREATE a new Education record
     @PostMapping
-    public ResponseEntity<?> createEducation(@PathVariable("userId") int userId,
+    public ResponseEntity<?> createEducation(Authentication authentication,
                                              @RequestBody EducationRequest req) {
         // Validate user
-        User user = userRepository.findUserById(userId);
+        User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
@@ -119,11 +120,11 @@ public class EducationController {
 
     // 3. UPDATE an Education record
     @PutMapping("/{eduId}")
-    public ResponseEntity<?> updateEducation(@PathVariable("userId") int userId,
+    public ResponseEntity<?> updateEducation(Authentication authentication,
                                              @PathVariable("eduId") int eduId,
                                              @RequestBody EducationRequest req) {
         // Validate user
-        User user = userRepository.findUserById(userId);
+        User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
@@ -136,7 +137,7 @@ public class EducationController {
 
         Education education = optionalEdu.get();
         // Ensure ownership
-        if (education.getUser().getId() != userId) {
+        if (education.getUser().getId() != user.getId()) {
             return ResponseEntity.badRequest().body("This record doesn't belong to the specified user");
         }
 
@@ -164,10 +165,10 @@ public class EducationController {
 
     // 4. DELETE an Education record
     @DeleteMapping("/{eduId}")
-    public ResponseEntity<?> deleteEducation(@PathVariable("userId") int userId,
+    public ResponseEntity<?> deleteEducation(Authentication authentication,
                                              @PathVariable("eduId") int eduId) {
         // Validate user
-        User user = userRepository.findUserById(userId);
+        User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
@@ -180,7 +181,7 @@ public class EducationController {
 
         Education education = optionalEdu.get();
         // Check ownership
-        if (education.getUser().getId() != userId) {
+        if (education.getUser().getId() != user.getId()) {
             return ResponseEntity.badRequest().body("This record doesn't belong to the specified user");
         }
 

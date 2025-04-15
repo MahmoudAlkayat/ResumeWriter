@@ -1,17 +1,8 @@
 package ninjas.cs490Project.controller;
 
-import ninjas.cs490Project.dto.EducationData;
-import ninjas.cs490Project.dto.ResumeParsingResult;
-import ninjas.cs490Project.dto.WorkExperienceData;
-import ninjas.cs490Project.entity.Education;
 import ninjas.cs490Project.entity.Resume;
-import ninjas.cs490Project.entity.Skill;
 import ninjas.cs490Project.entity.User;
-import ninjas.cs490Project.entity.WorkExperience;
-import ninjas.cs490Project.repository.EducationRepository;
-import ninjas.cs490Project.repository.SkillRepository;
 import ninjas.cs490Project.repository.UserRepository;
-import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.service.AsyncResumeParser;
 import ninjas.cs490Project.service.ResumeParsingService;
 import ninjas.cs490Project.service.ResumeService;
@@ -20,11 +11,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -35,28 +26,19 @@ public class ResumeController {
     private static final Logger logger = LoggerFactory.getLogger(ResumeController.class);
 
     private final UserRepository userRepository;
-    private final SkillRepository skillRepository;
     private final ResumeService resumeService;
     private final ResumeParsingService resumeParsingService;
-    private final EducationRepository educationRepository;
-    private final WorkExperienceRepository workExperienceRepository;
     private final AsyncResumeParser asyncResumeParser;
     private final ResumeProcessingNotificationService notificationService;
 
     public ResumeController(UserRepository userRepository,
-                            SkillRepository skillRepository,
                             ResumeService resumeService,
                             ResumeParsingService resumeParsingService,
-                            EducationRepository educationRepository,
-                            WorkExperienceRepository workExperienceRepository,
                             AsyncResumeParser asyncResumeParser,
                             ResumeProcessingNotificationService notificationService) {
         this.userRepository = userRepository;
-        this.skillRepository = skillRepository;
         this.resumeService = resumeService;
         this.resumeParsingService = resumeParsingService;
-        this.educationRepository = educationRepository;
-        this.workExperienceRepository = workExperienceRepository;
         this.asyncResumeParser = asyncResumeParser;
         this.notificationService = notificationService;
     }
@@ -74,18 +56,19 @@ public class ResumeController {
      */
     @PostMapping("/upload")
     public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile file,
-                                          @RequestParam("userId") int userId) {
+                                          Authentication authentication) {
         if (file.isEmpty()) {
             logger.warn("Attempted to upload an empty file.");
             return ResponseEntity.badRequest().body("No file selected.");
         }
         try {
+            String email = authentication.getName();
             // 1. Find the User
-            User currentUser = userRepository.findUserById(userId);
+            User currentUser = userRepository.findByEmail(email);
             if (currentUser == null) {
-                logger.error("User not found with id: {}", userId);
+                logger.error("User not found");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("User not found with id: " + userId);
+                        .body("User not found");
             }
 
             // 2. Extract text via Tika and parse key information via GPT
