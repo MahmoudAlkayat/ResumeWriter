@@ -53,7 +53,7 @@ export default function JobDescriptionForm() {
   return (
     <Background className="relative flex flex-col items-center min-h-screen text-center p-8">
       <h1 className="text-4xl font-bold text-foreground mb-8">Submit a Job Description</h1>
-      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-4 border border-gray-200 mb-8 
+      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-8 border border-gray-200 mb-8 
       dark:bg-neutral-900 dark:border-neutral-800">
         <Textarea
           value={text}
