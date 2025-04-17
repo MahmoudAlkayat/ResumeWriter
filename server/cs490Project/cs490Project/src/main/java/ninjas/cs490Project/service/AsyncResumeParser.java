@@ -9,9 +9,11 @@ import ninjas.cs490Project.entity.Education;
 import ninjas.cs490Project.entity.Resume;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.entity.WorkExperience;
+import ninjas.cs490Project.entity.FreeformEntry;
 import ninjas.cs490Project.repository.EducationRepository;
 import ninjas.cs490Project.repository.ResumeRepository;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
+import ninjas.cs490Project.repository.FreeformEntryRepository;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -34,18 +39,21 @@ public class AsyncResumeParser {
     private final WorkExperienceRepository workExperienceRepository;
     private final EducationRepository educationRepository;
     private final ResumeProcessingNotificationService notificationService;
+    private final FreeformEntryRepository freeformEntryRepository;
     private final ObjectMapper objectMapper;
 
     public AsyncResumeParser(ResumeRepository resumeRepository,
                              ResumeParsingService resumeParsingService,
                              WorkExperienceRepository workExperienceRepository,
                              EducationRepository educationRepository,
-                             ResumeProcessingNotificationService notificationService) {
+                             ResumeProcessingNotificationService notificationService,
+                             FreeformEntryRepository freeformEntryRepository) {
         this.resumeRepository = resumeRepository;
         this.resumeParsingService = resumeParsingService;
         this.workExperienceRepository = workExperienceRepository;
         this.educationRepository = educationRepository;
         this.notificationService = notificationService;
+        this.freeformEntryRepository = freeformEntryRepository;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -143,11 +151,13 @@ public class AsyncResumeParser {
 
     @Async
     @Transactional
-    public void parseFreeformCareer(String text, User user) {
+    public void parseFreeformCareer(String text, User user, Integer freeformId) {
+        FreeformEntry entry = freeformEntryRepository.findById(freeformId)
+                .orElseThrow(() -> new RuntimeException("FreeformEntry not found"));
+
         try {
             // Parse the freeform text using GPT
             ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
-            logger.info("Parsed freeform career result: {}", objectMapper.writeValueAsString(parsingResult));
 
             // Process work experience entries
             List<WorkExperienceData> workExpList = parsingResult.getWorkExperienceList();
@@ -172,23 +182,34 @@ public class AsyncResumeParser {
 
                     we.setDescription(data.getDescription());
                     we.setUser(user);
+                    we.setFreeformEntry(entry);
                     workExperiences.add(we);
                 }
                 // Save all work experience entries in a batch
                 workExperienceRepository.saveAll(workExperiences);
                 logger.info("Saved {} work experience entries from freeform text.", workExperiences.size());
                 
+                // Update FreeformEntry status
+                entry.setUpdatedAt(LocalDateTime.now());
+                freeformEntryRepository.save(entry);
+                
                 // Notify success
-                notificationService.notifyCareerProcessingComplete(user.getId());
+                notificationService.notifyCareerProcessingComplete(freeformId);
             } else {
                 logger.warn("No work experience entries found in parsed freeform text.");
+                entry.setUpdatedAt(LocalDateTime.now());
+                freeformEntryRepository.save(entry);
+                
                 // Notify error
-                notificationService.notifyCareerProcessingError(user.getId(), "No work experience entries could be extracted from the text. Please try again with more detailed information.");
+                notificationService.notifyCareerProcessingError(freeformId, "No work experience entries could be extracted from the text. Please try again with more detailed information.");
             }
         } catch (Exception e) {
             logger.error("Error parsing freeform career", e);
+            entry.setUpdatedAt(LocalDateTime.now());
+            freeformEntryRepository.save(entry);
+            
             // Notify error with the specific error message
-            notificationService.notifyCareerProcessingError(user.getId(), e.getMessage());
+            notificationService.notifyCareerProcessingError(freeformId, e.getMessage());
         }
     }
 }

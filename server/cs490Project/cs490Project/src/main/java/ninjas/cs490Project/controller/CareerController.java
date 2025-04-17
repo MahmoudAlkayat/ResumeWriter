@@ -2,8 +2,10 @@ package ninjas.cs490Project.controller;
 
 import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.entity.User;
+import ninjas.cs490Project.entity.FreeformEntry;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.UserRepository;
+import ninjas.cs490Project.repository.FreeformEntryRepository;
 import ninjas.cs490Project.service.AsyncResumeParser;
 import ninjas.cs490Project.service.ResumeProcessingNotificationService;
 import org.springframework.security.core.Authentication;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -22,15 +25,18 @@ public class CareerController {
     private final UserRepository userRepository;
     private final AsyncResumeParser asyncResumeParser;
     private final ResumeProcessingNotificationService notificationService;
+    private final FreeformEntryRepository freeformEntryRepository;
 
     public CareerController(WorkExperienceRepository workExperienceRepository,
                             UserRepository userRepository,
                             AsyncResumeParser asyncResumeParser,
-                            ResumeProcessingNotificationService notificationService) {
+                            ResumeProcessingNotificationService notificationService,
+                            FreeformEntryRepository freeformEntryRepository) {
         this.workExperienceRepository = workExperienceRepository;
         this.userRepository = userRepository;
         this.asyncResumeParser = asyncResumeParser;
         this.notificationService = notificationService;
+        this.freeformEntryRepository = freeformEntryRepository;
     }
 
     // ------------------------------
@@ -117,9 +123,7 @@ public class CareerController {
 
     @GetMapping("/{freeformId}/status")
     public SseEmitter subscribeToCareerProcessingStatus(@PathVariable int freeformId) {
-        //TODO: Implement when freeform DB table is created
-        return null;
-        // return notificationService.subscribeToCareerProcessing(freeformId);
+        return notificationService.subscribeToCareerProcessing(freeformId);
     }
 
     @PostMapping("/freeform")
@@ -135,10 +139,21 @@ public class CareerController {
             return ResponseEntity.badRequest().body("Text field is required");
         }
 
+        // Create and save a new FreeformEntry
+        FreeformEntry entry = new FreeformEntry();
+        entry.setUser(user);
+        entry.setRawText(text);
+        entry.setCreatedAt(LocalDateTime.now());
+        entry.setUpdatedAt(LocalDateTime.now());
+        FreeformEntry savedEntry = freeformEntryRepository.save(entry);
+
         // Process the freeform text asynchronously
-        asyncResumeParser.parseFreeformCareer(text, user);
+        asyncResumeParser.parseFreeformCareer(text, user, savedEntry.getId());
         
-        return ResponseEntity.ok("Freeform career entry submitted for processing");
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Freeform career entry submitted for processing");
+        response.put("entryId", savedEntry.getId());
+        return ResponseEntity.ok(response);
     }
 
     // 3. UPDATE an existing WorkExperience record for a user
