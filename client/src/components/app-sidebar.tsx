@@ -36,6 +36,16 @@ const data = {
       title: "Career",
       url: "/career",
       icon: FolderClosed,
+      items: [
+        {
+          title: "View",
+          url: "/career"
+        },
+        {
+          title: "Freeform",
+          url: "/career/freeform/"
+        }
+      ]
     },
     {
       title: "Education",
