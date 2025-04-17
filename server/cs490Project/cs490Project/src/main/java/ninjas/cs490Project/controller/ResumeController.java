@@ -175,27 +175,31 @@ public class ResumeController {
                 return ResponseEntity.badRequest().body("jobId is required");
             }
 
+            JobDescription jobDescription = jobDescriptionRepository.findById(request.getJobId())
+                    .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
+
             // Create a new Resume entity
-            Resume resume = new Resume();
-            resume.setTitle("Generated Resume for Job #" + request.getJobId());
-            resume.setCreatedAt(LocalDateTime.now());
-            resume.setUpdatedAt(LocalDateTime.now());
+            GeneratedResume resume = new GeneratedResume();
+            resume.setCreatedAt(Instant.now());
+            resume.setUpdatedAt(Instant.now());
+            resume.setJobDescription(jobDescription);
             resume.setUser(currentUser);
 
-            // Resume savedResume = resumeService.saveResume(resume);
+            resumeService.storeGeneratedResume(resume);
             logger.info("Created new resume with id: {}", resume.getId());
 
             // Start async processing
             new Thread(() -> {
                 try {
-                    ResumeParsingResult result = resumeGenerationService.generateResume(currentUser, request.getJobId());
+                    ResumeParsingResult result = resumeGenerationService.generateResumeTest(currentUser, request.getJobId());
                     
                     // Update resume content with generated result
                     resume.setContent(objectMapper.writeValueAsString(result));
-                    // resumeService.saveUploadedResume(null, "Generated Resume for Job #" + request.getJobId(), currentUser);
+                    resume.setUpdatedAt(Instant.now());
+                    resumeService.storeGeneratedResume(resume);
                     
                     // Notify completion
-                    // notificationService.notifyProcessingComplete(savedResume.getId());
+                    notificationService.notifyProcessingComplete(Integer.valueOf(resume.getId().toString()));
                 } catch (Exception e) {
                     logger.error("Error generating resume: {}", e.getMessage());
                     // notificationService.notifyProcessingError(savedResume.getId(), e.getMessage());

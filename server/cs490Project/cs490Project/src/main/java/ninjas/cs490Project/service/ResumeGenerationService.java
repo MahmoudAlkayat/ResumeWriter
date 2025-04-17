@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ninjas.cs490Project.dto.GPTRequest;
 import ninjas.cs490Project.dto.Message;
 import ninjas.cs490Project.dto.ResumeParsingResult;
+import ninjas.cs490Project.dto.EducationData;
+import ninjas.cs490Project.dto.WorkExperienceData;
 import ninjas.cs490Project.entity.Education;
 import ninjas.cs490Project.entity.JobDescription;
 import ninjas.cs490Project.entity.User;
@@ -22,6 +24,8 @@ import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @Service
 public class ResumeGenerationService {
@@ -50,18 +54,18 @@ public class ResumeGenerationService {
     }
 
     public ResumeParsingResult generateResume(User user, Long jobId) throws Exception {
-        // 1. Get the job description
+        // Get the job description
         JobDescription jobDescription = jobDescriptionRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
 
-        // 2. Get user's work experience and education
+        // Get user's work experience and education
         List<WorkExperience> workExperiences = workExperienceRepository.findByUserId(user.getId());
         List<Education> educationList = educationRepository.findByUserId(user.getId());
 
-        // 3. Build the prompt for GPT
+        // Build the prompt for GPT
         String prompt = buildPrompt(jobDescription, workExperiences, educationList);
 
-        // 4. Create the GPT request
+        // Create the GPT request
         GPTRequest gptRequest = new GPTRequest(
                 "gpt-4",
                 List.of(
@@ -70,7 +74,7 @@ public class ResumeGenerationService {
                 )
         );
 
-        // 5. Make the API call
+        // Make the API call
         String rawGptResponse = webClient.post()
                 .uri("/chat/completions")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -80,7 +84,7 @@ public class ResumeGenerationService {
                 .bodyToMono(String.class)
                 .block();
 
-        // 6. Parse and return the result
+        // Parse and return the result
         return parseGptResponse(rawGptResponse);
     }
 
@@ -195,5 +199,65 @@ public class ResumeGenerationService {
             logger.error("Error parsing GPT response: {}", e.getMessage());
             throw new Exception("Failed to generate resume. Please try again.");
         }
+    }
+
+    //Test with mock data
+    public ResumeParsingResult generateResumeTest(User user, Long jobId) throws Exception {
+        // Get the job description
+        JobDescription jobDescription = jobDescriptionRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
+
+        // TESTING: Use mock data instead of calling GPT API
+        ResumeParsingResult mockResult = new ResumeParsingResult();
+
+        // Mock education data
+        List<EducationData> mockEducationList = new ArrayList<>();
+        EducationData mockEducation = new EducationData();
+        mockEducation.setInstitution("University of Illinois at Urbana-Champaign");
+        mockEducation.setDegree("Master of Science");
+        mockEducation.setFieldOfStudy("Computer Science");
+        mockEducation.setStartDate("2023-08-15");
+        mockEducation.setEndDate("2025-05-15");
+        mockEducation.setGpa(3.9);
+        mockEducation.setDescription("Specialized in Artificial Intelligence and Machine Learning");
+        mockEducationList.add(mockEducation);
+        mockResult.setEducationList(mockEducationList);
+
+        // Mock work experience data
+        List<WorkExperienceData> mockWorkExperienceList = new ArrayList<>();
+        
+        WorkExperienceData mockWorkExp1 = new WorkExperienceData();
+        mockWorkExp1.setCompany("Tech Innovators Inc.");
+        mockWorkExp1.setJobTitle("Senior Software Engineer");
+        mockWorkExp1.setStartDate("2020-06-01");
+        mockWorkExp1.setEndDate("2023-08-01");
+        mockWorkExp1.setDescription("• Led development of cloud-native microservices using Spring Boot and Kubernetes\n" +
+                                  "• Implemented CI/CD pipelines reducing deployment time by 60%\n" +
+                                  "• Mentored junior developers and conducted code reviews");
+        mockWorkExperienceList.add(mockWorkExp1);
+
+        WorkExperienceData mockWorkExp2 = new WorkExperienceData();
+        mockWorkExp2.setCompany("Data Systems Corp");
+        mockWorkExp2.setJobTitle("Software Developer");
+        mockWorkExp2.setStartDate("2018-03-15");
+        mockWorkExp2.setEndDate("2020-05-30");
+        mockWorkExp2.setDescription("• Developed and maintained RESTful APIs using Java and Spring Framework\n" +
+                                  "• Optimized database queries improving application performance by 40%\n" +
+                                  "• Collaborated with cross-functional teams to deliver features on schedule");
+        mockWorkExperienceList.add(mockWorkExp2);
+
+        mockResult.setWorkExperienceList(mockWorkExperienceList);
+
+        // Mock skills
+        mockResult.setSkills(Arrays.asList(
+            "Java", "Spring Boot", "Kubernetes", "Docker", "AWS",
+            "Microservices", "REST APIs", "CI/CD", "Git", "SQL",
+            "MongoDB", "React", "TypeScript", "Python", "Agile"
+        ));
+
+        // Simulate API delay
+        Thread.sleep(2000);
+
+        return mockResult;
     }
 } 
