@@ -89,8 +89,8 @@ public class JobDescriptionController {
         for (JobDescription job : jobDescriptions) {
             Map<String, Object> jobMap = new HashMap<>();
             jobMap.put("jobId", job.getId());
-            jobMap.put("title", job.getJobTitle());
-            jobMap.put("text", job.getJobDescription());
+            jobMap.put("title", job.getJobTitle() != null ? job.getJobTitle().trim() : "");
+            jobMap.put("text", job.getJobDescription() != null ? job.getJobDescription().trim() : "");
             jobMap.put("submittedAt", job.getCreatedAt());
             response.add(jobMap);
         }

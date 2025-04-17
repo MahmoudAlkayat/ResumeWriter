@@ -24,7 +24,11 @@ const data = {
       items: [
         {
           title: "Upload",
-          url: "/upload-resume",
+          url: "/resumes/upload",
+        },
+        {
+          title: "History",
+          url:"/resumes/upload/history"
         }
       ],
     },
