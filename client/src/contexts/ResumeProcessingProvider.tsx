@@ -6,15 +6,15 @@ import { useToast } from './ToastProvider';
 interface ResumeProcessingContextType {
     activeResumeId: number | null;
     setActiveResumeId: (id: number | null) => void;
-    activeCareerUserId: number | null;
-    setActiveCareerUserId: (id: number | null) => void;
+    activeFreeformId: number | null;
+    setActiveFreeformId: (id: number | null) => void;
 }
 
 const ResumeProcessingContext = createContext<ResumeProcessingContextType | undefined>(undefined);
 
 export function ResumeProcessingProvider({ children }: { children: React.ReactNode }) {
     const [activeResumeId, setActiveResumeId] = useState<number | null>(null);
-    const [activeCareerUserId, setActiveCareerUserId] = useState<number | null>(null);
+    const [activeFreeformId, setActiveFreeformId] = useState<number | null>(null);
     const { showSuccess, showError } = useToast();
 
     // Handle resume processing notifications
@@ -23,77 +23,82 @@ export function ResumeProcessingProvider({ children }: { children: React.ReactNo
 
         console.log('Connecting to SSE for resumeId:', activeResumeId);
         const eventSource = new EventSource(`http://localhost:8080/api/resumes/${activeResumeId}/status`);
+        let retryCount = 0;
+        const maxRetries = 3;
 
         eventSource.onopen = () => {
-            console.log('SSE connection opened');
+            console.log('SSE connection opened for resume');
+            retryCount = 0; // Reset retry count on successful connection
         };
 
         eventSource.addEventListener('processing-complete', (event) => {
             console.log('Received processing-complete event:', event.data);
-            try {
-                const data = JSON.parse(event.data);
-                showSuccess('Resume processed!');
-                setActiveResumeId(null); // Clear the active resume ID after completion
-            } catch (error) {
-                console.error('Error parsing SSE data:', error);
-                showError('Error processing resume data');
-            }
+            showSuccess('Resume processed!');
+            setActiveResumeId(null);
             eventSource.close();
         });
 
         eventSource.onerror = (error) => {
-            console.error('SSE Error:', error);
+            console.error('Resume SSE Error:', error);
             if (eventSource.readyState === EventSource.CLOSED) {
-                console.log('SSE connection closed');
-                showError('Connection to server lost. Please refresh the page.');
-            } else {
-                showError('Failed to process resume. Please try again.');
+                console.log('Resume SSE connection closed');
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(`Retrying connection (${retryCount}/${maxRetries})...`);
+                    // Wait for a second before retrying
+                    setTimeout(() => {
+                        eventSource.close();
+                        new EventSource(`http://localhost:8080/api/resumes/${activeResumeId}/status`);
+                    }, 1000);
+                } else {
+                    showError('Connection to server lost. Please try again.');
+                    setActiveResumeId(null);
+                }
             }
-            eventSource.close();
         };
 
         return () => {
-            console.log('Cleaning up SSE connection');
+            console.log('Cleaning up resume SSE connection');
             eventSource.close();
         };
     }, [activeResumeId, showSuccess, showError]);
 
     // Handle career processing notifications
     useEffect(() => {
-        //TODO: Implement when freeform DB table is created
-        return;
-        if (!activeCareerUserId) return;
+        if (!activeFreeformId) return;
 
-        console.log('Connecting to SSE for career processing userId:', activeCareerUserId);
-        const eventSource = new EventSource(`http://localhost:8080/api/resumes/career/${activeCareerUserId}/status`);
+        console.log('Connecting to SSE for freeform entry:', activeFreeformId);
+        const eventSource = new EventSource(`http://localhost:8080/api/resumes/career/${activeFreeformId}/status`);
+        let retryCount = 0;
+        const maxRetries = 3;
+        let isCompleted = false;
+
+        const cleanup = () => {
+            if (!isCompleted) {
+                console.log('Cleaning up career SSE connection');
+                eventSource.close();
+                setActiveFreeformId(null);
+            }
+        };
 
         eventSource.onopen = () => {
             console.log('Career SSE connection opened');
+            retryCount = 0; // Reset retry count on successful connection
         };
 
         eventSource.addEventListener('processing-complete', (event) => {
             console.log('Received career processing-complete event:', event.data);
-            try {
-                const data = JSON.parse(event.data);
-                showSuccess('Freeform career entry processed!');
-                setActiveCareerUserId(null); // Clear the active user ID after completion
-            } catch (error) {
-                console.error('Error parsing career SSE data:', error);
-                showError('Error processing career data');
-            }
+            isCompleted = true;
+            showSuccess(event.data || 'Career information processed successfully!');
+            setActiveFreeformId(null);
             eventSource.close();
         });
 
         eventSource.addEventListener('processing-error', (event) => {
             console.log('Received career processing-error event:', event.data);
-            try {
-                const data = JSON.parse(event.data);
-                showError(data.message || 'Failed to process career entry');
-                setActiveCareerUserId(null); // Clear the active user ID after error
-            } catch (error) {
-                console.error('Error parsing career error SSE data:', error);
-                showError('Error processing career data');
-            }
+            isCompleted = true;
+            showError(event.data || 'Failed to process career entry');
+            setActiveFreeformId(null);
             eventSource.close();
         });
 
@@ -101,25 +106,42 @@ export function ResumeProcessingProvider({ children }: { children: React.ReactNo
             console.error('Career SSE Error:', error);
             if (eventSource.readyState === EventSource.CLOSED) {
                 console.log('Career SSE connection closed');
-                showError('Connection to server lost. Please refresh the page.');
-            } else {
-                showError('Failed to process career entries. Please try again.');
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(`Retrying connection (${retryCount}/${maxRetries})...`);
+                    // Wait for a second before retrying
+                    setTimeout(() => {
+                        eventSource.close();
+                        new EventSource(`http://localhost:8080/api/resumes/career/${activeFreeformId}/status`);
+                    }, 1000);
+                } else {
+                    showError('Connection to server lost. Please try again.');
+                    cleanup();
+                }
             }
-            eventSource.close();
         };
 
+        // Set a timeout for the entire operation
+        const timeout = setTimeout(() => {
+            if (!isCompleted) {
+                console.log('Operation timed out');
+                showError('Operation timed out. Please try again.');
+                cleanup();
+            }
+        }, 30000); // 30 second timeout
+
         return () => {
-            console.log('Cleaning up career SSE connection');
-            eventSource.close();
+            clearTimeout(timeout);
+            cleanup();
         };
-    }, [activeCareerUserId, showSuccess, showError]);
+    }, [activeFreeformId, showSuccess, showError]);
 
     return (
         <ResumeProcessingContext.Provider value={{ 
             activeResumeId, 
             setActiveResumeId,
-            activeCareerUserId,
-            setActiveCareerUserId
+            activeFreeformId,
+            setActiveFreeformId
         }}>
             {children}
         </ResumeProcessingContext.Provider>
