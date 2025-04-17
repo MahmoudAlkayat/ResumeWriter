@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Service
@@ -48,6 +49,10 @@ public class ResumeService {
     // This method stores the resume entity that has been built (with parsed details, etc.)
     public Resume storeResume(Resume resume) {
         return resumeRepository.save(resume);
+    }
+
+    public List<Resume> getResumesByUser(User user) {
+        return resumeRepository.findByUser(user);
     }
 
 }
