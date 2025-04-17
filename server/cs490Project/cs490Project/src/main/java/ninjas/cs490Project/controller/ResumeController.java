@@ -1,5 +1,7 @@
 package ninjas.cs490Project.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import ninjas.cs490Project.dto.ResumeParsingResult;
 import ninjas.cs490Project.entity.Resume;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.UserRepository;
@@ -7,6 +9,7 @@ import ninjas.cs490Project.service.AsyncResumeParser;
 import ninjas.cs490Project.service.ResumeParsingService;
 import ninjas.cs490Project.service.ResumeService;
 import ninjas.cs490Project.service.ResumeProcessingNotificationService;
+import ninjas.cs490Project.service.ResumeGenerationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -30,17 +33,23 @@ public class ResumeController {
     private final ResumeParsingService resumeParsingService;
     private final AsyncResumeParser asyncResumeParser;
     private final ResumeProcessingNotificationService notificationService;
+    private final ResumeGenerationService resumeGenerationService;
+    private final ObjectMapper objectMapper;
 
     public ResumeController(UserRepository userRepository,
                             ResumeService resumeService,
                             ResumeParsingService resumeParsingService,
                             AsyncResumeParser asyncResumeParser,
-                            ResumeProcessingNotificationService notificationService) {
+                            ResumeProcessingNotificationService notificationService,
+                            ResumeGenerationService resumeGenerationService,
+                            ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.resumeService = resumeService;
         this.resumeParsingService = resumeParsingService;
         this.asyncResumeParser = asyncResumeParser;
         this.notificationService = notificationService;
+        this.resumeGenerationService = resumeGenerationService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping("/{resumeId}/status")
@@ -123,5 +132,72 @@ public class ResumeController {
         }
 
         return ResponseEntity.ok(response);
+    }
+
+    public static class GenerateResumeRequest {
+        private Long jobId;
+
+        public Long getJobId() {
+            return jobId;
+        }
+
+        public void setJobId(Long jobId) {
+            this.jobId = jobId;
+        }
+    }
+
+    @PostMapping("/generate")
+    public ResponseEntity<?> generateResume(@RequestBody GenerateResumeRequest request,
+                                          Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            User currentUser = userRepository.findByEmail(email);
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("User not found");
+            }
+
+            if (request.getJobId() == null) {
+                return ResponseEntity.badRequest().body("jobId is required");
+            }
+
+            // Create a new Resume entity
+            Resume resume = new Resume();
+            resume.setTitle("Generated Resume for Job #" + request.getJobId());
+            resume.setCreatedAt(LocalDateTime.now());
+            resume.setUpdatedAt(LocalDateTime.now());
+            resume.setUser(currentUser);
+
+            Resume savedResume = resumeService.storeResume(resume);
+            logger.info("Created new resume with id: {}", savedResume.getId());
+
+            // Start async processing
+            new Thread(() -> {
+                try {
+                    ResumeParsingResult result = resumeGenerationService.generateResume(currentUser, request.getJobId());
+                    
+                    // Update resume content with generated result
+                    resume.setContent(objectMapper.writeValueAsString(result));
+                    resumeService.storeResume(resume);
+                    
+                    // Notify completion
+                    // notificationService.notifyProcessingComplete(savedResume.getId());
+                } catch (Exception e) {
+                    logger.error("Error generating resume: {}", e.getMessage());
+                    // notificationService.notifyProcessingError(savedResume.getId(), e.getMessage());
+                }
+            }).start();
+
+            // Return the resume ID and processing status
+            Map<String, Object> response = new HashMap<>();
+            response.put("resumeId", savedResume.getId());
+            response.put("status", "processing");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error in resume generation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating resume: " + e.getMessage());
+        }
     }
 }
