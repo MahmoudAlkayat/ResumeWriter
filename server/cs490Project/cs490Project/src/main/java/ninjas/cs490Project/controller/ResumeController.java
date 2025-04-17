@@ -116,8 +116,8 @@ public class ResumeController {
         for (Resume resume : resumes) {
             Map<String, Object> resumeMap = new HashMap<>();
             resumeMap.put("resumeId", resume.getId());
-            resumeMap.put("title", resume.getTitle());
-            resumeMap.put("content", resume.getContent());
+            resumeMap.put("title", resume.getTitle() != null ? resume.getTitle().trim() : "");
+            resumeMap.put("content", resume.getContent() != null ? resume.getContent().trim() : "");
             resumeMap.put("createdAt", resume.getCreatedAt());
             response.add(resumeMap);
         }

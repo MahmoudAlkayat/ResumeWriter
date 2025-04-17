@@ -25,6 +25,10 @@ const data = {
         {
           title: "Upload",
           url: "/resumes/upload",
+        },
+        {
+          title: "History",
+          url:"/resumes/upload/history"
         }
       ],
     },
