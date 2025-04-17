@@ -22,12 +22,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class AsyncResumeParser {
@@ -157,55 +158,72 @@ public class AsyncResumeParser {
 
         try {
             // Parse the freeform text using GPT
-            ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
+            // ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
 
-            // Process work experience entries
+            // FOR TESTING
+            Thread.sleep(5000);
+            ResumeParsingResult parsingResult = new ResumeParsingResult();
+            parsingResult.setWorkExperienceList(new ArrayList<>());
+            WorkExperienceData mock = new WorkExperienceData();
+            mock.setCompany("Company");
+            mock.setJobTitle("Job Title");
+            mock.setStartDate("2021-01-01");
+            mock.setEndDate("2021-01-01");
+            mock.setDescription("Description");
+            parsingResult.getWorkExperienceList().add(mock);
+
+            // Get existing work experience if any
+            WorkExperience existingExperience = workExperienceRepository.findByFreeformEntryId(freeformId);
+
+            // Process work experience entry
             List<WorkExperienceData> workExpList = parsingResult.getWorkExperienceList();
             if (workExpList != null && !workExpList.isEmpty()) {
-                logger.info("Found {} work experience entries from freeform text.", workExpList.size());
-                List<WorkExperience> workExperiences = new ArrayList<>();
-
-                for (WorkExperienceData data : workExpList) {
-                    WorkExperience we = new WorkExperience();
-                    we.setCompany(data.getCompany());
-                    we.setJobTitle(data.getJobTitle());
-                    we.setStartDate(LocalDate.parse(data.getStartDate()));
-
-                    String endDateStr = data.getEndDate();
-                    if (endDateStr == null || endDateStr.trim().isEmpty() || endDateStr.equalsIgnoreCase("N/A")) {
-                        we.setEndDate(null);
-                    } else if (endDateStr.equalsIgnoreCase("Present")) {
-                        we.setEndDate(LocalDate.now());
-                    } else {
-                        we.setEndDate(LocalDate.parse(endDateStr));
-                    }
-
-                    we.setDescription(data.getDescription());
-                    we.setUser(user);
-                    we.setFreeformEntry(entry);
-                    workExperiences.add(we);
-                }
-                // Save all work experience entries in a batch
-                workExperienceRepository.saveAll(workExperiences);
-                logger.info("Saved {} work experience entries from freeform text.", workExperiences.size());
+                // Take only the first work experience entry
+                WorkExperienceData data = workExpList.get(0);
                 
-                // Update FreeformEntry status
-                entry.setUpdatedAt(LocalDateTime.now());
+                // Update existing experience or create new one
+                WorkExperience we = (existingExperience != null) ? existingExperience : new WorkExperience();
+                
+                // Update the fields
+                we.setCompany(data.getCompany());
+                we.setJobTitle(data.getJobTitle());
+                we.setStartDate(LocalDate.parse(data.getStartDate()));
+
+                String endDateStr = data.getEndDate();
+                if (endDateStr == null || endDateStr.trim().isEmpty() || endDateStr.equalsIgnoreCase("N/A")) {
+                    we.setEndDate(null);
+                } else if (endDateStr.equalsIgnoreCase("Present")) {
+                    we.setEndDate(LocalDate.now());
+                } else {
+                    we.setEndDate(LocalDate.parse(endDateStr));
+                }
+
+                we.setDescription(data.getDescription());
+                we.setUser(user);
+                we.setFreeformEntry(entry);
+
+                // Save the work experience
+                workExperienceRepository.save(we);
+                logger.info("Saved work experience entry from freeform text.");
+                
+                // Update FreeformEntry
+                entry.setUpdatedAt(Instant.now());
                 freeformEntryRepository.save(entry);
                 
                 // Notify success
                 notificationService.notifyCareerProcessingComplete(freeformId);
             } else {
-                logger.warn("No work experience entries found in parsed freeform text.");
-                entry.setUpdatedAt(LocalDateTime.now());
+                logger.warn("No work experience entry found in parsed freeform text.");
+                
+                entry.setUpdatedAt(Instant.now());
                 freeformEntryRepository.save(entry);
                 
                 // Notify error
-                notificationService.notifyCareerProcessingError(freeformId, "No work experience entries could be extracted from the text. Please try again with more detailed information.");
+                notificationService.notifyCareerProcessingError(freeformId, "No work experience entry could be extracted from the text. Please try again with more detailed information.");
             }
         } catch (Exception e) {
             logger.error("Error parsing freeform career", e);
-            entry.setUpdatedAt(LocalDateTime.now());
+            entry.setUpdatedAt(Instant.now());
             freeformEntryRepository.save(entry);
             
             // Notify error with the specific error message

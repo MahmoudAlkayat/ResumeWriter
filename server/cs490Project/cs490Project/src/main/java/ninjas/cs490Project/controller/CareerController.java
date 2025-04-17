@@ -12,7 +12,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -143,8 +145,8 @@ public class CareerController {
         FreeformEntry entry = new FreeformEntry();
         entry.setUser(user);
         entry.setRawText(text);
-        entry.setCreatedAt(LocalDateTime.now());
-        entry.setUpdatedAt(LocalDateTime.now());
+        entry.setCreatedAt(Instant.now());
+        entry.setUpdatedAt(Instant.now());
         FreeformEntry savedEntry = freeformEntryRepository.save(entry);
 
         // Process the freeform text asynchronously
@@ -201,6 +203,7 @@ public class CareerController {
 
     // 4. DELETE an existing WorkExperience record
     @DeleteMapping("/{jobId}")
+    @Transactional
     public ResponseEntity<?> deleteCareer(Authentication authentication,
                                           @PathVariable("jobId") int jobId) {
         // Ensure user exists
@@ -221,8 +224,69 @@ public class CareerController {
             return ResponseEntity.badRequest().body("This record doesn't belong to the specified user");
         }
 
-        // Delete
+        // Delete associated FreeformEntry if it exists
+        FreeformEntry freeformEntry = job.getFreeformEntry();
+        if (freeformEntry != null) {
+            freeformEntryRepository.delete(freeformEntry);
+        }
+
+        // Delete the work experience
         workExperienceRepository.delete(job);
         return ResponseEntity.ok("Deleted career record");
+    }
+
+    @GetMapping("/freeform")
+    public ResponseEntity<?> getFreeformCareer(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName());
+        if (user == null) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+        List<FreeformEntry> entries = freeformEntryRepository.findByUserId(user.getId());
+        List<Map<String, String>> response = new ArrayList<>();
+        for (FreeformEntry entry : entries) {
+            Map<String, String> entryMap = new HashMap<>();
+            entryMap.put("id", String.valueOf(entry.getId()));
+            entryMap.put("text", entry.getRawText());
+            entryMap.put("updatedAt", String.valueOf(entry.getUpdatedAt()));
+            response.add(entryMap);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/freeform/{freeformId}")
+    @Transactional
+    public ResponseEntity<?> updateFreeformCareer(Authentication authentication,
+                                                @PathVariable("freeformId") int freeformId,
+                                                @RequestBody Map<String, String> request) {
+        User user = userRepository.findByEmail(authentication.getName());
+        if (user == null) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+
+        Optional<FreeformEntry> optionalEntry = freeformEntryRepository.findById(freeformId);
+        if (optionalEntry.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        FreeformEntry entry = optionalEntry.get();
+        if (entry.getUser().getId() != user.getId()) {
+            return ResponseEntity.badRequest().body("This entry doesn't belong to the specified user");
+        }
+
+        String text = request.get("text");
+        if (text == null || text.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Text field is required");
+        }
+
+        entry.setRawText(text);
+        entry.setUpdatedAt(Instant.now());
+        freeformEntryRepository.save(entry);
+
+        asyncResumeParser.parseFreeformCareer(text, user, freeformId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Freeform career entry updated and submitted for processing");
+        response.put("entryId", freeformId);
+        return ResponseEntity.ok(response);
     }
 }
