@@ -10,10 +10,12 @@ import ninjas.cs490Project.entity.UploadedResume;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.entity.FreeformEntry;
+import ninjas.cs490Project.entity.Skill;
 import ninjas.cs490Project.repository.EducationRepository;
 import ninjas.cs490Project.repository.UploadedResumeRepository;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.FreeformEntryRepository;
+import ninjas.cs490Project.repository.SkillRepository;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,13 +44,17 @@ public class AsyncResumeParser {
     private final ResumeProcessingNotificationService notificationService;
     private final FreeformEntryRepository freeformEntryRepository;
     private final ObjectMapper objectMapper;
+    private final SkillRepository skillRepository;
+    private final SkillService skillService;
 
     public AsyncResumeParser(UploadedResumeRepository uploadedResumeRepository,
                              ResumeParsingService resumeParsingService,
                              WorkExperienceRepository workExperienceRepository,
                              EducationRepository educationRepository,
                              ResumeProcessingNotificationService notificationService,
-                             FreeformEntryRepository freeformEntryRepository) {
+                             FreeformEntryRepository freeformEntryRepository,
+                             SkillRepository skillRepository,
+                             SkillService skillService) {
         this.uploadedResumeRepository = uploadedResumeRepository;
         this.resumeParsingService = resumeParsingService;
         this.workExperienceRepository = workExperienceRepository;
@@ -56,6 +62,8 @@ public class AsyncResumeParser {
         this.notificationService = notificationService;
         this.freeformEntryRepository = freeformEntryRepository;
         this.objectMapper = new ObjectMapper();
+        this.skillRepository = skillRepository;
+        this.skillService = skillService;
     }
 
     @Async
@@ -93,8 +101,14 @@ public class AsyncResumeParser {
             mockWorkExperience.setDescription("Developed and maintained software applications.");
             mockWorkExperienceList.add(mockWorkExperience);
 
+            List<String> mockSkills = new ArrayList<>();
+            mockSkills.add("Java");
+            mockSkills.add("Python");
+            mockSkills.add("C++");
+
             parsingResult.setEducationList(mockEducationList);
             parsingResult.setWorkExperienceList(mockWorkExperienceList);
+            parsingResult.setSkills(mockSkills);
 
             // Update the resume content
             resume.setContent(resumeText);
@@ -160,6 +174,18 @@ public class AsyncResumeParser {
                 logger.info("Saved {} work experience entries.", workExpList.size());
             } else {
                 logger.warn("No work experience entries found in parsed result.");
+            }
+
+            // Process skills
+            List<String> skills = parsingResult.getSkills();
+            if (skills != null && !skills.isEmpty()) {
+                logger.info("Found {} skills to process.", skills.size());
+                
+                // Use SkillService to add skills with de-duplication
+                List<Skill> addedSkills = skillService.addSkills(skills, resume.getUser());
+                logger.info("Processed {} skills for user.", addedSkills.size());
+            } else {
+                logger.warn("No skills found in parsed result.");
             }
 
             // Notify that processing is complete

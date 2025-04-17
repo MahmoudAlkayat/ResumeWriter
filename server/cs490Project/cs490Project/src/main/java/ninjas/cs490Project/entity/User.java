@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -39,10 +38,6 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    // Relationship: One user can have many resumes
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<Resume> resumes;
 
     // Getters and Setters
 
@@ -116,13 +111,5 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public Set<Resume> getResumes() {
-        return resumes;
-    }
-
-    public void setResumes(Set<Resume> resumes) {
-        this.resumes = resumes;
     }
 }

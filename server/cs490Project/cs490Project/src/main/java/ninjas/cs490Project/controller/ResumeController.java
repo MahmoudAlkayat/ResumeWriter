@@ -5,7 +5,6 @@ import ninjas.cs490Project.dto.ResumeParsingResult;
 import ninjas.cs490Project.entity.UploadedResume;
 import ninjas.cs490Project.entity.GeneratedResume;
 import ninjas.cs490Project.entity.JobDescription;
-import ninjas.cs490Project.entity.Resume;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.repository.JobDescriptionRepository;
@@ -26,7 +25,6 @@ import org.springframework.web.multipart.MultipartFile;
 import ninjas.cs490Project.service.ResumeService;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController

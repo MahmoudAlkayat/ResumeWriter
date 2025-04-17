@@ -2,7 +2,6 @@ package ninjas.cs490Project.entity;
 
 import lombok.Data;
 import jakarta.persistence.*;
-import java.util.Set;
 
 @Data
 @Entity
@@ -10,11 +9,12 @@ import java.util.Set;
 public class Skill {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String name;
 
-    @ManyToMany(mappedBy = "skills")
-    private Set<Resume> resumes;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }
