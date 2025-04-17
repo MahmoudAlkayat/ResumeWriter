@@ -2,14 +2,19 @@ package ninjas.cs490Project.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ninjas.cs490Project.dto.ResumeParsingResult;
+import ninjas.cs490Project.entity.UploadedResume;
+import ninjas.cs490Project.entity.GeneratedResume;
+import ninjas.cs490Project.entity.JobDescription;
 import ninjas.cs490Project.entity.Resume;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.UserRepository;
+import ninjas.cs490Project.repository.JobDescriptionRepository;
+import ninjas.cs490Project.repository.UploadedResumeRepository;
+import ninjas.cs490Project.repository.GeneratedResumeRepository;
 import ninjas.cs490Project.service.AsyncResumeParser;
 import ninjas.cs490Project.service.ResumeParsingService;
-import ninjas.cs490Project.service.ResumeService;
-import ninjas.cs490Project.service.ResumeProcessingNotificationService;
 import ninjas.cs490Project.service.ResumeGenerationService;
+import ninjas.cs490Project.service.ResumeProcessingNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -18,38 +23,48 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.multipart.MultipartFile;
+import ninjas.cs490Project.service.ResumeService;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
 @RequestMapping("/api/resumes")
 public class ResumeController {
-
     private static final Logger logger = LoggerFactory.getLogger(ResumeController.class);
 
     private final UserRepository userRepository;
-    private final ResumeService resumeService;
+    private final JobDescriptionRepository jobDescriptionRepository;
+    private final UploadedResumeRepository uploadedResumeRepository;
+    private final GeneratedResumeRepository generatedResumeRepository;
     private final ResumeParsingService resumeParsingService;
+    private final ResumeGenerationService resumeGenerationService;
     private final AsyncResumeParser asyncResumeParser;
     private final ResumeProcessingNotificationService notificationService;
-    private final ResumeGenerationService resumeGenerationService;
     private final ObjectMapper objectMapper;
+    private final ResumeService resumeService;
 
     public ResumeController(UserRepository userRepository,
-                            ResumeService resumeService,
-                            ResumeParsingService resumeParsingService,
-                            AsyncResumeParser asyncResumeParser,
-                            ResumeProcessingNotificationService notificationService,
-                            ResumeGenerationService resumeGenerationService,
-                            ObjectMapper objectMapper) {
+                          JobDescriptionRepository jobDescriptionRepository,
+                          UploadedResumeRepository uploadedResumeRepository,
+                          GeneratedResumeRepository generatedResumeRepository,
+                          ResumeParsingService resumeParsingService,
+                          ResumeGenerationService resumeGenerationService,
+                          AsyncResumeParser asyncResumeParser,
+                          ResumeProcessingNotificationService notificationService,
+                          ObjectMapper objectMapper,
+                          ResumeService resumeService) {
         this.userRepository = userRepository;
-        this.resumeService = resumeService;
+        this.jobDescriptionRepository = jobDescriptionRepository;
+        this.uploadedResumeRepository = uploadedResumeRepository;
+        this.generatedResumeRepository = generatedResumeRepository;
         this.resumeParsingService = resumeParsingService;
+        this.resumeGenerationService = resumeGenerationService;
         this.asyncResumeParser = asyncResumeParser;
         this.notificationService = notificationService;
-        this.resumeGenerationService = resumeGenerationService;
         this.objectMapper = objectMapper;
+        this.resumeService = resumeService;
     }
 
     @GetMapping("/{resumeId}/status")
@@ -65,14 +80,13 @@ public class ResumeController {
      */
     @PostMapping("/upload")
     public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile file,
-                                          Authentication authentication) {
+                                        Authentication authentication) {
         if (file.isEmpty()) {
             logger.warn("Attempted to upload an empty file.");
             return ResponseEntity.badRequest().body("No file selected.");
         }
         try {
             String email = authentication.getName();
-            // 1. Find the User
             User currentUser = userRepository.findByEmail(email);
             if (currentUser == null) {
                 logger.error("User not found");
@@ -80,19 +94,19 @@ public class ResumeController {
                         .body("User not found");
             }
 
-            // 2. Extract text via Tika and parse key information via GPT
+            // Extract text via Tika and parse key information via GPT
             String extractedText = resumeParsingService.extractTextFromFile(file);
 
-            // 3. Create and save a new Resume entity (for the file data)
-            Resume resume = new Resume();
+            // Create and save a new UploadedResume entity
+            UploadedResume resume = new UploadedResume();
             resume.setTitle(file.getOriginalFilename());
             resume.setContent(extractedText);
             resume.setFileData(file.getBytes());
-            resume.setCreatedAt(LocalDateTime.now());
-            resume.setUpdatedAt(LocalDateTime.now());
+            resume.setCreatedAt(Instant.now());
+            resume.setUpdatedAt(Instant.now());
             resume.setUser(currentUser);
 
-            Resume savedResume = resumeService.storeResume(resume);
+            UploadedResume savedResume = uploadedResumeRepository.save(resume);
             logger.info("Resume uploaded and stored successfully with id: {}", savedResume.getId());
 
             // Start async processing of the resume
@@ -119,10 +133,10 @@ public class ResumeController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        List<Resume> resumes = resumeService.getResumesByUser(currentUser);
+        List<UploadedResume> resumes = uploadedResumeRepository.findByUser(currentUser);
 
         List<Map<String, Object>> response = new ArrayList<>();
-        for (Resume resume : resumes) {
+        for (UploadedResume resume : resumes) {
             Map<String, Object> resumeMap = new HashMap<>();
             resumeMap.put("resumeId", resume.getId());
             resumeMap.put("title", resume.getTitle() != null ? resume.getTitle().trim() : "");
@@ -168,8 +182,8 @@ public class ResumeController {
             resume.setUpdatedAt(LocalDateTime.now());
             resume.setUser(currentUser);
 
-            Resume savedResume = resumeService.storeResume(resume);
-            logger.info("Created new resume with id: {}", savedResume.getId());
+            // Resume savedResume = resumeService.saveResume(resume);
+            logger.info("Created new resume with id: {}", resume.getId());
 
             // Start async processing
             new Thread(() -> {
@@ -178,7 +192,7 @@ public class ResumeController {
                     
                     // Update resume content with generated result
                     resume.setContent(objectMapper.writeValueAsString(result));
-                    resumeService.storeResume(resume);
+                    // resumeService.saveUploadedResume(null, "Generated Resume for Job #" + request.getJobId(), currentUser);
                     
                     // Notify completion
                     // notificationService.notifyProcessingComplete(savedResume.getId());
@@ -190,7 +204,7 @@ public class ResumeController {
 
             // Return the resume ID and processing status
             Map<String, Object> response = new HashMap<>();
-            response.put("resumeId", savedResume.getId());
+            response.put("resumeId", resume.getId());
             response.put("status", "processing");
             return ResponseEntity.ok(response);
 
