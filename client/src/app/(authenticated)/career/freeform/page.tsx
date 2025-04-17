@@ -77,6 +77,12 @@ export default function FreeformCareerPage() {
             return;
         }
 
+        if (editingIndex !== null && formData.text.trim() === freeformEntries[editingIndex].text.trim()) {
+            setEditingIndex(null);
+            setFormData({ text: "" });
+            return;
+        }
+
         try {
             if (editingIndex == null || editingIndex < 0) {
                 showError("Invalid index for update");

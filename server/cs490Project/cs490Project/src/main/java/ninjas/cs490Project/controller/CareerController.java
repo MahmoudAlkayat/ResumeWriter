@@ -278,6 +278,10 @@ public class CareerController {
             return ResponseEntity.badRequest().body("Text field is required");
         }
 
+        if (text.equals(entry.getRawText())) {
+            return ResponseEntity.badRequest().body("No changes were made to the freeform entry");
+        }
+
         entry.setRawText(text);
         entry.setUpdatedAt(Instant.now());
         freeformEntryRepository.save(entry);
