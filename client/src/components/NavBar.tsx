@@ -17,8 +17,8 @@ import Image from "next/image";
 
 export default function NavBar() {
     const { user, logout } = useAuth();
-    const { activeResumeId, activeCareerUserId } = useResumeProcessing();
-    const isProcessing = activeResumeId !== null || activeCareerUserId !== null;
+    const { activeResumeId, activeFreeformId } = useResumeProcessing();
+    const isProcessing = activeResumeId !== null || activeFreeformId !== null;
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-background dark:bg-sidebar shadow-md">

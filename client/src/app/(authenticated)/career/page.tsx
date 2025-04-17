@@ -26,7 +26,7 @@ export default function CareerPage() {
   const { user } = useAuth();
   const { showError, showSuccess, showInfo } = useToast();
   const { activeResumeId } = useResumeProcessing();
-  const { activeCareerUserId, setActiveCareerUserId } = useResumeProcessing();
+  const { activeFreeformId, setActiveFreeformId } = useResumeProcessing();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("freeform");
   const [freeform, setFreeform] = useState("");
@@ -80,7 +80,7 @@ export default function CareerPage() {
       fetchCareerHistory();
     }
     onUpdate();
-  },[activeResumeId, activeCareerUserId])
+  },[activeResumeId, activeFreeformId])
 
   // Start "Add New Career" flow
   const handleAdd = () => {
@@ -263,7 +263,8 @@ export default function CareerPage() {
       }
 
       showInfo("Freeform entry submitted. Please wait while we process your entry.");
-      setActiveCareerUserId(user.id);
+      const entryData = await res.json();
+      setActiveFreeformId(entryData.entryId);
       setFreeform("");
       setEditingIndex(null);
     } catch (err) {
