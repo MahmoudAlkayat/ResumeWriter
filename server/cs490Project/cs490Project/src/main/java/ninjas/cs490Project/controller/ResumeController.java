@@ -115,6 +115,7 @@ public class ResumeController {
             // Return success with processing status
             Map<String, Object> response = new HashMap<>();
             response.put("resumeId", savedResume.getId());
+            response.put("statusId", status.getId());
             response.put("status", "processing");
             return ResponseEntity.ok(response);
 
@@ -200,6 +201,7 @@ public class ResumeController {
             // Return the resume ID and processing status
             Map<String, Object> response = new HashMap<>();
             response.put("resumeId", savedResume.getId());
+            response.put("statusId", status.getId());
             response.put("status", "processing");
             return ResponseEntity.ok(response);
 

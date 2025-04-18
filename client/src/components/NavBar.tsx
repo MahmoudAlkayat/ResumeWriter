@@ -19,8 +19,6 @@ import { useState } from "react";
 
 export default function NavBar() {
     const { user, logout } = useAuth();
-    const { activeResumeId, activeFreeformId } = useResumeProcessing();
-    const isProcessing = activeResumeId !== null || activeFreeformId !== null;
     const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
     return (
@@ -31,12 +29,6 @@ export default function NavBar() {
                     <Link href="/home">
                         <Logo />
                     </Link>
-                    {isProcessing && (
-                        <div className="flex items-center gap-2 text-md text-green-600 ml-8">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Processing {activeResumeId ? "Resume Upload" : "Career Entry"}</span>
-                        </div>
-                    )}
                 </div>
                 <div className="flex-1" />
                 <div className="flex items-center gap-2">

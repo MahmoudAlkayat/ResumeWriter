@@ -225,6 +225,7 @@ public class ResumeGenerationService {
     //Test with mock data
     @Async
     public void generateResumeTest(User user, Long jobId, GeneratedResume savedResume, ProcessingStatus status) throws Exception {
+        Thread.sleep(7000);
         processingStatusService.startProcessing(status.getId());
         // Get the job description
         JobDescription jobDescription = jobDescriptionRepository.findById(jobId)

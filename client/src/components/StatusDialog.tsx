@@ -129,8 +129,8 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
         <DialogHeader>
           <DialogTitle className="text-xl text-center">Status</DialogTitle>
         </DialogHeader>
-        <DialogDescription>
-          <div className="flex flex-col gap-4">
+        <DialogDescription />
+          <div className="-mt-4 flex flex-col gap-4">
             {statuses.length > 0 ? (
               statuses.map((status) => (
                 <div
@@ -189,7 +189,6 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
               </div>
             )}
           </div>
-        </DialogDescription>
       </DialogContent>
     </Dialog>
   );

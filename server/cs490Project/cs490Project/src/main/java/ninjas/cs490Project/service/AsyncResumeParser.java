@@ -69,7 +69,7 @@ public class AsyncResumeParser {
             // logger.info("Parsed result: {}", objectMapper.writeValueAsString(parsingResult));
 
             // TESTING
-            Thread.sleep(5000);
+            Thread.sleep(10000);
             ResumeParsingResult parsingResult = new ResumeParsingResult();
             List<EducationData> mockEducationList = new ArrayList<>();
             EducationData mockEducation = new EducationData();
@@ -196,7 +196,7 @@ public class AsyncResumeParser {
             // ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
 
             // FOR TESTING
-            Thread.sleep(5000);
+            Thread.sleep(10000);
             ResumeParsingResult parsingResult = new ResumeParsingResult();
             parsingResult.setWorkExperienceList(new ArrayList<>());
             WorkExperienceData mock = new WorkExperienceData();
