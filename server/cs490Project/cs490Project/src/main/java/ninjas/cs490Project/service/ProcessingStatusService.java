@@ -17,10 +17,11 @@ public class ProcessingStatusService {
     @Autowired
     private ProcessingStatusRepository processingStatusRepository;
 
-    public List<ProcessingStatus> getLatestStatuses(int limit) {
-        return processingStatusRepository.findAll(
-            PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "startedAt"))
-        ).getContent();
+    public List<ProcessingStatus> getLatestStatusesForUser(User user, int limit) {
+        return processingStatusRepository.findByUserOrderByStartedAtDesc(
+            user,
+            PageRequest.of(0, limit)
+        );
     }
 
     public ProcessingStatus getStatusById(Long id) {

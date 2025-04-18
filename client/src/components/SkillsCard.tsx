@@ -105,11 +105,11 @@ export const SkillsCard: React.FC = () => {
             <Badge
               key={skill.id}
               variant="secondary"
-              className="pl-4 text-sm flex items-center gap-1 group select-none"
+              className="pl-4 py-2 text-sm flex items-center gap-1 group select-none"
             >
               {skill.name}
               <Button
-                className="ml-1 p-0 rounded bg-transparent hover:bg-red-100 dark:hover:bg-red-900"
+                className="ml-1 p-0 rounded bg-transparent hover:bg-red-100 dark:hover:bg-red-900 shadow-none w-4 h-6"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDeleteSkill(skill.id);
@@ -123,13 +123,13 @@ export const SkillsCard: React.FC = () => {
           {showAddSkill ? (
             <form
               onSubmit={handleAddSkill}
-              className="flex items-center gap-1 outline outline-1 outline-gray-300 px-2 py-1 rounded-lg"
+              className="flex items-center gap-1 outline outline-1 outline-gray-300 dark:outline-neutral-800 px-2 py-1 rounded-lg dark:bg-muted-background shadow-none"
             >
               <Input
                 autoFocus
                 value={newSkill}
                 onChange={(e) => setNewSkill(e.target.value)}
-                className="h-6 w-24 text-sm px-2 py-0 border-none focus-visible:ring-0 focus-visible:outline-none"
+                className="h-6 w-24 text-sm px-2 py-0 border-none focus-visible:ring-0 focus-visible:outline-none dark:bg-muted-background shadow-none"
                 placeholder="New skill"
               />
               <Button type="submit" size="icon" className="h-6 w-6 p-1">

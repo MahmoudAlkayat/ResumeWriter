@@ -154,6 +154,7 @@ public class CareerController {
         
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Freeform career entry submitted for processing");
+        response.put("statusId", status.getId());
         response.put("entryId", savedEntry.getId());
         return ResponseEntity.ok(response);
     }
@@ -297,6 +298,7 @@ public class CareerController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Freeform career entry updated and submitted for processing");
+        response.put("statusId", status.getId());
         response.put("entryId", freeformId);
         return ResponseEntity.ok(response);
     }

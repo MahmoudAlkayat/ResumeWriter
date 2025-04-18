@@ -25,7 +25,7 @@ interface EducationEntry {
 export default function EducationManager() {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
-  const { activeResumeId } = useResumeProcessing();
+  const { activeProcesses } = useResumeProcessing();
   const [isLoading, setIsLoading] = useState(true);
 
   // Education data
@@ -77,7 +77,7 @@ export default function EducationManager() {
       fetchEducation();
     }
     onUpdate();
-  },[activeResumeId])
+  }, [activeProcesses]);
 
   // 2) Handle starting the "add" flow
   const handleAdd = () => {
