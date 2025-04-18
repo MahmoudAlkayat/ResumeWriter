@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/contexts/ToastProvider";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import SkillsCard from "@/components/SkillsCard";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -192,6 +193,13 @@ export default function ProfilePage() {
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white shadow-xl rounded-2xl py-8 border border-gray-200 dark:bg-neutral-900 dark:border-neutral-800">
+          <h2 className="text-2xl font-bold text-primary text-center">Skills</h2>
+          <CardContent>
+            <SkillsCard />
           </CardContent>
         </Card>
 

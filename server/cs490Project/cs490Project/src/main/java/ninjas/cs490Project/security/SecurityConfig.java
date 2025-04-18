@@ -38,7 +38,7 @@ public class SecurityConfig {
                         // Add "/oauth/google/**" to your existing permit list:
                         .requestMatchers("/api/register", "/auth/**", "/oauth/**").permitAll()
                         .requestMatchers("/api/resumes/*/status", "/api/resumes/career/*/status").permitAll()
-                        .requestMatchers("/api/resumes/**", "/api/profile/**").authenticated()
+                        .requestMatchers("/api/resumes/**", "/api/profile/**", "/api/skills/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())
