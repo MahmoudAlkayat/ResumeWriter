@@ -82,7 +82,7 @@ export default function GenerateResumePage() {
       }
 
       const data = await response.json();
-      addActiveProcess(data.statusId, 'resume');
+      addActiveProcess(data.statusId, 'generate');
       showInfo("Resume generation started. You can track the progress in the status dialog.");
     } catch (error) {
       if (error instanceof Error) showError(error.message);

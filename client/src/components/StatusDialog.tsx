@@ -9,6 +9,7 @@ import { DialogHeader } from "./ui/dialog";
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { useToast } from "@/contexts/ToastProvider";
+import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
 
 interface Status {
   id: string;
@@ -28,6 +29,7 @@ interface StatusDialogProps {
 
 export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
   const [statuses, setStatuses] = useState<Status[]>([]);
+  const { activeProcesses } = useResumeProcessing();
   const { showError } = useToast();
 
   const fetchStatuses = async () => {
@@ -48,15 +50,7 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
     if (open) {
       fetchStatuses();
     }
-  }, [open]);
-
-  // Poll for updates every 2 seconds if there are processing items
-  useEffect(() => {
-    if (!open || !statuses.some(s => s.status === "PROCESSING")) return;
-    
-    const interval = setInterval(fetchStatuses, 2000);
-    return () => clearInterval(interval);
-  }, [open, statuses]);
+  }, [open, activeProcesses]);
 
   const getStatusIcon = (status: Status["status"]) => {
     switch (status) {
