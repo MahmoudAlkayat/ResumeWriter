@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import lombok.Data;
@@ -62,7 +63,8 @@ public class ResumeGenerationService {
         this.resumeService = resumeService;
     }
 
-    public ResumeParsingResult generateResume(User user, Long jobId, GeneratedResume savedResume, ProcessingStatus status) throws Exception {
+    @Async
+    public void generateResume(User user, Long jobId, GeneratedResume savedResume, ProcessingStatus status) throws Exception {
         try {
             processingStatusService.startProcessing(status.getId());
             // Get the job description
@@ -101,7 +103,6 @@ public class ResumeGenerationService {
             savedResume.setUpdatedAt(Instant.now());
             resumeService.storeGeneratedResume(savedResume);
             processingStatusService.completeProcessing(status.getId());
-            return result;
         } catch (Exception e) {
             processingStatusService.failProcessing(status.getId(), e.getMessage());
             throw e;
@@ -222,7 +223,9 @@ public class ResumeGenerationService {
     }
 
     //Test with mock data
-    public ResumeParsingResult generateResumeTest(User user, Long jobId) throws Exception {
+    @Async
+    public void generateResumeTest(User user, Long jobId, GeneratedResume savedResume, ProcessingStatus status) throws Exception {
+        processingStatusService.startProcessing(status.getId());
         // Get the job description
         JobDescription jobDescription = jobDescriptionRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
@@ -275,9 +278,13 @@ public class ResumeGenerationService {
             "MongoDB", "React", "TypeScript", "Python", "Agile"
         ));
 
+        
         // Simulate API delay
         Thread.sleep(2000);
-
-        return mockResult;
+        
+        savedResume.setContent(objectMapper.writeValueAsString(mockResult));
+        savedResume.setUpdatedAt(Instant.now());
+        resumeService.storeGeneratedResume(savedResume);
+        processingStatusService.completeProcessing(status.getId());
     }
 } 

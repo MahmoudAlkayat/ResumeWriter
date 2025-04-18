@@ -195,7 +195,7 @@ public class ResumeController {
                 savedResume.getId()
             );
             
-            resumeGenerationService.generateResume(currentUser, request.getJobId(), savedResume, status);
+            resumeGenerationService.generateResumeTest(currentUser, request.getJobId(), savedResume, status);
             
             // Return the resume ID and processing status
             Map<String, Object> response = new HashMap<>();
