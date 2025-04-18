@@ -1,7 +1,5 @@
 package ninjas.cs490Project.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ninjas.cs490Project.dto.EducationData;
 import ninjas.cs490Project.dto.ResumeParsingResult;
 import ninjas.cs490Project.dto.WorkExperienceData;
@@ -10,12 +8,12 @@ import ninjas.cs490Project.entity.UploadedResume;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.entity.FreeformEntry;
+import ninjas.cs490Project.entity.ProcessingStatus;
 import ninjas.cs490Project.entity.Skill;
 import ninjas.cs490Project.repository.EducationRepository;
 import ninjas.cs490Project.repository.UploadedResumeRepository;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.FreeformEntryRepository;
-import ninjas.cs490Project.repository.SkillRepository;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayInputStream;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 @Service
 public class AsyncResumeParser {
@@ -38,39 +33,32 @@ public class AsyncResumeParser {
     private static final Logger logger = LoggerFactory.getLogger(AsyncResumeParser.class);
 
     private final UploadedResumeRepository uploadedResumeRepository;
-    private final ResumeParsingService resumeParsingService;
     private final WorkExperienceRepository workExperienceRepository;
     private final EducationRepository educationRepository;
-    private final ResumeProcessingNotificationService notificationService;
     private final FreeformEntryRepository freeformEntryRepository;
-    private final ObjectMapper objectMapper;
-    private final SkillRepository skillRepository;
     private final SkillService skillService;
+    private final ProcessingStatusService processingStatusService;
 
     public AsyncResumeParser(UploadedResumeRepository uploadedResumeRepository,
-                             ResumeParsingService resumeParsingService,
                              WorkExperienceRepository workExperienceRepository,
                              EducationRepository educationRepository,
-                             ResumeProcessingNotificationService notificationService,
                              FreeformEntryRepository freeformEntryRepository,
-                             SkillRepository skillRepository,
-                             SkillService skillService) {
+                             SkillService skillService,
+                             ProcessingStatusService processingStatusService) {
         this.uploadedResumeRepository = uploadedResumeRepository;
-        this.resumeParsingService = resumeParsingService;
         this.workExperienceRepository = workExperienceRepository;
         this.educationRepository = educationRepository;
-        this.notificationService = notificationService;
         this.freeformEntryRepository = freeformEntryRepository;
-        this.objectMapper = new ObjectMapper();
-        this.skillRepository = skillRepository;
         this.skillService = skillService;
+        this.processingStatusService = processingStatusService;
     }
 
     @Async
     @Transactional
-    public void parseResume(UploadedResume resume) {
+    public void parseResume(UploadedResume resume, ProcessingStatus status) {
         try {
-            // Extract text using Apache Tika
+            processingStatusService.startProcessing(status.getId());
+
             Tika tika = new Tika();
             String resumeText = tika.parseToString(new ByteArrayInputStream(resume.getFileData()));
             logger.info("Extracted resume text (first 100 chars): {}",
@@ -81,6 +69,7 @@ public class AsyncResumeParser {
             // logger.info("Parsed result: {}", objectMapper.writeValueAsString(parsingResult));
 
             // TESTING
+            Thread.sleep(5000);
             ResumeParsingResult parsingResult = new ResumeParsingResult();
             List<EducationData> mockEducationList = new ArrayList<>();
             EducationData mockEducation = new EducationData();
@@ -188,21 +177,21 @@ public class AsyncResumeParser {
                 logger.warn("No skills found in parsed result.");
             }
 
-            // Notify that processing is complete
-            // notificationService.notifyProcessingComplete(resume.getId().intValue());
+            processingStatusService.completeProcessing(status.getId());
         } catch (Exception e) {
             logger.error("Error processing resume with ID " + resume.getId(), e);
-            // notificationService.notifyProcessingError(resume.getId().intValue(), e.getMessage());
+            processingStatusService.failProcessing(status.getId(), e.getMessage());
         }
     }
 
     @Async
     @Transactional
-    public void parseFreeformCareer(String text, User user, Integer freeformId) {
+    public void parseFreeformCareer(String text, User user, Integer freeformId, ProcessingStatus status) {
         FreeformEntry entry = freeformEntryRepository.findById(freeformId)
                 .orElseThrow(() -> new RuntimeException("FreeformEntry not found"));
 
         try {
+            processingStatusService.startProcessing(status.getId());
             // Parse the freeform text using GPT
             // ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
 
@@ -256,24 +245,18 @@ public class AsyncResumeParser {
                 entry.setUpdatedAt(Instant.now());
                 freeformEntryRepository.save(entry);
                 
-                // Notify success
-                notificationService.notifyCareerProcessingComplete(freeformId);
             } else {
                 logger.warn("No work experience entry found in parsed freeform text.");
-                
                 entry.setUpdatedAt(Instant.now());
                 freeformEntryRepository.save(entry);
-                
-                // Notify error
-                notificationService.notifyCareerProcessingError(freeformId, "No work experience entry could be extracted from the text. Please try again with more detailed information.");
             }
+            processingStatusService.completeProcessing(status.getId());
+
         } catch (Exception e) {
             logger.error("Error parsing freeform career", e);
             entry.setUpdatedAt(Instant.now());
             freeformEntryRepository.save(entry);
-            
-            // Notify error with the specific error message
-            notificationService.notifyCareerProcessingError(freeformId, e.getMessage());
+            processingStatusService.failProcessing(status.getId(), e.getMessage());
         }
     }
 }
