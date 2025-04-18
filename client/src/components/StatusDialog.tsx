@@ -132,7 +132,7 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
                   className="flex flex-col gap-2 p-4 rounded-lg border bg-card"
                 >
                   <div className="flex justify-between">
-                    <div className="flex items-center gap-4 max-w-[70%]">
+                    <div className="flex items-center gap-4">
                       {getStatusIcon(status.status)}
                       <div>
                         <h3 className="font-medium text-foreground leading-none">
@@ -161,7 +161,7 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
                           </span>
                         )}
                         {status.status == "FAILED" && (
-                          <span className="text-sm text-red-500 truncate max-w-[200px]">
+                          <span className="text-xs text-red-500 truncate max-w-[150px]">
                             {status.error}
                           </span>
                         )}

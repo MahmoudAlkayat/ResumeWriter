@@ -21,6 +21,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.ByteArrayInputStream;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -38,19 +40,25 @@ public class AsyncResumeParser {
     private final FreeformEntryRepository freeformEntryRepository;
     private final SkillService skillService;
     private final ProcessingStatusService processingStatusService;
+    private final ResumeParsingService resumeParsingService;
+    private final ObjectMapper objectMapper;
 
     public AsyncResumeParser(UploadedResumeRepository uploadedResumeRepository,
                              WorkExperienceRepository workExperienceRepository,
                              EducationRepository educationRepository,
                              FreeformEntryRepository freeformEntryRepository,
                              SkillService skillService,
-                             ProcessingStatusService processingStatusService) {
+                             ProcessingStatusService processingStatusService,
+                             ResumeParsingService resumeParsingService,
+                             ObjectMapper objectMapper) {
         this.uploadedResumeRepository = uploadedResumeRepository;
         this.workExperienceRepository = workExperienceRepository;
         this.educationRepository = educationRepository;
         this.freeformEntryRepository = freeformEntryRepository;
         this.skillService = skillService;
         this.processingStatusService = processingStatusService;
+        this.resumeParsingService = resumeParsingService;
+        this.objectMapper = objectMapper;
     }
 
     @Async
@@ -65,9 +73,10 @@ public class AsyncResumeParser {
                     resumeText.substring(0, Math.min(resumeText.length(), 100)));
 
             // Parse resume details using your parsing service (e.g., GPT)
-            // ResumeParsingResult parsingResult = resumeParsingService.parseKeyInformation(resumeText);
-            // logger.info("Parsed result: {}", objectMapper.writeValueAsString(parsingResult));
+            ResumeParsingResult parsingResult = resumeParsingService.parseKeyInformation(resumeText);
+            logger.info("Parsed result: {}", objectMapper.writeValueAsString(parsingResult));
 
+            /*
             // TESTING
             Thread.sleep(10000);
             ResumeParsingResult parsingResult = new ResumeParsingResult();
@@ -98,6 +107,7 @@ public class AsyncResumeParser {
             parsingResult.setEducationList(mockEducationList);
             parsingResult.setWorkExperienceList(mockWorkExperienceList);
             parsingResult.setSkills(mockSkills);
+            */
 
             // Update the resume content
             resume.setContent(resumeText);
@@ -193,8 +203,9 @@ public class AsyncResumeParser {
         try {
             processingStatusService.startProcessing(status.getId());
             // Parse the freeform text using GPT
-            // ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
+            ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
 
+            /*
             // FOR TESTING
             Thread.sleep(10000);
             ResumeParsingResult parsingResult = new ResumeParsingResult();
@@ -206,6 +217,7 @@ public class AsyncResumeParser {
             mock.setEndDate("2021-01-01");
             mock.setDescription("Description");
             parsingResult.getWorkExperienceList().add(mock);
+             */
 
             // Get existing work experience if any
             WorkExperience existingExperience = workExperienceRepository.findByFreeformEntryId(freeformId);

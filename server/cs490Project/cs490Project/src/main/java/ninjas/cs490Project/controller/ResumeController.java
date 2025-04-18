@@ -11,14 +11,12 @@ import ninjas.cs490Project.repository.UploadedResumeRepository;
 import ninjas.cs490Project.service.AsyncResumeParser;
 import ninjas.cs490Project.service.ResumeParsingService;
 import ninjas.cs490Project.service.ResumeGenerationService;
-import ninjas.cs490Project.service.ResumeProcessingNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.multipart.MultipartFile;
 import ninjas.cs490Project.service.ResumeService;
 import ninjas.cs490Project.service.ProcessingStatusService;
@@ -37,7 +35,6 @@ public class ResumeController {
     private final ResumeParsingService resumeParsingService;
     private final ResumeGenerationService resumeGenerationService;
     private final AsyncResumeParser asyncResumeParser;
-    private final ResumeProcessingNotificationService notificationService;
     private final ResumeService resumeService;
     private final ProcessingStatusService processingStatusService;
 
@@ -47,7 +44,6 @@ public class ResumeController {
                           ResumeParsingService resumeParsingService,
                           ResumeGenerationService resumeGenerationService,
                           AsyncResumeParser asyncResumeParser,
-                          ResumeProcessingNotificationService notificationService,
                           ResumeService resumeService,
                           ProcessingStatusService processingStatusService) {
         this.userRepository = userRepository;
@@ -56,14 +52,8 @@ public class ResumeController {
         this.resumeParsingService = resumeParsingService;
         this.resumeGenerationService = resumeGenerationService;
         this.asyncResumeParser = asyncResumeParser;
-        this.notificationService = notificationService;
         this.resumeService = resumeService;
         this.processingStatusService = processingStatusService;
-    }
-
-    @GetMapping("/{resumeId}/status")
-    public SseEmitter subscribeToStatus(@PathVariable int resumeId) {
-        return notificationService.subscribeToResumeProcessing(resumeId);
     }
 
     /**
@@ -179,6 +169,10 @@ public class ResumeController {
             JobDescription jobDescription = jobDescriptionRepository.findById(request.getJobId())
                     .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
 
+            if (currentUser.getId() != jobDescription.getUser().getId()) {
+                return ResponseEntity.badRequest().body("User does not have access to this job description");
+            }
+
             // Create a new Resume entity
             GeneratedResume resume = new GeneratedResume();
             resume.setCreatedAt(Instant.now());
@@ -196,7 +190,7 @@ public class ResumeController {
                 savedResume.getId()
             );
             
-            resumeGenerationService.generateResumeTest(currentUser, request.getJobId(), savedResume, status);
+            resumeGenerationService.generateResume(currentUser, request.getJobId(), savedResume, status);
             
             // Return the resume ID and processing status
             Map<String, Object> response = new HashMap<>();

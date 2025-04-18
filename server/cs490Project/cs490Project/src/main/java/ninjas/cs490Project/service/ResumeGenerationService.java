@@ -227,9 +227,6 @@ public class ResumeGenerationService {
     public void generateResumeTest(User user, Long jobId, GeneratedResume savedResume, ProcessingStatus status) throws Exception {
         processingStatusService.startProcessing(status.getId());
         Thread.sleep(7000);
-        // Get the job description
-        JobDescription jobDescription = jobDescriptionRepository.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
 
         // TESTING: Use mock data instead of calling GPT API
         ResumeParsingResult mockResult = new ResumeParsingResult();
