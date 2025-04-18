@@ -4,14 +4,18 @@ import ninjas.cs490Project.entity.ProcessingStatus;
 import ninjas.cs490Project.service.ProcessingStatusService;
 import ninjas.cs490Project.repository.UploadedResumeRepository;
 import ninjas.cs490Project.repository.GeneratedResumeRepository;
+import ninjas.cs490Project.repository.UserRepository;
+import ninjas.cs490Project.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 @RestController
 @RequestMapping("/api/resumes/status")
 public class ProcessingStatusController {
@@ -25,14 +29,25 @@ public class ProcessingStatusController {
     @Autowired
     private GeneratedResumeRepository generatedResumeRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getLatestStatuses(
-            @RequestParam(defaultValue = "5") int limit) {
+            @RequestParam(defaultValue = "5") int limit,
+            Authentication authentication) {
         if (limit <= 0 || limit > 100) {
-            limit = 5; // Default to 10 if invalid limit is provided
+            limit = 5; // Default to 5 if invalid limit is provided
         }
-        List<ProcessingStatus> statuses = processingStatusService.getLatestStatuses(limit);
+
+        User currentUser = userRepository.findByEmail(authentication.getName());
+        if (currentUser == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<ProcessingStatus> statuses = processingStatusService.getLatestStatusesForUser(currentUser, limit);
         List<Map<String, Object>> response = new ArrayList<>();
+        
         for (ProcessingStatus status : statuses) {
             Map<String, Object> statusMap = new HashMap<>();
             statusMap.put("id", status.getId());
@@ -57,8 +72,21 @@ public class ProcessingStatusController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getStatusById(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> getStatusById(
+            @PathVariable Long id,
+            Authentication authentication) {
+        User currentUser = userRepository.findByEmail(authentication.getName());
+        if (currentUser == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         ProcessingStatus status = processingStatusService.getStatusById(id);
+        
+        // Check if the status belongs to the current user
+        if (status.getUser().getId() != currentUser.getId()) {
+            return ResponseEntity.notFound().build();
+        }
+
         Map<String, Object> statusMap = new HashMap<>();
         statusMap.put("id", status.getId());
         statusMap.put("type", status.getProcessingType());

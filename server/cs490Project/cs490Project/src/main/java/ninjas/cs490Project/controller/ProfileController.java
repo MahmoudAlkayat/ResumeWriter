@@ -4,6 +4,10 @@ import ninjas.cs490Project.entity.Profile;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.ProfileRepository;
 import ninjas.cs490Project.repository.UserRepository;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,36 +23,6 @@ public class ProfileController {
     @Autowired
     private UserRepository userRepository;
 
-    private class ProfileResponse {
-        private String phone;
-        private String address;
-        private String themePreference;
-
-        public String getPhone() {
-            return phone;
-        }
-
-        public void setPhone(String phone) {
-            this.phone = phone;
-        }
-
-        public String getAddress() {
-            return address;
-        }
-
-        public void setAddress(String address) {
-            this.address = address;
-        }
-
-        public String getThemePreference() {
-            return themePreference;
-        }
-
-        public void setThemePreference(String themePreference) {
-            this.themePreference = themePreference;
-        }
-    }
-
     @GetMapping
     public ResponseEntity<?> getProfile(Authentication authentication) {
         String email = authentication.getName();
@@ -63,12 +37,12 @@ public class ProfileController {
             profile = profileRepository.save(newProfile);
         }
 
-        ProfileResponse profileResponse = new ProfileResponse();
-        profileResponse.setPhone(profile.getPhone());
-        profileResponse.setAddress(profile.getAddress());
-        profileResponse.setThemePreference(profile.getThemePreference());
+        Map<String, Object> response = new HashMap<>();
+        response.put("phone", profile.getPhone());
+        response.put("address", profile.getAddress());
+        response.put("themePreference", profile.getThemePreference());
 
-        return ResponseEntity.ok(profileResponse);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping
@@ -98,11 +72,11 @@ public class ProfileController {
             existingProfile = profileRepository.save(existingProfile);
         }
 
-        ProfileResponse profileResponse = new ProfileResponse();
-        profileResponse.setPhone(existingProfile.getPhone());
-        profileResponse.setAddress(existingProfile.getAddress());
-        profileResponse.setThemePreference(existingProfile.getThemePreference());
+        Map<String, Object> response = new HashMap<>();
+        response.put("phone", existingProfile.getPhone());
+        response.put("address", existingProfile.getAddress());
+        response.put("themePreference", existingProfile.getThemePreference());
 
-        return ResponseEntity.ok(profileResponse);
+        return ResponseEntity.ok(response);
     }
 } 
