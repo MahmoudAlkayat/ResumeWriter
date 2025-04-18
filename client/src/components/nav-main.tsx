@@ -41,7 +41,7 @@ export function NavMain({
                   className="gap-6"
                 >
                   {item.icon && <item.icon className="scale-200" />}
-                  <span className="text-xl font-medium text-center">{item.title}</span>
+                  <span className="text-lg font-medium text-center">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -55,7 +55,7 @@ export function NavMain({
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton className="gap-6">
                     {item.icon && <item.icon className="scale-200" />}
-                    <span className="text-xl font-medium text-center">{item.title}</span>
+                    <span className="text-lg font-medium text-center">{item.title}</span>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
