@@ -3,20 +3,19 @@ package ninjas.cs490Project.controller;
 import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.entity.FreeformEntry;
+import ninjas.cs490Project.entity.ProcessingStatus;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.repository.FreeformEntryRepository;
 import ninjas.cs490Project.service.AsyncResumeParser;
-import ninjas.cs490Project.service.ResumeProcessingNotificationService;
+import ninjas.cs490Project.service.ProcessingStatusService;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -26,19 +25,19 @@ public class CareerController {
     private final WorkExperienceRepository workExperienceRepository;
     private final UserRepository userRepository;
     private final AsyncResumeParser asyncResumeParser;
-    private final ResumeProcessingNotificationService notificationService;
     private final FreeformEntryRepository freeformEntryRepository;
+    private final ProcessingStatusService processingStatusService;
 
     public CareerController(WorkExperienceRepository workExperienceRepository,
                             UserRepository userRepository,
                             AsyncResumeParser asyncResumeParser,
-                            ResumeProcessingNotificationService notificationService,
-                            FreeformEntryRepository freeformEntryRepository) {
+                            FreeformEntryRepository freeformEntryRepository,
+                            ProcessingStatusService processingStatusService) {
         this.workExperienceRepository = workExperienceRepository;
         this.userRepository = userRepository;
         this.asyncResumeParser = asyncResumeParser;
-        this.notificationService = notificationService;
         this.freeformEntryRepository = freeformEntryRepository;
+        this.processingStatusService = processingStatusService;
     }
 
     // ------------------------------
@@ -123,11 +122,6 @@ public class CareerController {
         return ResponseEntity.ok("Created new career record");
     }
 
-    @GetMapping("/{freeformId}/status")
-    public SseEmitter subscribeToCareerProcessingStatus(@PathVariable int freeformId) {
-        return notificationService.subscribeToCareerProcessing(freeformId);
-    }
-
     @PostMapping("/freeform")
     public ResponseEntity<?> createFreeformCareer(Authentication authentication,
                                                  @RequestBody Map<String, String> request) {
@@ -149,8 +143,14 @@ public class CareerController {
         entry.setUpdatedAt(Instant.now());
         FreeformEntry savedEntry = freeformEntryRepository.save(entry);
 
-        // Process the freeform text asynchronously
-        asyncResumeParser.parseFreeformCareer(text, user, savedEntry.getId());
+        // Create processing status
+        ProcessingStatus status = processingStatusService.createProcessingStatus(
+            user,
+            ProcessingStatus.ProcessingType.FREEFORM_ENTRY,
+            Long.valueOf(savedEntry.getId())
+        );
+
+        asyncResumeParser.parseFreeformCareer(text, user, savedEntry.getId(), status);
         
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Freeform career entry submitted for processing");
@@ -286,8 +286,15 @@ public class CareerController {
         entry.setUpdatedAt(Instant.now());
         freeformEntryRepository.save(entry);
 
-        asyncResumeParser.parseFreeformCareer(text, user, freeformId);
-        
+        // Create processing status for the update
+        ProcessingStatus status = processingStatusService.createProcessingStatus(
+            user,
+            ProcessingStatus.ProcessingType.FREEFORM_ENTRY,
+            Long.valueOf(freeformId)
+        );
+
+        asyncResumeParser.parseFreeformCareer(text, user, freeformId, status);
+
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Freeform career entry updated and submitted for processing");
         response.put("entryId", freeformId);

@@ -7,7 +7,9 @@ import ninjas.cs490Project.dto.ResumeParsingResult;
 import ninjas.cs490Project.dto.EducationData;
 import ninjas.cs490Project.dto.WorkExperienceData;
 import ninjas.cs490Project.entity.Education;
+import ninjas.cs490Project.entity.GeneratedResume;
 import ninjas.cs490Project.entity.JobDescription;
+import ninjas.cs490Project.entity.ProcessingStatus;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.repository.EducationRepository;
@@ -24,6 +26,7 @@ import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -36,6 +39,8 @@ public class ResumeGenerationService {
     private final WorkExperienceRepository workExperienceRepository;
     private final EducationRepository educationRepository;
     private final JobDescriptionRepository jobDescriptionRepository;
+    private final ProcessingStatusService processingStatusService;
+    private final ResumeService resumeService;
 
     @Value("${gpt.api.key}")
     private String gptApiKey;
@@ -43,7 +48,9 @@ public class ResumeGenerationService {
     public ResumeGenerationService(WebClient.Builder webClientBuilder,
                                  WorkExperienceRepository workExperienceRepository,
                                  EducationRepository educationRepository,
-                                 JobDescriptionRepository jobDescriptionRepository) {
+                                 JobDescriptionRepository jobDescriptionRepository,
+                                 ProcessingStatusService processingStatusService,
+                                 ResumeService resumeService) {
         this.webClient = webClientBuilder
                 .baseUrl("https://api.openai.com/v1")
                 .build();
@@ -51,41 +58,54 @@ public class ResumeGenerationService {
         this.workExperienceRepository = workExperienceRepository;
         this.educationRepository = educationRepository;
         this.jobDescriptionRepository = jobDescriptionRepository;
+        this.processingStatusService = processingStatusService;
+        this.resumeService = resumeService;
     }
 
-    public ResumeParsingResult generateResume(User user, Long jobId) throws Exception {
-        // Get the job description
-        JobDescription jobDescription = jobDescriptionRepository.findById(jobId)
+    public ResumeParsingResult generateResume(User user, Long jobId, GeneratedResume savedResume, ProcessingStatus status) throws Exception {
+        try {
+            processingStatusService.startProcessing(status.getId());
+            // Get the job description
+            JobDescription jobDescription = jobDescriptionRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
 
-        // Get user's work experience and education
-        List<WorkExperience> workExperiences = workExperienceRepository.findByUserId(user.getId());
-        List<Education> educationList = educationRepository.findByUserId(user.getId());
+            // Get user's work experience and education
+            List<WorkExperience> workExperiences = workExperienceRepository.findByUserId(user.getId());
+            List<Education> educationList = educationRepository.findByUserId(user.getId());
 
-        // Build the prompt for GPT
-        String prompt = buildPrompt(jobDescription, workExperiences, educationList);
+            // Build the prompt for GPT
+            String prompt = buildPrompt(jobDescription, workExperiences, educationList);
 
-        // Create the GPT request
-        GPTRequest gptRequest = new GPTRequest(
-                "gpt-4",
-                List.of(
-                        new Message("developer", "You are a helpful assistant."),
-                        new Message("user", prompt)
-                )
-        );
+            // Create the GPT request
+            GPTRequest gptRequest = new GPTRequest(
+                    "gpt-4",
+                    List.of(
+                            new Message("developer", "You are a helpful assistant."),
+                            new Message("user", prompt)
+                    )
+            );
 
-        // Make the API call
-        String rawGptResponse = webClient.post()
-                .uri("/chat/completions")
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + gptApiKey)
-                .bodyValue(gptRequest)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+            // Make the API call
+            String rawGptResponse = webClient.post()
+                    .uri("/chat/completions")
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + gptApiKey)
+                    .bodyValue(gptRequest)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
 
-        // Parse and return the result
-        return parseGptResponse(rawGptResponse);
+            // Parse and return the result
+            ResumeParsingResult result = parseGptResponse(rawGptResponse);
+            savedResume.setContent(objectMapper.writeValueAsString(result));
+            savedResume.setUpdatedAt(Instant.now());
+            resumeService.storeGeneratedResume(savedResume);
+            processingStatusService.completeProcessing(status.getId());
+            return result;
+        } catch (Exception e) {
+            processingStatusService.failProcessing(status.getId(), e.getMessage());
+            throw e;
+        }
     }
 
     private String buildPrompt(JobDescription jobDescription, 
