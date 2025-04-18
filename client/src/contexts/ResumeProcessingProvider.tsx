@@ -5,12 +5,12 @@ import { useToast } from './ToastProvider';
 
 interface ActiveProcess {
   id: number;
-  type: 'resume' | 'freeform';
+  type: 'generate' | 'upload' | 'freeform';
 }
 
 interface ResumeProcessingContextType {
   activeProcesses: ActiveProcess[];
-  addActiveProcess: (id: number, type: 'resume' | 'freeform') => void;
+  addActiveProcess: (id: number, type: 'generate' | 'upload' | 'freeform') => void;
   removeActiveProcess: (id: number) => void;
 }
 
@@ -20,7 +20,7 @@ export function ResumeProcessingProvider({ children }: { children: React.ReactNo
     const [activeProcesses, setActiveProcesses] = useState<ActiveProcess[]>([]);
     const { showSuccess, showError } = useToast();
 
-    const addActiveProcess = useCallback((id: number, type: 'resume' | 'freeform') => {
+    const addActiveProcess = useCallback((id: number, type: 'generate' | 'upload' | 'freeform') => {
         setActiveProcesses(prev => [...prev, { id, type }]);
     }, []);
 
@@ -47,7 +47,22 @@ export function ResumeProcessingProvider({ children }: { children: React.ReactNo
                     const status = await response.json();
                     
                     if (status.status === 'COMPLETED') {
-                        showSuccess(`${process.type === 'resume' ? 'Resume' : 'Career entry'} processed successfully!`);
+                        let message = '';
+                        
+                        switch (process.type) {
+                            case 'generate':
+                            message = 'Resume generation completed successfully!';
+                            break;
+                            case 'upload':
+                            message = 'Resume upload processed successfully!';
+                            break;
+                            case 'freeform':
+                            message = 'Freeform entry processed successfully!';
+                            break;
+                            default:
+                            message = 'Process completed successfully!';
+                        }
+                        showSuccess(message);
                         removeActiveProcess(process.id);
                     } else if (status.status === 'FAILED') {
                         showError(status.error || 'Processing failed');

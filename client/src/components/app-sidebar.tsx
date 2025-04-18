@@ -6,6 +6,7 @@ import {
   FileUser,
   FolderClosed,
   GraduationCap,
+  Sparkles,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -19,10 +20,9 @@ import { StatusDialog } from "@/components/StatusDialog"
 const data = {
   navMain: [
     {
-      title: "Resume",
+      title: "Your Resumes",
       url: "",
       icon: FileUser,
-      isActive: true,
       items: [
         {
           title: "Upload",
@@ -33,6 +33,21 @@ const data = {
           url:"/resumes/upload/history"
         }
       ],
+    },
+    {
+      title: "Generate Resumes",
+      url: "/resumes/generate",
+      icon: Sparkles,
+      items: [
+        {
+          title: "Generate",
+          url: "/resumes/generate"
+        },
+        {
+          title: "History",
+          url: "/resumes/generate/history"
+        }
+      ]
     },
     {
       title: "Career",
@@ -78,9 +93,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        <StatusDialog />
-      </SidebarFooter>
     </Sidebar>
   )
 }

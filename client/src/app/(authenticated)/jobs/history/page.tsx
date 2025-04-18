@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Background } from '@/components/ui/background';
 import LoadingScreen from '@/components/LoadingScreen';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,8 @@ export default function JobHistoryPage() {
   const [jobs, setJobs] = useState<JobDescription[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
+  const paragraphRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
+  const [overflowingJobs, setOverflowingJobs] = useState<Set<string>>(new Set());
   const { showError } = useToast();
 
   async function fetchJobHistory() {
@@ -39,6 +41,17 @@ export default function JobHistoryPage() {
   useEffect(() => {
     fetchJobHistory();
   }, []);
+
+  useEffect(() => {
+    const newOverflowing = new Set<string>();
+    jobs.forEach(job => {
+      const el = paragraphRefs.current[job.jobId];
+      if (el && el.scrollHeight > el.clientHeight) {
+        newOverflowing.add(job.jobId);
+      }
+    });
+    setOverflowingJobs(newOverflowing);
+  }, [jobs]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -71,12 +84,15 @@ export default function JobHistoryPage() {
                   <CardTitle className="line-clamp-1 text-lg">{job.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className={`text-md text-gray-700 dark:text-muted-foreground break-words whitespace-pre-wrap ${
-                    !expandedJobs.has(job.jobId) ? 'line-clamp-4' : ''
-                  }`}>
+                  <p
+                    ref={(el) => { paragraphRefs.current[job.jobId] = el; }}
+                    className={`text-md text-gray-700 dark:text-muted-foreground whitespace-pre-wrap break-all ${
+                      !expandedJobs.has(job.jobId) ? 'line-clamp-4' : ''
+                    }`}
+                  >
                     {job.text}
                   </p>
-                  {job.text.length > 400 && (
+                  {overflowingJobs.has(job.jobId) && (
                     <Button
                       variant="link"
                       className="p-0 h-auto text-sm mt-2"

@@ -59,7 +59,7 @@ export default function ResumeUploadPage() {
       }
 
       const data = await response.json();
-      addActiveProcess(data.statusId, 'resume');
+      addActiveProcess(data.statusId, 'upload');
       showInfo("Resume uploaded. Please wait while we process your resume.");
     } catch (error) {
       showError("Error uploading resume");
