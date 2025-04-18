@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/auth";
 import { Button } from "@/components/ui/button";
-import {User, LogOut, Loader2 } from "lucide-react";
+import {User, LogOut, Loader2, CircleEllipsis } from "lucide-react";
 import Link from "next/link";
 import {
     DropdownMenu,
@@ -14,11 +14,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "@/components/Logo";
 import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
 import Image from "next/image";
+import { StatusDialog } from "@/components/StatusDialog";
+import { useState } from "react";
 
 export default function NavBar() {
     const { user, logout } = useAuth();
     const { activeResumeId, activeFreeformId } = useResumeProcessing();
     const isProcessing = activeResumeId !== null || activeFreeformId !== null;
+    const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-background dark:bg-sidebar shadow-md">
@@ -37,6 +40,7 @@ export default function NavBar() {
                 </div>
                 <div className="flex-1" />
                 <div className="flex items-center gap-2">
+                    <StatusDialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen} />
                     <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                             <Button 
@@ -66,6 +70,11 @@ export default function NavBar() {
                                     <User className="mr-2 h-4 w-4" />
                                     <span>Profile</span>
                                 </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setStatusDialogOpen(true)} className="cursor-pointer">
+                                <CircleEllipsis className="mr-2 h-4 w-4" />
+                                <span>Status</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 

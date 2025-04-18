@@ -2,14 +2,11 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
 import { CircleEllipsis, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { DialogHeader } from "./ui/dialog";
-import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "./ui/sidebar";
 import { useState, useEffect } from "react";
-import { useSidebar } from "./ui/sidebar";
 import { Button } from "./ui/button";
 import { useToast } from "@/contexts/ToastProvider";
 
@@ -24,10 +21,13 @@ interface Status {
   error?: string;
 }
 
-export function StatusDialog() {
+interface StatusDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
   const [statuses, setStatuses] = useState<Status[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const { setOpen } = useSidebar();
   const { showError } = useToast();
 
   const fetchStatuses = async () => {
@@ -45,19 +45,18 @@ export function StatusDialog() {
   };
 
   useEffect(() => {
-    if (isOpen) {
-      setOpen(false);
+    if (open) {
       fetchStatuses();
     }
-  }, [isOpen, setOpen]);
+  }, [open]);
 
   // Poll for updates every 2 seconds if there are processing items
   useEffect(() => {
-    if (!isOpen || !statuses.some(s => s.status === "PROCESSING")) return;
+    if (!open || !statuses.some(s => s.status === "PROCESSING")) return;
     
     const interval = setInterval(fetchStatuses, 2000);
     return () => clearInterval(interval);
-  }, [isOpen, statuses]);
+  }, [open, statuses]);
 
   const getStatusIcon = (status: Status["status"]) => {
     switch (status) {
@@ -113,76 +112,85 @@ export function StatusDialog() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    });
+  };
+
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <Dialog modal={false} open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <SidebarMenuButton className="flex items-center gap-1">
-              <CircleEllipsis className="scale-200" />
-              <span className="text-xs font-medium">Status</span>
-            </SidebarMenuButton>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="text-xl text-center">Status</DialogTitle>
-            </DialogHeader>
-            <DialogDescription>
-              <div className="flex flex-col gap-4">
-                {statuses.length > 0 ? (
-                  statuses.map((status) => (
-                    <div
-                      key={status.id}
-                      className="flex flex-col gap-2 p-4 rounded-lg border bg-card"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 max-w-[70%]">
-                          {getStatusIcon(status.status)}
-                          <div>
-                            <h3 className="font-medium leading-none">
-                              {getStatusTitle(status)}
-                            </h3>
-                            {getStatusSubtitle(status) && (
-                              <p className="text-sm text-muted-foreground mt-1 truncate">
-                                {getStatusSubtitle(status)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            {getStatusText(status)}
-                          </span>
-                          {status.status === "COMPLETED" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 px-2"
-                              onClick={() => {
-                                // TODO: Implement next step action
-                                console.log("Next step for", status.id);
-                              }}
-                            >
-                              View
-                            </Button>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="text-xl text-center">Status</DialogTitle>
+        </DialogHeader>
+        <DialogDescription>
+          <div className="flex flex-col gap-4">
+            {statuses.length > 0 ? (
+              statuses.map((status) => (
+                <div
+                  key={status.id}
+                  className="flex flex-col gap-2 p-4 rounded-lg border bg-card"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 max-w-[70%]">
+                      {getStatusIcon(status.status)}
+                      <div>
+                        <h3 className="font-medium text-foreground leading-none">
+                          {getStatusTitle(status)}
+                        </h3>
+                        {getStatusSubtitle(status) && (
+                          <p className="text-sm text-muted-foreground mt-1 truncate">
+                            {getStatusSubtitle(status)}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {(status.status == "PROCESSING" || status.status == "PENDING") && (
+                            <> Started: {formatDate(status.startedAt)}</>
                           )}
-                        </div>
+                          {(status.status == "COMPLETED" || status.status == "FAILED") && status.completedAt && (
+                            <> Finished: {formatDate(status.completedAt)}</>
+                          )}
+                        </p>
                       </div>
-                      {status.error && (
-                        <p className="text-sm text-red-500">{status.error}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        {status.status != "COMPLETED" && getStatusText(status)}
+                      </span>
+                      {status.status === "COMPLETED" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2"
+                          onClick={() => {
+                            // TODO: Implement next step action
+                            console.log("Next step for", status.id);
+                          }}
+                        >
+                          View
+                        </Button>
                       )}
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-muted-foreground">
-                    No generated resumes found
                   </div>
-                )}
+                  {status.error && (
+                    <p className="text-sm text-red-500">{status.error}</p>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                No generated resumes found
               </div>
-            </DialogDescription>
-          </DialogContent>
-        </Dialog>
-      </SidebarMenuItem>
-    </SidebarMenu>
+            )}
+          </div>
+        </DialogDescription>
+      </DialogContent>
+    </Dialog>
   );
 }
