@@ -137,8 +137,8 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
                   key={status.id}
                   className="flex flex-col gap-2 p-4 rounded-lg border bg-card"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 max-w-[70%]">
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-4 max-w-[70%]">
                       {getStatusIcon(status.status)}
                       <div>
                         <h3 className="font-medium text-foreground leading-none">
@@ -149,38 +149,44 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
                             {getStatusSubtitle(status)}
                           </p>
                         )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {(status.status == "PROCESSING" || status.status == "PENDING") && (
-                            <> Started: {formatDate(status.startedAt)}</>
-                          )}
-                          {(status.status == "COMPLETED" || status.status == "FAILED") && status.completedAt && (
-                            <> Finished: {formatDate(status.completedAt)}</>
-                          )}
-                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        {status.status != "COMPLETED" && getStatusText(status)}
-                      </span>
-                      {status.status === "COMPLETED" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 px-2"
-                          onClick={() => {
-                            // TODO: Implement next step action
-                            console.log("Next step for", status.id);
-                          }}
-                        >
-                          View
-                        </Button>
-                      )}
+                    <div className="flex flex-col items-end justify-center gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        {(status.status == "PROCESSING" || status.status == "PENDING") && (
+                          <> Started: {formatDate(status.startedAt)}</>
+                        )}
+                        {(status.status == "COMPLETED" || status.status == "FAILED") && status.completedAt && (
+                          <> Finished: {formatDate(status.completedAt)}</>
+                        )}
+                      </p>
+                      <div className="flex gap-2">
+                        {status.status != "COMPLETED" && status.status != "FAILED" && (
+                          <span className="text-sm text-blue-600">
+                            {getStatusText(status)}
+                          </span>
+                        )}
+                        {status.status == "FAILED" && (
+                          <span className="text-sm text-red-500 truncate max-w-[200px]">
+                            {status.error}
+                          </span>
+                        )}
+                        {status.status === "COMPLETED" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-2"
+                            onClick={() => {
+                              // TODO: Implement next step action
+                              console.log("Next step for", status.id);
+                            }}
+                          >
+                            View
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  {status.error && (
-                    <p className="text-sm text-red-500">{status.error}</p>
-                  )}
                 </div>
               ))
             ) : (
