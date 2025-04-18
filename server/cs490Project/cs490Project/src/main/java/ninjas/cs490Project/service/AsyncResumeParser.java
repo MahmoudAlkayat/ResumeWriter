@@ -6,12 +6,12 @@ import ninjas.cs490Project.dto.EducationData;
 import ninjas.cs490Project.dto.ResumeParsingResult;
 import ninjas.cs490Project.dto.WorkExperienceData;
 import ninjas.cs490Project.entity.Education;
-import ninjas.cs490Project.entity.Resume;
+import ninjas.cs490Project.entity.UploadedResume;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.entity.FreeformEntry;
 import ninjas.cs490Project.repository.EducationRepository;
-import ninjas.cs490Project.repository.ResumeRepository;
+import ninjas.cs490Project.repository.UploadedResumeRepository;
 import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.FreeformEntryRepository;
 import org.apache.tika.Tika;
@@ -35,7 +35,7 @@ public class AsyncResumeParser {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncResumeParser.class);
 
-    private final ResumeRepository resumeRepository;
+    private final UploadedResumeRepository uploadedResumeRepository;
     private final ResumeParsingService resumeParsingService;
     private final WorkExperienceRepository workExperienceRepository;
     private final EducationRepository educationRepository;
@@ -43,13 +43,13 @@ public class AsyncResumeParser {
     private final FreeformEntryRepository freeformEntryRepository;
     private final ObjectMapper objectMapper;
 
-    public AsyncResumeParser(ResumeRepository resumeRepository,
+    public AsyncResumeParser(UploadedResumeRepository uploadedResumeRepository,
                              ResumeParsingService resumeParsingService,
                              WorkExperienceRepository workExperienceRepository,
                              EducationRepository educationRepository,
                              ResumeProcessingNotificationService notificationService,
                              FreeformEntryRepository freeformEntryRepository) {
-        this.resumeRepository = resumeRepository;
+        this.uploadedResumeRepository = uploadedResumeRepository;
         this.resumeParsingService = resumeParsingService;
         this.workExperienceRepository = workExperienceRepository;
         this.educationRepository = educationRepository;
@@ -60,7 +60,7 @@ public class AsyncResumeParser {
 
     @Async
     @Transactional
-    public void parseResume(Resume resume) {
+    public void parseResume(UploadedResume resume) {
         try {
             // Extract text using Apache Tika
             Tika tika = new Tika();
@@ -69,12 +69,36 @@ public class AsyncResumeParser {
                     resumeText.substring(0, Math.min(resumeText.length(), 100)));
 
             // Parse resume details using your parsing service (e.g., GPT)
-            ResumeParsingResult parsingResult = resumeParsingService.parseKeyInformation(resumeText);
-            logger.info("Parsed result: {}", objectMapper.writeValueAsString(parsingResult));
+            // ResumeParsingResult parsingResult = resumeParsingService.parseKeyInformation(resumeText);
+            // logger.info("Parsed result: {}", objectMapper.writeValueAsString(parsingResult));
+
+            // TESTING
+            ResumeParsingResult parsingResult = new ResumeParsingResult();
+            List<EducationData> mockEducationList = new ArrayList<>();
+            EducationData mockEducation = new EducationData();
+            mockEducation.setInstitution("University of Illinois at Urbana-Champaign");
+            mockEducation.setDegree("Bachelor of Science");
+            mockEducation.setFieldOfStudy("Computer Science");
+            mockEducation.setStartDate("2021-08-15");
+            mockEducation.setEndDate("2025-12-15");
+            mockEducation.setGpa(3.8);
+            mockEducationList.add(mockEducation);
+
+            List<WorkExperienceData> mockWorkExperienceList = new ArrayList<>();
+            WorkExperienceData mockWorkExperience = new WorkExperienceData();
+            mockWorkExperience.setCompany("Google");
+            mockWorkExperience.setJobTitle("Software Engineer");
+            mockWorkExperience.setStartDate("2021-08-15");
+            mockWorkExperience.setEndDate("2025-12-15");
+            mockWorkExperience.setDescription("Developed and maintained software applications.");
+            mockWorkExperienceList.add(mockWorkExperience);
+
+            parsingResult.setEducationList(mockEducationList);
+            parsingResult.setWorkExperienceList(mockWorkExperienceList);
 
             // Update the resume content
             resume.setContent(resumeText);
-            resumeRepository.save(resume);
+            uploadedResumeRepository.save(resume);
 
             // Process education entries
             List<EducationData> educationList = parsingResult.getEducationList();
@@ -115,8 +139,6 @@ public class AsyncResumeParser {
             // Process work experience entries
             List<WorkExperienceData> workExpList = parsingResult.getWorkExperienceList();
             if (workExpList != null && !workExpList.isEmpty()) {
-                logger.info("Found {} work experience entries.", workExpList.size());
-                List<WorkExperience> workExperiences = new ArrayList<>();
 
                 for (WorkExperienceData data : workExpList) {
                     WorkExperience we = new WorkExperience();
@@ -132,21 +154,19 @@ public class AsyncResumeParser {
                     }
 
                     we.setDescription(data.getDescription());
-                    // Map directly by User (not by Resume)
                     we.setUser(resume.getUser());
-                    workExperiences.add(we);
+                    workExperienceRepository.save(we);
                 }
-                // Save all work experience entries in a batch
-                workExperienceRepository.saveAll(workExperiences);
-                logger.info("Saved {} work experience entries.", workExperiences.size());
+                logger.info("Saved {} work experience entries.", workExpList.size());
             } else {
                 logger.warn("No work experience entries found in parsed result.");
             }
 
             // Notify that processing is complete
-            notificationService.notifyProcessingComplete(resume.getId());
+            // notificationService.notifyProcessingComplete(resume.getId().intValue());
         } catch (Exception e) {
             logger.error("Error processing resume with ID " + resume.getId(), e);
+            // notificationService.notifyProcessingError(resume.getId().intValue(), e.getMessage());
         }
     }
 

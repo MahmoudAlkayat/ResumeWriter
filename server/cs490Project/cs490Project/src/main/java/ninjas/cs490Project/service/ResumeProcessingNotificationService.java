@@ -36,8 +36,11 @@ public class ResumeProcessingNotificationService {
         if (emitter != null) {
             try {
                 emitter.send(SseEmitter.event()
-                        .name("processing-complete")
-                        .data("Resume processing completed successfully"));
+                        .name("resume-processing")
+                        .data(Map.of(
+                            "status", "complete",
+                            "resumeId", resumeId
+                        )));
                 emitter.complete();
             } catch (Exception e) {
                 emitter.completeWithError(e);
@@ -52,8 +55,11 @@ public class ResumeProcessingNotificationService {
         if (emitter != null) {
             try {
                 emitter.send(SseEmitter.event()
-                        .name("processing-complete")
-                        .data("Career information processing completed successfully"));
+                        .name("career-processing")
+                        .data(Map.of(
+                            "status", "complete",
+                            "freeformId", freeformId
+                        )));
                 emitter.complete();
             } catch (Exception e) {
                 emitter.completeWithError(e);
@@ -63,13 +69,37 @@ public class ResumeProcessingNotificationService {
         }
     }
 
+    public void notifyProcessingError(Integer resumeId, String errorMessage) {
+        SseEmitter emitter = resumeEmitters.get(resumeId);
+        if (emitter != null) {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("resume-processing")
+                        .data(Map.of(
+                            "status", "error",
+                            "resumeId", resumeId,
+                            "error", errorMessage
+                        )));
+                emitter.complete();
+            } catch (Exception e) {
+                emitter.completeWithError(e);
+            } finally {
+                resumeEmitters.remove(resumeId);
+            }
+        }
+    }
+
     public void notifyCareerProcessingError(Integer freeformId, String errorMessage) {
         SseEmitter emitter = careerEmitters.get(freeformId);
         if (emitter != null) {
             try {
                 emitter.send(SseEmitter.event()
-                        .name("processing-error")
-                        .data(errorMessage));
+                        .name("career-processing")
+                        .data(Map.of(
+                            "status", "error",
+                            "freeformId", freeformId,
+                            "error", errorMessage
+                        )));
                 emitter.complete();
             } catch (Exception e) {
                 emitter.completeWithError(e);
