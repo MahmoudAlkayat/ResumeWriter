@@ -7,5 +7,6 @@ import java.util.List;
 
 @Repository
 public interface WorkExperienceRepository extends JpaRepository<WorkExperience, Integer> {
-    List<WorkExperience> findByUserId(int userId);
+    List<WorkExperience> findByUserId(Integer userId);
+    WorkExperience findByFreeformEntryId(Integer freeformEntryId);
 }

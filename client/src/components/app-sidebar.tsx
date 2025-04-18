@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   Briefcase,
   FileUser,
+  FolderClosed,
   GraduationCap,
 } from "lucide-react"
 
@@ -25,20 +26,49 @@ const data = {
       items: [
         {
           title: "Upload",
-          url: "/upload-resume",
+          url: "/resumes/upload",
+        },
+        {
+          title: "History",
+          url:"/resumes/upload/history"
         }
       ],
     },
     {
       title: "Career",
       url: "/career",
-      icon: Briefcase,
+      icon: FolderClosed,
+      items: [
+        {
+          title: "View",
+          url: "/career"
+        },
+        {
+          title: "Freeform",
+          url: "/career/freeform/"
+        }
+      ]
     },
     {
       title: "Education",
       url: "/education",
       icon: GraduationCap,
     },
+    {
+      title: "Jobs",
+      url: "",
+      icon: Briefcase,
+      items: [
+        {
+          title: "Submit",
+          url: "/jobs/submit",
+        },
+        {
+          title: "History",
+          url: "/jobs/history",
+        }
+      ]
+    }
   ],
 }
 
