@@ -67,12 +67,12 @@ public class LinkedInOAuthController {
                 user.setFirstName(linkedInUser.getFirstName());
                 user.setLastName(linkedInUser.getLastName());
                 user.setIsVerified(true);
-
+                
                 String randomPassword = UUID.randomUUID().toString();
-                user.setPasswordHash(passwordEncoder.encode(randomPassword));
-
-                userRepository.save(user);
+                user.setPasswordHash(passwordEncoder.encode(randomPassword));  
             }
+            user.setProfilePictureUrl(linkedInUser.getProfilePictureUrl());
+            userRepository.save(user);
 
             String themePreference;
             Profile profile = profileRepository.findByUser(user);
@@ -94,12 +94,13 @@ public class LinkedInOAuthController {
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             
             // Create URL-encoded user data
-            String userData = String.format("id=%s&email=%s&firstName=%s&lastName=%s",
+            String userData = String.format("id=%s&email=%s&firstName=%s&lastName=%s&themePreference=%s&profilePictureUrl=%s",
                 URLEncoder.encode(String.valueOf(user.getId()), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getFirstName(), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getLastName(), StandardCharsets.UTF_8.toString()),
-                URLEncoder.encode(themePreference, StandardCharsets.UTF_8.toString())
+                URLEncoder.encode(themePreference, StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(user.getProfilePictureUrl(), StandardCharsets.UTF_8.toString())
             );
             
             response.sendRedirect("http://localhost:3000/auth-success?oauth=linkedin&" + userData);

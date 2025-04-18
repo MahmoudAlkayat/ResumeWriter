@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "@/components/Logo";
-import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
 import Image from "next/image";
 import { StatusDialog } from "@/components/StatusDialog";
 import { useState } from "react";
@@ -41,7 +40,7 @@ export default function NavBar() {
                                 className="!h-auto focus:outline-none flex items-center gap-4 px-4 py-1 hover:bg-accent"
                             >
                                 <Avatar className="size-8">
-                                    <AvatarImage src={`https://api.dicebear.com/9.x/initials/svg?seed=${user?.firstName}${user?.lastName}&backgroundType=gradientLinear`} />
+                                    <AvatarImage src={user?.profilePictureUrl || `https://api.dicebear.com/9.x/initials/svg?seed=${user?.firstName}${user?.lastName}&backgroundType=gradientLinear`} />
                                     <AvatarFallback>{user?.firstName[0]}</AvatarFallback>
                                 </Avatar>
                                 <span className="text-lg font-medium">{user?.firstName}</span>

@@ -118,7 +118,7 @@ export default function ProfilePage() {
         {/* Header Section */}
         <div className="flex flex-col items-center justify-center gap-2">
             <Avatar className="size-16">
-                <AvatarImage src={`https://api.dicebear.com/9.x/initials/svg?seed=${user?.firstName}${user?.lastName}&backgroundType=gradientLinear`} />
+                <AvatarImage src={user?.profilePictureUrl || `https://api.dicebear.com/9.x/initials/svg?seed=${user?.firstName}${user?.lastName}&backgroundType=gradientLinear`} />
                 <AvatarFallback>{user?.firstName[0]}</AvatarFallback>
             </Avatar>
           <h1 className="text-4xl font-bold text-primary mb-4 drop-shadow-md">

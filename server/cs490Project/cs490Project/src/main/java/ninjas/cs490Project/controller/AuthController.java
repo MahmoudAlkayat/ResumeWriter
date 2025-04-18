@@ -109,6 +109,7 @@ public class AuthController {
             userData.put("email", user.getEmail());
             userData.put("firstName", user.getFirstName());
             userData.put("lastName", user.getLastName());
+            userData.put("profilePictureUrl", user.getProfilePictureUrl());
             return ResponseEntity.ok(userData);
         } else {
             return ResponseEntity.status(401).body("Not authenticated");

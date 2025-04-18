@@ -66,17 +66,16 @@ public class GoogleOAuthController {
             if (user == null) {
                 user = new User();
                 user.setEmail(googleUser.getEmail());
-                user.setUsername(googleUser.getEmail()); // or your own logic
+                user.setUsername(googleUser.getEmail());
                 user.setFirstName(googleUser.getFirstName() != null ? googleUser.getFirstName() : "");
                 user.setLastName(googleUser.getLastName() != null ? googleUser.getLastName() : "");
                 user.setIsVerified(true);
 
-                // Generate a random password and hash it.
                 String randomPassword = UUID.randomUUID().toString();
                 user.setPasswordHash(passwordEncoder.encode(randomPassword));
-
-                userRepository.save(user);
             }
+            user.setProfilePictureUrl(googleUser.getPictureUrl());
+            userRepository.save(user);
 
             String themePreference;
             Profile profile = profileRepository.findByUser(user);
@@ -101,12 +100,13 @@ public class GoogleOAuthController {
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
             // 7) Add user data to redirect URL
-            String userData = String.format("id=%s&email=%s&firstName=%s&lastName=%s&themePreference=%s",
+            String userData = String.format("id=%s&email=%s&firstName=%s&lastName=%s&themePreference=%s&profilePictureUrl=%s",
                 URLEncoder.encode(String.valueOf(user.getId()), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getFirstName(), StandardCharsets.UTF_8.toString()),
                 URLEncoder.encode(user.getLastName(), StandardCharsets.UTF_8.toString()),
-                URLEncoder.encode(themePreference, StandardCharsets.UTF_8.toString())
+                URLEncoder.encode(themePreference, StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(user.getProfilePictureUrl(), StandardCharsets.UTF_8.toString())
             );
 
             // 8) Redirect with user data

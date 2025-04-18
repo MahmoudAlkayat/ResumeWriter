@@ -19,8 +19,9 @@ const AuthSuccessPage: React.FC = () => {
     const firstName = searchParams.get('firstName')
     const lastName = searchParams.get('lastName')
     const themePreference = searchParams.get('themePreference') || 'light'
+    const profilePictureUrl = searchParams.get('profilePictureUrl')
     if (!id && !email && !firstName && !lastName) return;
-    login({id: Number(id), email: email!, firstName: firstName!, lastName: lastName!}, themePreference)
+    login({id: Number(id), email: email!, firstName: firstName!, lastName: lastName!, profilePictureUrl: profilePictureUrl!}, themePreference)
   }
 
   useEffect(() => {

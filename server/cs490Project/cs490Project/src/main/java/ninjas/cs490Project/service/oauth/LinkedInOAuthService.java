@@ -65,6 +65,7 @@ public class LinkedInOAuthService {
         user.setFirstName((String) profileData.get("given_name"));
         user.setLastName((String) profileData.get("family_name"));
         user.setId((String) profileData.get("sub"));
+        user.setProfilePictureUrl((String) profileData.get("picture"));
 
         return user;
     }
