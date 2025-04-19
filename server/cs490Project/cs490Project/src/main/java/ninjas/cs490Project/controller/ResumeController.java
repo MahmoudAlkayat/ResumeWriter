@@ -13,7 +13,9 @@ import ninjas.cs490Project.service.ResumeParsingService;
 import ninjas.cs490Project.service.ResumeGenerationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -100,7 +102,7 @@ public class ResumeController {
                 savedResume.getId()
             );
 
-            asyncResumeParser.parseResume(savedResume, status);
+            // asyncResumeParser.parseResume(savedResume, status);
 
             // Return success with processing status
             Map<String, Object> response = new HashMap<>();
@@ -137,6 +139,37 @@ public class ResumeController {
         }
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/upload/{resumeId}/original")
+    public ResponseEntity<?> getOriginalFile(@PathVariable Long resumeId, Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            User currentUser = userRepository.findByEmail(email);
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+
+            UploadedResume resume = uploadedResumeRepository.findById(resumeId)
+                .orElseThrow(() -> new IllegalArgumentException("Resume not found"));
+
+            // Check if the current user owns this resume
+            if (resume.getUser().getId() != currentUser.getId()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You don't have permission to access this file");
+            }
+
+            // Set up response headers for file download
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", resume.getTitle());
+            headers.setContentLength(resume.getFileData().length);
+
+            return new ResponseEntity<>(resume.getFileData(), headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving original file: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving file: " + e.getMessage());
+        }
     }
 
     public static class GenerateResumeRequest {

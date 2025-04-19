@@ -64,10 +64,44 @@ export default function ResumeHistoryPage() {
                 className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700"
               >
                 <CardHeader className="-mb-4">
+                  <div className="flex">
                   <CardTitle className="text-lg">{new Date(resume.createdAt).toLocaleString('en-US', {
                     dateStyle: 'medium',
                     timeStyle: 'short'
                   })}</CardTitle>
+                  <div className="ml-auto">
+                    <Button
+                        variant="link"
+                        className="p-0 h-auto text-sm"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`http://localhost:8080/api/resumes/upload/${resume.resumeId}/original`, {
+                              credentials: "include"
+                            });
+
+                            if (!response.ok) {
+                              throw new Error("Failed to download file");
+                            }
+
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = resume.title;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                          } catch (err) {
+                            if (err instanceof Error) showError(err.message);
+                            else showError("Failed to download file");
+                          }
+                        }}
+                      >
+                        View Original
+                      </Button>
+                  </div>
+                  </div>
                   <CardTitle className="line-clamp-1 text-lg">{resume.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -90,7 +124,7 @@ export default function ResumeHistoryPage() {
                         setExpandedResumes(newExpanded);
                       }}
                     >
-                      {expandedResumes.has(resume.resumeId) ? 'Show less' : 'Read more'}
+                      {expandedResumes.has(resume.resumeId) ? 'Show Less' : 'Read More'}
                     </Button>
                   )}
                 </CardContent>
