@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Background } from '@/components/ui/background';
 import LoadingScreen from '@/components/LoadingScreen';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/contexts/ToastProvider';
 import { Button } from '@/components/ui/button';
 
@@ -92,6 +92,7 @@ export default function JobHistoryPage() {
                   >
                     {job.text}
                   </p>
+                  <div className="flex items-center">
                   {overflowingJobs.has(job.jobId) && (
                     <Button
                       variant="link"
@@ -109,6 +110,10 @@ export default function JobHistoryPage() {
                       {expandedJobs.has(job.jobId) ? 'Show less' : 'Read more'}
                     </Button>
                   )}
+                  <div className="ml-auto">
+                    <p className="text-xs text-muted-foreground">JobID: {job.jobId}</p>
+                  </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}

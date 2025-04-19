@@ -150,7 +150,7 @@ public class CareerController {
             Long.valueOf(savedEntry.getId())
         );
 
-        asyncResumeParser.parseFreeformCareer(text, user, savedEntry.getId(), status);
+        asyncResumeParser.parseFreeformCareer(text, user, savedEntry, status);
         
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Freeform career entry submitted for processing");
@@ -249,6 +249,7 @@ public class CareerController {
             entryMap.put("id", String.valueOf(entry.getId()));
             entryMap.put("text", entry.getRawText());
             entryMap.put("updatedAt", String.valueOf(entry.getUpdatedAt()));
+            entryMap.put("careerId", entry.getWorkExperience() != null ? String.valueOf(entry.getWorkExperience().getId()) : null);
             response.add(entryMap);
         }
         return ResponseEntity.ok(response);
@@ -294,7 +295,7 @@ public class CareerController {
             Long.valueOf(freeformId)
         );
 
-        asyncResumeParser.parseFreeformCareer(text, user, freeformId, status);
+        asyncResumeParser.parseFreeformCareer(text, user, entry, status);
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Freeform career entry updated and submitted for processing");

@@ -15,12 +15,14 @@ interface FreeformEntry {
     id: number;
     text: string;
     updatedAt: string;
+    careerId: number;
 }
 
 export default function FreeformCareerPage() {
     const { user } = useAuth();
     const { showError, showSuccess } = useToast();
     const [isLoading, setIsLoading] = useState(true);
+    const { addActiveProcess } = useResumeProcessing();
 
     const [freeformEntries, setFreeformEntries] = useState<FreeformEntry[]>([]);
 
@@ -40,6 +42,7 @@ export default function FreeformCareerPage() {
                 throw new Error("Failed to fetch freeform entries");
             }
             const data = await response.json();
+            console.log(data)
             setFreeformEntries(data);
             setIsLoading(false);
         } catch (err) {
@@ -77,6 +80,7 @@ export default function FreeformCareerPage() {
             return;
         }
 
+        // No changes
         if (editingIndex !== null && formData.text.trim() === freeformEntries[editingIndex].text.trim()) {
             setEditingIndex(null);
             setFormData({ text: "" });
@@ -106,8 +110,8 @@ export default function FreeformCareerPage() {
             }
 
             const result = await response.json();
-
-            showSuccess("Entry updated successfully");
+            addActiveProcess(result.statusId, 'freeform');
+            showSuccess("Freeform entry updated. Please wait while we process it.");
             await fetchFreeformEntries();
         } catch (err) {
             if (err instanceof Error) {
@@ -137,6 +141,8 @@ export default function FreeformCareerPage() {
                 {freeformEntries.length === 0 ? (
                     <p className="text-xl text-foreground drop-shadow-sm text-center">
                         No freeform entries found.
+                        <br/>
+                        Start by adding a new career entry with freeform text.
                     </p>
                 ) : (
                     <div className="space-y-8">
@@ -193,12 +199,19 @@ export default function FreeformCareerPage() {
                                                 </div>
                                                 </CardContent>
                                                 <CardFooter className="-mt-2">
-                                                    <p className="text-muted-foreground text-sm">
-                                                    {new Date(entry.updatedAt).toLocaleString('en-US', {
-                                                        dateStyle: 'medium',
-                                                        timeStyle: 'short'
-                                                    })}
-                                                    </p>
+                                                    <div className="flex justify-between w-full items-center">
+                                                        <p className="text-muted-foreground text-sm">
+                                                        {new Date(entry.updatedAt).toLocaleString('en-US', {
+                                                            dateStyle: 'medium',
+                                                            timeStyle: 'short'
+                                                        })}
+                                                        </p>
+                                                        {entry.careerId && (
+                                                            <p className="text-muted-foreground text-xs">
+                                                                For CareerID: {entry.careerId}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </CardFooter>
                                                 </>
                                         )}

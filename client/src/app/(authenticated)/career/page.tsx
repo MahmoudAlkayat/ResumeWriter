@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Background } from "@/components/ui/background";
 import { Pencil, PlusIcon, Trash } from "lucide-react";
 import { useAuth } from "@/hooks/auth";
@@ -397,13 +397,22 @@ export default function CareerPage() {
                               ? job.endDate
                               : new Date(job.endDate).toISOString().slice(0, 10)}
                           </p>
-                          <p className="text-gray-700 dark:text-white leading-relaxed">
+                          <p className="text-gray-700 dark:text-white leading-relaxed break-words whitespace-pre-wrap">
                             {job.responsibilities}
                           </p>
                         </div>
                       </>
                     )}
                   </CardContent>
+                  <CardFooter className="-mt-4">
+                      <div className="flex justify-between ml-auto">
+                          {job.id && (
+                              <p className="text-muted-foreground text-xs">
+                                  CareerID: {job.id}
+                              </p>
+                          )}
+                      </div>
+                  </CardFooter>
                 </Card>
               );
             })}

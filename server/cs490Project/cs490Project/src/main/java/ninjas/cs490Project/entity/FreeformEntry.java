@@ -24,4 +24,8 @@ public class FreeformEntry {
 
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+    @OneToOne
+    @JoinColumn(name = "work_experience_id")
+    private WorkExperience workExperience;
 } 

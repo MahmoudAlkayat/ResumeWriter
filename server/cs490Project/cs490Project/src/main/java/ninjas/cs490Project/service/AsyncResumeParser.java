@@ -196,16 +196,12 @@ public class AsyncResumeParser {
 
     @Async
     @Transactional
-    public void parseFreeformCareer(String text, User user, Integer freeformId, ProcessingStatus status) {
-        FreeformEntry entry = freeformEntryRepository.findById(freeformId)
-                .orElseThrow(() -> new RuntimeException("FreeformEntry not found"));
-
+    public void parseFreeformCareer(String text, User user, FreeformEntry freeformEntry, ProcessingStatus status) {
         try {
             processingStatusService.startProcessing(status.getId());
             // Parse the freeform text using GPT
-            ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
+            // ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
 
-            /*
             // FOR TESTING
             Thread.sleep(10000);
             ResumeParsingResult parsingResult = new ResumeParsingResult();
@@ -217,10 +213,9 @@ public class AsyncResumeParser {
             mock.setEndDate("2021-01-01");
             mock.setDescription("Description");
             parsingResult.getWorkExperienceList().add(mock);
-             */
 
             // Get existing work experience if any
-            WorkExperience existingExperience = workExperienceRepository.findByFreeformEntryId(freeformId);
+            WorkExperience existingExperience = workExperienceRepository.findByFreeformEntryId(freeformEntry.getId());
 
             // Process work experience entry
             List<WorkExperienceData> workExpList = parsingResult.getWorkExperienceList();
@@ -247,27 +242,28 @@ public class AsyncResumeParser {
 
                 we.setDescription(data.getDescription());
                 we.setUser(user);
-                we.setFreeformEntry(entry);
+                we.setFreeformEntry(freeformEntry);
 
                 // Save the work experience
                 workExperienceRepository.save(we);
                 logger.info("Saved work experience entry from freeform text.");
                 
                 // Update FreeformEntry
-                entry.setUpdatedAt(Instant.now());
-                freeformEntryRepository.save(entry);
+                freeformEntry.setUpdatedAt(Instant.now());
+                freeformEntry.setWorkExperience(we);
+                freeformEntryRepository.save(freeformEntry);
                 
             } else {
                 logger.warn("No work experience entry found in parsed freeform text.");
-                entry.setUpdatedAt(Instant.now());
-                freeformEntryRepository.save(entry);
+                freeformEntry.setUpdatedAt(Instant.now());
+                freeformEntryRepository.save(freeformEntry);
             }
             processingStatusService.completeProcessing(status.getId());
 
         } catch (Exception e) {
             logger.error("Error parsing freeform career", e);
-            entry.setUpdatedAt(Instant.now());
-            freeformEntryRepository.save(entry);
+            freeformEntry.setUpdatedAt(Instant.now());
+            freeformEntryRepository.save(freeformEntry);
             processingStatusService.failProcessing(status.getId(), e.getMessage());
         }
     }
