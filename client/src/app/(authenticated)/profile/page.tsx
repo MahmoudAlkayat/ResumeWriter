@@ -22,12 +22,25 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [themePreference, setThemePreference] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [editingFirst, setEditingFirst] = useState("");
+  const [editingLast, setEditingLast] = useState("");
 
   const validatePhone = (phone: string) => {
-    // E.164 format: +[country code][subscriber number]
     const phoneRegex = /^\+?[1-9]\d{9}$/;
     if (phone && !phoneRegex.test(phone)) {
       showError("Please enter a valid phone number (e.g., 1234567890)");
+      return false;
+    }
+    return true;
+  };
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showError("Please enter a valid email address");
       return false;
     }
     return true;
@@ -42,6 +55,11 @@ export default function ProfilePage() {
     setPhone(data.phone || "");
     setAddress(data.address || "");
     setThemePreference(data.themePreference || "");
+    setFirstName(data.firstName || "");
+    setLastName(data.lastName || "");
+    setEmail(data.email || "");
+    setEditingFirst(data.firstName || "");
+    setEditingLast(data.lastName || "");
   }
 
   useEffect(() => {
@@ -56,6 +74,9 @@ export default function ProfilePage() {
     if (!validatePhone(phone)) {
       return;
     }
+    if (!validateEmail(email)) {
+      return;
+    }
 
     try {
       const res = await fetch("http://localhost:8080/api/profile", {
@@ -68,6 +89,9 @@ export default function ProfilePage() {
           phone,
           address,
           themePreference,
+          firstName: editingFirst,
+          lastName: editingLast,
+          email,
         }),
       });
 
@@ -78,6 +102,7 @@ export default function ProfilePage() {
       
       showSuccess("Profile updated successfully");
       setIsEditing(false);
+      fetchUser();
     } catch (err) {
       showError(err instanceof Error ? err.message : "Failed to update profile");
     }
@@ -119,10 +144,10 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center justify-center gap-2">
             <Avatar className="size-16">
                 <AvatarImage src={user?.profilePictureUrl || `https://api.dicebear.com/9.x/initials/svg?seed=${user?.firstName}${user?.lastName}&backgroundType=gradientLinear`} />
-                <AvatarFallback>{user?.firstName[0]}</AvatarFallback>
+                <AvatarFallback>{firstName[0]}</AvatarFallback>
             </Avatar>
           <h1 className="text-4xl font-bold text-primary mb-4 drop-shadow-md">
-            {user?.firstName} {user?.lastName}
+            {firstName} {lastName}
           </h1>
         </div>
 
@@ -142,8 +167,41 @@ export default function ProfilePage() {
             </div>
             <div className="space-y-4">
               <div className="flex flex-col items-center">
+                <Label className="text-sm text-gray-500 dark:text-gray-400">First Name</Label>
+                {isEditing ? (
+                  <Input
+                    value={editingFirst}
+                    onChange={(e) => setEditingFirst(e.target.value)}
+                    className="w-64"
+                  />
+                ) : (
+                  <p className="text-lg font-medium">{firstName}</p>
+                )}
+              </div>
+              <div className="flex flex-col items-center">
+                <Label className="text-sm text-gray-500 dark:text-gray-400">Last Name</Label>
+                {isEditing ? (
+                  <Input
+                    value={editingLast}
+                    onChange={(e) => setEditingLast(e.target.value)}
+                    className="w-64"
+                  />
+                ) : (
+                  <p className="text-lg font-medium">{lastName}</p>
+                )}
+              </div>
+              <div className="flex flex-col items-center">
                 <Label className="text-sm text-gray-500 dark:text-gray-400">Email</Label>
-                <p className="text-lg font-medium">{user?.email}</p>
+                {isEditing ? (
+                  <Input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-64"
+                    type="email"
+                  />
+                ) : (
+                  <p className="text-lg font-medium">{email}</p>
+                )}
               </div>
               <div className="flex flex-col items-center">
                 <Label className="text-sm text-gray-500 dark:text-gray-400">Phone</Label>
@@ -247,4 +305,3 @@ export default function ProfilePage() {
     </Background>
   );
 }
-
