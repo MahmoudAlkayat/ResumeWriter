@@ -164,7 +164,8 @@ public class AsyncResumeParser {
                         we.setEndDate(LocalDate.parse(endDateStr));
                     }
 
-                    we.setDescription(data.getDescription());
+                    we.setResponsibilities(data.getResponsibilities());
+                    we.setAccomplishments(data.getAccomplishments());
                     we.setUser(resume.getUser());
                     workExperienceRepository.save(we);
                 }
@@ -209,7 +210,8 @@ public class AsyncResumeParser {
             mock.setJobTitle("Job Title");
             mock.setStartDate("2021-01-01");
             mock.setEndDate("2021-01-01");
-            mock.setDescription("Description");
+            mock.setResponsibilities("Description");
+            mock.setAccomplishments("Test");
             parsingResult.getWorkExperienceList().add(mock);
              */
 
@@ -239,7 +241,8 @@ public class AsyncResumeParser {
                     we.setEndDate(LocalDate.parse(endDateStr));
                 }
 
-                we.setDescription(data.getDescription());
+                we.setResponsibilities(data.getResponsibilities());
+                we.setAccomplishments(data.getAccomplishments());
                 we.setUser(user);
                 we.setFreeformEntry(freeformEntry);
 

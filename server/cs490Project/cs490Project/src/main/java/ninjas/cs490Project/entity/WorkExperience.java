@@ -32,8 +32,10 @@ public class WorkExperience {
     private LocalDate endDate;
 
     @Column(columnDefinition = "TEXT")
-    private String description;
+    private String responsibilities;
 
+    @Column(columnDefinition = "TEXT")
+    private String accomplishments;
 
     // Getters and Setters
 
@@ -72,11 +74,18 @@ public class WorkExperience {
         this.endDate = endDate;
     }
 
-    public String getDescription() {
-        return description;
+    public String getResponsibilities() {
+        return responsibilities;
     }
-    public void setDescription(String description) {
-        this.description = description;
+    public void setResponsibilities(String responsibilities) {
+        this.responsibilities = responsibilities;
+    }
+
+    public String getAccomplishments() {
+        return accomplishments;
+    }
+    public void setAccomplishments(String accomplishments) {
+        this.accomplishments = accomplishments;
     }
 
     public User getUser() {

@@ -8,5 +8,6 @@ public class WorkExperienceData {
     private String jobTitle;
     private String startDate;
     private String endDate;
-    private String description;
+    private String responsibilities;
+    private String accomplishments;
 }

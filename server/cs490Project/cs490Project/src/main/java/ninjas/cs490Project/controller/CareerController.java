@@ -49,6 +49,7 @@ public class CareerController {
         private String startDate;
         private String endDate;
         private String responsibilities;
+        private String accomplishments;
 
         // Getters and setters
         public String getTitle() { return title; }
@@ -65,6 +66,9 @@ public class CareerController {
 
         public String getResponsibilities() { return responsibilities; }
         public void setResponsibilities(String responsibilities) { this.responsibilities = responsibilities; }
+
+        public String getAccomplishments() { return accomplishments; }
+        public void setAccomplishments(String accomplishments) { this.accomplishments = accomplishments; }
     }
 
     // 1. GET all WorkExperience records for a user
@@ -89,7 +93,8 @@ public class CareerController {
             jobMap.put("company", job.getCompany() != null ? job.getCompany() : "N/A");
             jobMap.put("startDate", job.getStartDate() != null ? job.getStartDate().toString() : "N/A");
             jobMap.put("endDate", job.getEndDate() != null ? job.getEndDate().toString() : "Present");
-            jobMap.put("responsibilities", job.getDescription() != null ? job.getDescription() : "N/A");
+            jobMap.put("responsibilities", job.getResponsibilities() != null ? job.getResponsibilities() : "N/A");
+            jobMap.put("accomplishments", job.getAccomplishments() != null ? job.getAccomplishments() : "N/A");
             jobsDtoList.add(jobMap);
         }
         return ResponseEntity.ok(Collections.singletonMap("jobs", jobsDtoList));
@@ -115,7 +120,8 @@ public class CareerController {
         if (req.getEndDate() != null && !req.getEndDate().isEmpty()) {
             job.setEndDate(LocalDate.parse(req.getEndDate()));
         }
-        job.setDescription(req.getResponsibilities());
+        job.setResponsibilities(req.getResponsibilities());
+        job.setAccomplishments(req.getAccomplishments());
 
         // Save the entity
         workExperienceRepository.save(job);
@@ -196,7 +202,8 @@ public class CareerController {
         } else {
             job.setEndDate(null);
         }
-        job.setDescription(req.getResponsibilities());
+        job.setResponsibilities(req.getResponsibilities());
+        job.setAccomplishments(req.getAccomplishments());
 
         // Save the changes
         workExperienceRepository.save(job);

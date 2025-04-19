@@ -158,7 +158,7 @@ public class ResumeGenerationService {
                 exp.getJobTitle(),
                 exp.getStartDate(),
                 exp.getEndDate() != null ? exp.getEndDate() : "Present",
-                exp.getDescription()
+                exp.getResponsibilities()
             ));
         }
 
@@ -313,7 +313,7 @@ public class ResumeGenerationService {
         mockWorkExp1.setJobTitle("Senior Software Engineer");
         mockWorkExp1.setStartDate("2020-06-01");
         mockWorkExp1.setEndDate("2023-08-01");
-        mockWorkExp1.setDescription("• Led development of cloud-native microservices using Spring Boot and Kubernetes\n" +
+        mockWorkExp1.setResponsibilities("• Led development of cloud-native microservices using Spring Boot and Kubernetes\n" +
                                   "• Implemented CI/CD pipelines reducing deployment time by 60%\n" +
                                   "• Mentored junior developers and conducted code reviews");
         mockWorkExperienceList.add(mockWorkExp1);
@@ -323,7 +323,7 @@ public class ResumeGenerationService {
         mockWorkExp2.setJobTitle("Software Developer");
         mockWorkExp2.setStartDate("2018-03-15");
         mockWorkExp2.setEndDate("2020-05-30");
-        mockWorkExp2.setDescription("• Developed and maintained RESTful APIs using Java and Spring Framework\n" +
+        mockWorkExp2.setResponsibilities("• Developed and maintained RESTful APIs using Java and Spring Framework\n" +
                                   "• Optimized database queries improving application performance by 40%\n" +
                                   "• Collaborated with cross-functional teams to deliver features on schedule");
         mockWorkExperienceList.add(mockWorkExp2);

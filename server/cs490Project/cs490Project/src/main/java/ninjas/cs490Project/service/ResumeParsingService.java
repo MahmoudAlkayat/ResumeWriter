@@ -119,7 +119,8 @@ public class ResumeParsingService {
              "jobTitle": string (default "N/A"),
              "startDate": string in YYYY-MM-DD format (default "2000-01-01"),
              "endDate": string in YYYY-MM-DD format (default "N/A"),
-             "description": string (default "N/A")
+             "responsibilities": string (default "N/A"),
+             "accomplishments": string (default "N/A")
            }
            If no work experience is found, return an empty array [].
         
@@ -127,7 +128,11 @@ public class ResumeParsingService {
         
         6. If certain fields cannot be determined, use the default values provided.
         
-        7. You may reformat descriptions to ensure clarity but must not omit relevant information.
+        7. For work experience:
+           - Responsibilities should list daily tasks and duties
+           - Accomplishments should highlight specific achievements, metrics, and impact
+           - Format both as bullet points or short paragraphs
+           - Keep responsibilities and accomplishments separate and distinct
         
         Now parse the following resume text and produce only a valid JSON response (no extra text or formatting):
         """ + resumeText;
@@ -194,16 +199,20 @@ public class ResumeParsingService {
           "jobTitle": string (default "N/A"),
           "startDate": string in YYYY-MM-DD format (default "2000-01-01"),
           "endDate": string in YYYY-MM-DD format (default "N/A"),
-          "description": string (default "N/A")
+          "responsibilities": string (default "N/A"),
+          "accomplishments": string (default "N/A")
         }
         
         Rules:
         1. Extract dates in YYYY-MM-DD format. If only year is available, use YYYY-01-01.
         2. If end date is not specified but context suggests current position, use "Present".
-        3. Description should be a clear, concise summary of responsibilities and achievements.
-        4. If certain fields cannot be determined, use the default values provided.
-        5. Always include all specified keys. Do not add extra properties. No null values.
-        6. You may reformat descriptions to ensure clarity but must not omit relevant information.
+        3. Responsibilities should list daily tasks and duties
+        4. Accomplishments should highlight specific achievements, metrics, and impact
+        5. Format both responsibilities and accomplishments as bullet points or short paragraphs
+        6. Keep responsibilities and accomplishments separate and distinct
+        7. If certain fields cannot be determined, use the default values provided.
+        8. Always include all specified keys. Do not add extra properties. No null values.
+        9. You may reformat text to ensure clarity but must not omit relevant information.
         
         Now parse the following career text and produce only a valid JSON response (no extra text or formatting):
         """ + text;
