@@ -59,6 +59,10 @@ public class JobDescriptionController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
+        if (jobDescription.getJobDescription().length() < 100) {
+            return ResponseEntity.badRequest().body("Job description must be at least 100 characters");
+        }
+
         if (jobDescription.getJobTitle() != null && jobDescription.getJobTitle().length() > 255) {
             return ResponseEntity.badRequest().body("Job title must not exceed 255 characters");
         }

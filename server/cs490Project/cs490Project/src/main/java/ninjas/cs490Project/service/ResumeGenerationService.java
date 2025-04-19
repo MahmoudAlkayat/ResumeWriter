@@ -96,7 +96,7 @@ public class ResumeGenerationService {
             GPTRequest gptRequest = new GPTRequest(
                     "gpt-4",
                     List.of(
-                            new Message("system", "You are an expert resume writer and career consultant, specializing in optimizing resumes for Applicant Tracking Systems (ATS). Your task is to generate personalized, keyword-optimized resumes that align a candidate’s experience and skills with a specific job description. Format your response strictly as JSON, following the provided schema. Do not include any extra commentary."),
+                            new Message("system", "You are an expert resume writer and career consultant, specializing in optimizing resumes for Applicant Tracking Systems (ATS). Your task is to generate personalized, keyword-optimized resumes that align a candidate's experience and skills with a specific job description. Format your response strictly as JSON, following the provided schema. Do not include any extra commentary."),
                             new Message("user", prompt)
                     )
             );
@@ -112,7 +112,7 @@ public class ResumeGenerationService {
                     .block();
 
             // Parse and return the result
-            ResumeGenerationResult result = parseGptResponse(rawGptResponse);
+            ResumeGenerationResult result = parseGptResponse(rawGptResponse, user, profile);
             savedResume.setContent(objectMapper.writeValueAsString(result));
             savedResume.setUpdatedAt(Instant.now());
             resumeService.storeGeneratedResume(savedResume);
@@ -129,15 +129,6 @@ public class ResumeGenerationService {
                          User user,
                          List<Skill> userSkills,
                          Profile profile) {
-        StringBuilder contactInfo = new StringBuilder();
-        contactInfo.append(String.format("First Name: %s\n", user.getFirstName()));
-        contactInfo.append(String.format("Last Name: %s\n", user.getLastName()));
-        contactInfo.append(String.format("Email: %s\n", user.getEmail()));
-        if (profile != null) {
-            contactInfo.append(String.format("Phone: %s\n", profile.getPhone() != null ? profile.getPhone() : ""));
-            contactInfo.append(String.format("Address: %s\n", profile.getAddress() != null ? profile.getAddress() : ""));
-        }
-
         StringBuilder skillsSection = new StringBuilder();
         if (userSkills != null && !userSkills.isEmpty()) {
             skillsSection.append("Skills: ");
@@ -176,17 +167,17 @@ public class ResumeGenerationService {
             ));
         }
 
+        String jobTitle = jobDescription.getJobTitle() != null ? jobDescription.getJobTitle() : "";
+        String jobDesc = jobDescription.getJobDescription() != null ? jobDescription.getJobDescription() : "";
+
         return String.format("""
             You are an expert resume writer with specialized knowledge in Applicant Tracking Systems (ATS). Your task is to generate a highly targeted resume based on the candidate's information, optimized for the following job description:
 
-            CANDIDATE CONTACT INFORMATION:
-            %s
-
-            CANDIDATE SKILLS:
-            %s
-
             JOB TITLE: %s
             JOB DESCRIPTION:
+            %s
+            
+            CANDIDATE SKILLS:
             %s
 
             CANDIDATE'S WORK EXPERIENCE:
@@ -197,13 +188,6 @@ public class ResumeGenerationService {
 
             Generate a resume in JSON format following this exact schema:
             {
-            "contactInfo": {
-                "firstName": string,
-                "lastName": string,
-                "email": string,
-                "phone": string,
-                "address": string
-            },
             "skills": [string],
             "educationList": [
                 {
@@ -244,10 +228,9 @@ public class ResumeGenerationService {
             - Tone is professional and confident
             - No extra text is included outside the JSON
             """,
-            contactInfo.toString(),
+            jobTitle,
+            jobDesc,
             skillsSection.toString(),
-            jobDescription.getJobTitle(),
-            jobDescription.getJobDescription(),
             careerHistory.toString(),
             educationHistory.toString()
         );
@@ -272,11 +255,24 @@ public class ResumeGenerationService {
         private String content;
     }
 
-    private ResumeGenerationResult parseGptResponse(String rawGptResponse) throws Exception {
+    private ResumeGenerationResult parseGptResponse(String rawGptResponse, User user, Profile profile) throws Exception {
         try {
             var gptResponseObj = objectMapper.readValue(rawGptResponse, GPTResponse.class);
             String contentJson = gptResponseObj.getChoices().get(0).getMessage().getContent();
-            return objectMapper.readValue(contentJson, ResumeGenerationResult.class);
+            ResumeGenerationResult result = objectMapper.readValue(contentJson, ResumeGenerationResult.class);
+            
+            // Add personal info to the result
+            ResumeGenerationResult.PersonalInfo personalInfo = new ResumeGenerationResult.PersonalInfo();
+            personalInfo.setFirstName(user.getFirstName());
+            personalInfo.setLastName(user.getLastName());
+            personalInfo.setEmail(user.getEmail());
+            if (profile != null) {
+                personalInfo.setPhone(profile.getPhone() != null ? profile.getPhone() : "");
+                personalInfo.setAddress(profile.getAddress() != null ? profile.getAddress() : "");
+            }
+            result.setPersonalInfo(personalInfo);
+            
+            return result;
         } catch (Exception e) {
             logger.error("Error parsing GPT response: {}", e.getMessage());
             throw new Exception("Failed to generate resume. Please try again.");
