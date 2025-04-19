@@ -7,27 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/contexts/ToastProvider';
 import { Button } from '@/components/ui/button';
 
-interface Resume {
+interface GeneratedResume {
     resumeId: string;
-    title: string;
     content: string;
     createdAt: string;
+    jobDescriptionTitle: string | null;
 }
 
-export default function ResumeHistoryPage() {
-  const [resumes, setResumes] = useState<Resume[]>([]);
+export default function GeneratedResumeHistoryPage() {
+  const [resumes, setResumes] = useState<GeneratedResume[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedResumes, setExpandedResumes] = useState<Set<string>>(new Set());
-  const paragraphRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
+  const paragraphRefs = useRef<Record<string, HTMLPreElement | null>>({});
   const [overflowingResumes, setOverflowingResumes] = useState<Set<string>>(new Set());
   const { showError } = useToast();
 
-  async function fetchResumeHistory() {
+  async function fetchGeneratedResumeHistory() {
     try {
-      const response = await fetch('http://localhost:8080/api/resumes/upload/history', {
+      const response = await fetch('http://localhost:8080/api/resumes/generate/history', {
         credentials: "include"
       });
-      if (!response.ok) throw new Error("Failed to fetch resume history");
+      if (!response.ok) throw new Error("Failed to fetch generated resume history");
       const data = await response.json();
       setResumes(data || []);
     } catch (err) {
@@ -39,7 +39,7 @@ export default function ResumeHistoryPage() {
   }
 
   useEffect(() => {
-    fetchResumeHistory();
+    fetchGeneratedResumeHistory();
   }, []);
 
   useEffect(() => {
@@ -60,14 +60,14 @@ export default function ResumeHistoryPage() {
   return (
     <Background className="relative flex flex-col items-center min-h-screen p-8">
         <h1 className="text-4xl font-bold text-foreground mb-8 drop-shadow-md text-center">
-          Your Uploaded Resumes
+          Your Generated Resumes
         </h1>
 
       <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
       dark:bg-neutral-900 dark:border-neutral-800">
         {resumes.length === 0 ? (
           <p className="text-xl text-foreground mb-6 drop-shadow-sm text-center">
-            No resumes uploaded yet.
+            No resumes generated yet.
           </p>
         ) : (
           <div className="space-y-8">
@@ -78,54 +78,31 @@ export default function ResumeHistoryPage() {
               >
                 <CardHeader className="-mb-4">
                   <div className="flex">
-                  <CardTitle className="text-lg">{new Date(resume.createdAt).toLocaleString('en-US', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                  })}</CardTitle>
-                  <div className="ml-auto">
-                    <Button
-                        variant="link"
-                        className="p-0 h-auto text-sm"
-                        onClick={async () => {
-                          try {
-                            const response = await fetch(`http://localhost:8080/api/resumes/upload/${resume.resumeId}/original`, {
-                              credentials: "include"
-                            });
-
-                            if (!response.ok) {
-                              throw new Error("Failed to download file");
-                            }
-
-                            const blob = await response.blob();
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = resume.title;
-                            document.body.appendChild(a);
-                            a.click();
-                            window.URL.revokeObjectURL(url);
-                            document.body.removeChild(a);
-                          } catch (err) {
-                            if (err instanceof Error) showError(err.message);
-                            else showError("Failed to download file");
-                          }
-                        }}
-                      >
-                        View Original
-                      </Button>
+                    <CardTitle className="text-lg">{new Date(resume.createdAt).toLocaleString('en-US', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short'
+                    })}</CardTitle>
                   </div>
-                  </div>
-                  <CardTitle className="line-clamp-1 text-lg">{resume.title}</CardTitle>
+                  {resume.jobDescriptionTitle && (
+                    <CardTitle className="line-clamp-1 text-lg">{resume.jobDescriptionTitle}</CardTitle>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  <p
+                {!resume.content && <p className="text-red-500">Failed to generate</p>}
+                <pre
                     ref={(el) => { paragraphRefs.current[resume.resumeId] = el; }}
-                    className={`text-md text-gray-700 dark:text-muted-foreground whitespace-pre-wrap break-all ${
+                    className={`text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words ${
                       !expandedResumes.has(resume.resumeId) ? 'line-clamp-4' : ''
                     }`}
                   >
-                    {resume.content}
-                  </p>
+                    {(() => {
+                      try {
+                        return JSON.stringify(JSON.parse(resume.content), null, 2);
+                      } catch {
+                        return resume.content;
+                      }
+                    })()}
+                  </pre>
                   {overflowingResumes.has(resume.resumeId) && (
                     <Button
                       variant="link"

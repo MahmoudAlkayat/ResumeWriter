@@ -102,7 +102,7 @@ public class ResumeController {
                 savedResume.getId()
             );
 
-            // asyncResumeParser.parseResume(savedResume, status);
+            asyncResumeParser.parseResume(savedResume, status);
 
             // Return success with processing status
             Map<String, Object> response = new HashMap<>();
@@ -135,6 +135,29 @@ public class ResumeController {
             resumeMap.put("title", resume.getTitle() != null ? resume.getTitle().trim() : "");
             resumeMap.put("content", resume.getContent() != null ? resume.getContent().trim() : "");
             resumeMap.put("createdAt", resume.getCreatedAt());
+            response.add(resumeMap);
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/generate/history")
+    public ResponseEntity<?> getGeneratedHistory(Authentication authentication) {
+        String email = authentication.getName();
+        User currentUser = userRepository.findByEmail(email);
+        if (currentUser == null) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+
+        List<GeneratedResume> resumes = resumeService.getGeneratedResumesByUser(currentUser);
+
+        List<Map<String, Object>> response = new ArrayList<>();
+        for (GeneratedResume resume : resumes) {
+            Map<String, Object> resumeMap = new HashMap<>();
+            resumeMap.put("resumeId", resume.getId());
+            resumeMap.put("content", resume.getContent() != null ? resume.getContent().trim() : "");
+            resumeMap.put("createdAt", resume.getCreatedAt());
+            resumeMap.put("jobDescriptionTitle", resume.getJobDescription().getJobTitle());
             response.add(resumeMap);
         }
 
