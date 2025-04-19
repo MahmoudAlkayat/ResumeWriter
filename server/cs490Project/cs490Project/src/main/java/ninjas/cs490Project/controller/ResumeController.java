@@ -101,7 +101,8 @@ public class ResumeController {
                 ProcessingStatus.ProcessingType.UPLOADED_RESUME,
                 savedResume.getId()
             );
-
+            
+            processingStatusService.startProcessing(status.getId());
             asyncResumeParser.parseResume(savedResume, status);
 
             // Return success with processing status

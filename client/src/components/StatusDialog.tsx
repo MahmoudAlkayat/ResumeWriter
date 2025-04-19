@@ -16,6 +16,8 @@ interface Status {
   type: "UPLOADED_RESUME" | "GENERATED_RESUME" | "FREEFORM_ENTRY";
   resumeName?: string;
   jobTitle?: string;
+  jobId?: number;
+  careerId?: number;
   status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
   startedAt: string;
   completedAt?: string;
@@ -46,9 +48,17 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
     }
   };
 
+  // Poll for status updates when dialog is open and there are active processes
   useEffect(() => {
-    if (open) {
-      fetchStatuses();
+    if (!open) return;
+
+    // Initial fetch
+    fetchStatuses();
+
+    // Only poll if there are active processes
+    if (activeProcesses.length > 0) {
+      const interval = setInterval(fetchStatuses, 2000);
+      return () => clearInterval(interval);
     }
   }, [open, activeProcesses]);
 
@@ -98,11 +108,11 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
       case "GENERATED_RESUME":
         return status.jobTitle ? 
           status.jobTitle.length > 40 ? 
-            `${status.jobTitle.substring(0, 37)}...` : 
+            `for "${status.jobTitle.substring(0, 40)}..."` : 
             status.jobTitle
-          : null;
+          : `for JobID: ${status.jobId}`;
       default:
-        return null;
+        return status.careerId ? `for CareerID: ${status.careerId}` : null;
     }
   };
 

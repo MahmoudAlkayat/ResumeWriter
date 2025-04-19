@@ -65,8 +65,6 @@ public class AsyncResumeParser {
     @Transactional
     public void parseResume(UploadedResume resume, ProcessingStatus status) {
         try {
-            processingStatusService.startProcessing(status.getId());
-
             Tika tika = new Tika();
             String resumeText = tika.parseToString(new ByteArrayInputStream(resume.getFileData()));
             logger.info("Extracted resume text (first 100 chars): {}",
@@ -198,10 +196,10 @@ public class AsyncResumeParser {
     @Transactional
     public void parseFreeformCareer(String text, User user, FreeformEntry freeformEntry, ProcessingStatus status) {
         try {
-            processingStatusService.startProcessing(status.getId());
             // Parse the freeform text using GPT
-            // ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
+            ResumeParsingResult parsingResult = resumeParsingService.parseFreeformCareer(text);
 
+            /*
             // FOR TESTING
             Thread.sleep(10000);
             ResumeParsingResult parsingResult = new ResumeParsingResult();
@@ -213,6 +211,7 @@ public class AsyncResumeParser {
             mock.setEndDate("2021-01-01");
             mock.setDescription("Description");
             parsingResult.getWorkExperienceList().add(mock);
+             */
 
             // Get existing work experience if any
             WorkExperience existingExperience = workExperienceRepository.findByFreeformEntryId(freeformEntry.getId());

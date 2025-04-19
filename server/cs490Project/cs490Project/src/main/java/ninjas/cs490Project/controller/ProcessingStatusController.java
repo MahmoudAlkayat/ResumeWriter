@@ -1,5 +1,6 @@
 package ninjas.cs490Project.controller;
 
+import ninjas.cs490Project.entity.FreeformEntry;
 import ninjas.cs490Project.entity.GeneratedResume;
 import ninjas.cs490Project.entity.ProcessingStatus;
 import ninjas.cs490Project.entity.UploadedResume;
@@ -8,6 +9,7 @@ import ninjas.cs490Project.repository.UploadedResumeRepository;
 import ninjas.cs490Project.repository.GeneratedResumeRepository;
 import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.entity.User;
+import ninjas.cs490Project.repository.FreeformEntryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -31,6 +33,9 @@ public class ProcessingStatusController {
 
     @Autowired
     private GeneratedResumeRepository generatedResumeRepository;
+
+    @Autowired
+    private FreeformEntryRepository freeformEntryRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -68,7 +73,16 @@ public class ProcessingStatusController {
                     String jobTitleString = generatedResume.get().getJobDescription().getJobTitle();
                     if (jobTitleString != null) {
                         statusMap.put("jobTitle", jobTitleString);
+                    } else { // No title, default to ID
+                        statusMap.put("jobId", generatedResume.get().getJobDescription().getId());
                     }
+                }
+            }
+            if (status.getProcessingType() == ProcessingStatus.ProcessingType.FREEFORM_ENTRY) {
+                Optional<FreeformEntry> freeformEntry = freeformEntryRepository.findById(status.getEntityId().intValue());
+                if (freeformEntry.isPresent() && freeformEntry.get().getWorkExperience() != null) {
+                    Integer careerId = freeformEntry.get().getWorkExperience().getId();
+                    statusMap.put("careerId", careerId);
                 }
             }
             statusMap.put("status", status.getStatus());

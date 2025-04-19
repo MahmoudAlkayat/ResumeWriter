@@ -149,7 +149,8 @@ public class CareerController {
             ProcessingStatus.ProcessingType.FREEFORM_ENTRY,
             Long.valueOf(savedEntry.getId())
         );
-
+        
+        processingStatusService.startProcessing(status.getId());
         asyncResumeParser.parseFreeformCareer(text, user, savedEntry, status);
         
         Map<String, Object> response = new HashMap<>();
@@ -295,6 +296,7 @@ public class CareerController {
             Long.valueOf(freeformId)
         );
 
+        processingStatusService.startProcessing(status.getId());
         asyncResumeParser.parseFreeformCareer(text, user, entry, status);
 
         Map<String, Object> response = new HashMap<>();
