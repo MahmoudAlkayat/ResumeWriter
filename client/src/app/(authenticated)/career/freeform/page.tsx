@@ -199,17 +199,19 @@ export default function FreeformCareerPage() {
                                                 </div>
                                                 </CardContent>
                                                 <CardFooter className="-mt-2">
-                                                    <div className="flex justify-between w-full items-center">
+                                                    <div className="flex justify-between w-full items-center italic">
                                                         <p className="text-muted-foreground text-sm">
-                                                        {new Date(entry.updatedAt).toLocaleString('en-US', {
+                                                        Last Updated: {new Date(entry.updatedAt).toLocaleString('en-US', {
                                                             dateStyle: 'medium',
                                                             timeStyle: 'short'
                                                         })}
                                                         </p>
-                                                        {entry.careerId && (
+                                                        {entry.careerId ? (
                                                             <p className="text-muted-foreground text-xs">
                                                                 For CareerID: {entry.careerId}
                                                             </p>
+                                                        ) : (
+                                                            <p className="text-red-600 text-xs">Failed to generate a career entry</p>
                                                         )}
                                                     </div>
                                                 </CardFooter>

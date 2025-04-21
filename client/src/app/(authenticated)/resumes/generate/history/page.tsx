@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Background } from '@/components/ui/background';
 import LoadingScreen from '@/components/LoadingScreen';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/contexts/ToastProvider';
 import { Button } from '@/components/ui/button';
 
@@ -11,6 +11,8 @@ interface GeneratedResume {
     resumeId: string;
     content: string;
     createdAt: string;
+    updatedAt: string;
+    jobId: string;
     jobDescriptionTitle: string | null;
 }
 
@@ -77,15 +79,16 @@ export default function GeneratedResumeHistoryPage() {
                 className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700"
               >
                 <CardHeader className="-mb-4">
-                  <div className="flex">
-                    <CardTitle className="text-lg">{new Date(resume.createdAt).toLocaleString('en-US', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short'
-                    })}</CardTitle>
-                  </div>
-                  {resume.jobDescriptionTitle && (
-                    <CardTitle className="line-clamp-1 text-lg">{resume.jobDescriptionTitle}</CardTitle>
+                <CardTitle className="line-clamp-1 text-lg">
+                  For: {" "}
+                  <span className="italic">
+                  {resume.jobDescriptionTitle ? (
+                    resume.jobDescriptionTitle
+                  ) : (
+                    `JobID ${resume.jobId}`
                   )}
+                  </span>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                 {!resume.content && <p className="text-red-500">Failed to generate</p>}
@@ -121,6 +124,21 @@ export default function GeneratedResumeHistoryPage() {
                     </Button>
                   )}
                 </CardContent>
+                <CardFooter className="-mt-2">
+                    <div className="flex justify-between w-full items-center italic">
+                        <p className="ml-auto text-muted-foreground text-sm">
+                        Last Updated: {new Date(resume.updatedAt).toLocaleString('en-US', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short'
+                        })}
+                        </p>
+                        {/* {resume.resumeId && (
+                            <p className="text-muted-foreground text-xs">
+                                ID: {resume.resumeId}
+                            </p>
+                        )} */}
+                    </div>
+                </CardFooter>
               </Card>
             ))}
           </div>

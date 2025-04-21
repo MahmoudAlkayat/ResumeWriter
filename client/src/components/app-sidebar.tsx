@@ -50,6 +50,21 @@ const data = {
       ]
     },
     {
+      title: "Jobs",
+      url: "",
+      icon: Briefcase,
+      items: [
+        {
+          title: "Submit",
+          url: "/jobs/submit",
+        },
+        {
+          title: "History",
+          url: "/jobs/history",
+        }
+      ]
+    },
+    {
       title: "Career",
       url: "/career",
       icon: FolderClosed,
@@ -68,21 +83,6 @@ const data = {
       title: "Education",
       url: "/education",
       icon: GraduationCap,
-    },
-    {
-      title: "Jobs",
-      url: "",
-      icon: Briefcase,
-      items: [
-        {
-          title: "Submit",
-          url: "/jobs/submit",
-        },
-        {
-          title: "History",
-          url: "/jobs/history",
-        }
-      ]
     }
   ],
 }

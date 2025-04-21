@@ -158,6 +158,8 @@ public class ResumeController {
             resumeMap.put("resumeId", resume.getId());
             resumeMap.put("content", resume.getContent() != null ? resume.getContent().trim() : "");
             resumeMap.put("createdAt", resume.getCreatedAt());
+            resumeMap.put("updatedAt", resume.getUpdatedAt());
+            resumeMap.put("jobId", resume.getJobDescription().getId());
             resumeMap.put("jobDescriptionTitle", resume.getJobDescription().getJobTitle());
             response.add(resumeMap);
         }

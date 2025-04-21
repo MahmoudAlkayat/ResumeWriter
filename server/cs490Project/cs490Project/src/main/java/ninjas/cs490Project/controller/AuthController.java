@@ -88,7 +88,7 @@ public class AuthController {
 
         Map<String, String> userData = new HashMap<>();
         userData.put("id", String.valueOf(user.getId()));
-        userData.put("email", user.getEmail());
+        userData.put("email", user.getUsername());
         userData.put("firstName", user.getFirstName());
         userData.put("lastName", user.getLastName());
 
@@ -106,7 +106,7 @@ public class AuthController {
             User user = userRepository.findByEmail(email);
             Map <String, String> userData = new HashMap<>();
             userData.put("id", String.valueOf(user.getId()));
-            userData.put("email", user.getEmail());
+            userData.put("email", user.getUsername());
             userData.put("firstName", user.getFirstName());
             userData.put("lastName", user.getLastName());
             userData.put("profilePictureUrl", user.getProfilePictureUrl());

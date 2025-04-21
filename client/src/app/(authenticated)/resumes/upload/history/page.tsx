@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Background } from '@/components/ui/background';
 import LoadingScreen from '@/components/LoadingScreen';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/contexts/ToastProvider';
 import { Button } from '@/components/ui/button';
 
@@ -78,10 +78,7 @@ export default function ResumeHistoryPage() {
               >
                 <CardHeader className="-mb-4">
                   <div className="flex">
-                  <CardTitle className="text-lg">{new Date(resume.createdAt).toLocaleString('en-US', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                  })}</CardTitle>
+                  <CardTitle className="line-clamp-1 text-lg">{resume.title}</CardTitle>
                   <div className="ml-auto">
                     <Button
                         variant="link"
@@ -115,7 +112,6 @@ export default function ResumeHistoryPage() {
                       </Button>
                   </div>
                   </div>
-                  <CardTitle className="line-clamp-1 text-lg">{resume.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p
@@ -144,6 +140,14 @@ export default function ResumeHistoryPage() {
                     </Button>
                   )}
                 </CardContent>
+                <CardFooter className="-mt-2">
+                    <p className="ml-auto text-muted-foreground text-sm italic">
+                    Uploaded: {new Date(resume.createdAt).toLocaleString('en-US', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    })}
+                    </p>
+                </CardFooter>
               </Card>
             ))}
           </div>

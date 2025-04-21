@@ -258,7 +258,7 @@ public class ResumeGenerationService {
             ResumeGenerationResult.PersonalInfo personalInfo = new ResumeGenerationResult.PersonalInfo();
             personalInfo.setFirstName(user.getFirstName());
             personalInfo.setLastName(user.getLastName());
-            personalInfo.setEmail(user.getEmail());
+            personalInfo.setEmail(user.getUsername());
             if (profile != null) {
                 personalInfo.setPhone(profile.getPhone() != null ? profile.getPhone() : "");
                 personalInfo.setAddress(profile.getAddress() != null ? profile.getAddress() : "");

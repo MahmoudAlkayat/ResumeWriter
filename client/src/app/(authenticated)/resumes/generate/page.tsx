@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Background } from '@/components/ui/background';
 import LoadingScreen from '@/components/LoadingScreen';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/contexts/ToastProvider';
 import { Button } from '@/components/ui/button';
 import { useResumeProcessing } from '@/contexts/ResumeProcessingProvider';
@@ -130,14 +130,8 @@ export default function GenerateResumePage() {
                         <CardTitle className="text-lg break-words">
                           {job.title || "Untitled Job"}
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(job.submittedAt).toLocaleString('en-US', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short'
-                          })}
-                        </p>
                       </CardHeader>
-                      <CardContent className="p-0">
+                      <CardContent className="p-0 -mt-4">
                         <p
                           ref={(el) => { paragraphRefs.current[job.jobId] = el; }}
                           className={`text-sm text-muted-foreground whitespace-pre-wrap break-all ${
@@ -165,6 +159,21 @@ export default function GenerateResumePage() {
                           </Button>
                         )}
                       </CardContent>
+                      <CardFooter className="p-0 font-normal">
+                        <div className="flex justify-between w-full items-center italic">
+                          <p className="text-muted-foreground text-sm">
+                          Submitted: {new Date(job.submittedAt).toLocaleString('en-US', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short'
+                          })}
+                          </p>
+                          {job.jobId && (
+                              <p className="text-muted-foreground text-xs">
+                                  JobID: {job.jobId}
+                              </p>
+                          )}
+                        </div>
+                      </CardFooter>
                     </Card>
                   </Label>
                 </div>
