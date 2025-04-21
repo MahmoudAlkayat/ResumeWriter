@@ -140,7 +140,7 @@ public class ResumeParsingService {
 
         // Create the GPT request payload
         GPTRequest gptRequest = new GPTRequest(
-                "gpt-4",
+                "gpt-3.5-turbo",
                 List.of(
                         new Message("developer", "You are a helpful assistant."),
                         new Message("user", prompt)
@@ -219,7 +219,7 @@ public class ResumeParsingService {
 
         // Create the GPT request payload
         GPTRequest gptRequest = new GPTRequest(
-                "gpt-4",
+                "gpt-3.5-turbo",
                 List.of(
                         new Message("developer", "You are a helpful assistant."),
                         new Message("user", prompt)

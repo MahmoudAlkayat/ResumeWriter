@@ -1,5 +1,6 @@
 package ninjas.cs490Project.service;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ninjas.cs490Project.dto.GPTRequest;
 import ninjas.cs490Project.dto.Message;
@@ -26,13 +27,13 @@ import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Data;
 
-import java.util.List;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class ResumeGenerationService {
@@ -52,17 +53,17 @@ public class ResumeGenerationService {
     private String gptApiKey;
 
     public ResumeGenerationService(WebClient.Builder webClientBuilder,
-                                 WorkExperienceRepository workExperienceRepository,
-                                 EducationRepository educationRepository,
-                                 JobDescriptionRepository jobDescriptionRepository,
-                                 ProcessingStatusService processingStatusService,
-                                 ResumeService resumeService,
-                                 SkillService skillService,
-                                 ProfileRepository profileRepository) {
-        this.webClient = webClientBuilder
-                .baseUrl("https://api.openai.com/v1")
-                .build();
-        this.objectMapper = new ObjectMapper();
+                                   WorkExperienceRepository workExperienceRepository,
+                                   EducationRepository educationRepository,
+                                   JobDescriptionRepository jobDescriptionRepository,
+                                   ProcessingStatusService processingStatusService,
+                                   ResumeService resumeService,
+                                   SkillService skillService,
+                                   ProfileRepository profileRepository) {
+        this.webClient = webClientBuilder.baseUrl("https://api.openai.com/v1").build();
+        this.objectMapper = new ObjectMapper()
+                // allow single values (e.g. "Java, Python") to be read as arrays if needed
+                .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
         this.workExperienceRepository = workExperienceRepository;
         this.educationRepository = educationRepository;
         this.jobDescriptionRepository = jobDescriptionRepository;
@@ -76,32 +77,25 @@ public class ResumeGenerationService {
     public void generateResume(User user, Long jobId, GeneratedResume savedResume, ProcessingStatus status) throws Exception {
         try {
             processingStatusService.startProcessing(status.getId());
-            // Get the job description
-            JobDescription jobDescription = jobDescriptionRepository.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
 
-            // Get user's work experience and education
+            JobDescription jobDescription = jobDescriptionRepository.findById(jobId)
+                    .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
+
             List<WorkExperience> workExperiences = workExperienceRepository.findByUserId(user.getId());
             List<Education> educationList = educationRepository.findByUserId(user.getId());
-
-            // Fetch user's skills
             List<Skill> userSkills = skillService.getUserSkills(user);
-            // Fetch user's profile
             Profile profile = profileRepository.findByUser(user);
 
-            // Build the prompt for GPT
             String prompt = buildPrompt(jobDescription, workExperiences, educationList, user, userSkills, profile);
 
-            // Create the GPT request
             GPTRequest gptRequest = new GPTRequest(
-                    "gpt-4",
+                    "gpt-3.5-turbo",
                     List.of(
                             new Message("system", "You are an expert resume writer and career consultant, specializing in optimizing resumes for Applicant Tracking Systems (ATS). Your task is to generate personalized, keyword-optimized resumes that align a candidate's experience and skills with a specific job description. Format your response strictly as JSON, following the provided schema. Do not include any extra commentary."),
                             new Message("user", prompt)
                     )
             );
 
-            // Make the API call
             String rawGptResponse = webClient.post()
                     .uri("/chat/completions")
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -111,8 +105,8 @@ public class ResumeGenerationService {
                     .bodyToMono(String.class)
                     .block();
 
-            // Parse and return the result
             ResumeGenerationResult result = parseGptResponse(rawGptResponse, user, profile);
+
             savedResume.setContent(objectMapper.writeValueAsString(result));
             savedResume.setUpdatedAt(Instant.now());
             resumeService.storeGeneratedResume(savedResume);
@@ -123,12 +117,13 @@ public class ResumeGenerationService {
         }
     }
 
-    private String buildPrompt(JobDescription jobDescription, 
-                         List<WorkExperience> workExperiences,
-                         List<Education> educationList,
-                         User user,
-                         List<Skill> userSkills,
-                         Profile profile) {
+    private String buildPrompt(JobDescription jobDescription,
+                               List<WorkExperience> workExperiences,
+                               List<Education> educationList,
+                               User user,
+                               List<Skill> userSkills,
+                               Profile profile) {
+
         StringBuilder skillsSection = new StringBuilder();
         if (userSkills != null && !userSkills.isEmpty()) {
             skillsSection.append("Skills: ");
@@ -144,26 +139,26 @@ public class ResumeGenerationService {
         StringBuilder careerHistory = new StringBuilder();
         for (WorkExperience exp : workExperiences) {
             careerHistory.append(String.format(
-                "Company: %s\nTitle: %s\nPeriod: %s to %s\nDescription: %s\n\n",
-                exp.getCompany(),
-                exp.getJobTitle(),
-                exp.getStartDate(),
-                exp.getEndDate() != null ? exp.getEndDate() : "Present",
-                exp.getResponsibilities()
+                    "Company: %s\nTitle: %s\nPeriod: %s to %s\nDescription: %s\n\n",
+                    exp.getCompany(),
+                    exp.getJobTitle(),
+                    exp.getStartDate(),
+                    exp.getEndDate() != null ? exp.getEndDate() : "Present",
+                    exp.getResponsibilities()
             ));
         }
 
         StringBuilder educationHistory = new StringBuilder();
         for (Education edu : educationList) {
             educationHistory.append(String.format(
-                "Institution: %s\nDegree: %s\nField: %s\nPeriod: %s to %s\nGPA: %s\nDescription: %s\n\n",
-                edu.getInstitution(),
-                edu.getDegree(),
-                edu.getFieldOfStudy(),
-                edu.getStartDate(),
-                edu.getEndDate(),
-                edu.getGpa(),
-                edu.getDescription()
+                    "Institution: %s\nDegree: %s\nField: %s\nPeriod: %s to %s\nGPA: %s\nDescription: %s\n\n",
+                    edu.getInstitution(),
+                    edu.getDegree(),
+                    edu.getFieldOfStudy(),
+                    edu.getStartDate(),
+                    edu.getEndDate(),
+                    edu.getGpa(),
+                    edu.getDescription()
             ));
         }
 
@@ -176,7 +171,7 @@ public class ResumeGenerationService {
             JOB TITLE: %s
             JOB DESCRIPTION:
             %s
-            
+
             CANDIDATE SKILLS:
             %s
 
@@ -188,51 +183,47 @@ public class ResumeGenerationService {
 
             Generate a resume in JSON format following this exact schema:
             {
-            "skills": [string],
-            "educationList": [
+              "skills": ["string","string",…],
+              "educationList": [
                 {
-                "institution": string,
-                "degree": string,
-                "fieldOfStudy": string,
-                "startDate": "YYYY-MM-DD",
-                "endDate": "YYYY-MM-DD",
-                "description": string,
-                "gpa": number
+                  "institution": "string",
+                  "degree": "string",
+                  "fieldOfStudy": "string",
+                  "startDate": "YYYY-MM-DD",
+                  "endDate": "YYYY-MM-DD",
+                  "description": "string",
+                  "gpa": number
                 }
-            ],
-            "workExperienceList": [
+              ],
+              "workExperienceList": [
                 {
-                "company": string,
-                "jobTitle": string,
-                "startDate": "YYYY-MM-DD",
-                "endDate": "YYYY-MM-DD",
-                "description": string
+                  "company": "string",
+                  "jobTitle": "string",
+                  "startDate": "YYYY-MM-DD",
+                  "endDate": "YYYY-MM-DD",
+                  "description": "string"
                 }
-            ]
+              ]
             }
 
             Instructions:
             1. Extract 8–12 relevant keywords from the job description and integrate them meaningfully.
             2. Rewrite work experience bullet points with:
-                - Strong action verbs
-                - Quantifiable achievements
-                - Concise 1–2 line format
+               - Strong action verbs
+               - Quantifiable achievements
+               - Concise 1–2 line format
             3. Prioritize skills most relevant to the job.
             4. Maintain original job titles, company names, and date ranges.
             5. Ensure all dates maintain YYYY-MM-DD format.
             6. Return ONLY the JSON with no additional commentary.
+               * Make sure "skills" is an actual JSON array, e.g.: ["Java","Python","SQL",…]
             7. Use empty strings or 0 for any missing data, never null values.
-
-            Before returning the result, double-check:
-            - JSON is valid and follows the schema
-            - Tone is professional and confident
-            - No extra text is included outside the JSON
             """,
-            jobTitle,
-            jobDesc,
-            skillsSection.toString(),
-            careerHistory.toString(),
-            educationHistory.toString()
+                jobTitle,
+                jobDesc,
+                skillsSection.toString(),
+                careerHistory.toString(),
+                educationHistory.toString()
         );
     }
 
@@ -260,8 +251,7 @@ public class ResumeGenerationService {
             var gptResponseObj = objectMapper.readValue(rawGptResponse, GPTResponse.class);
             String contentJson = gptResponseObj.getChoices().get(0).getMessage().getContent();
             ResumeGenerationResult result = objectMapper.readValue(contentJson, ResumeGenerationResult.class);
-            
-            // Add personal info to the result
+
             ResumeGenerationResult.PersonalInfo personalInfo = new ResumeGenerationResult.PersonalInfo();
             personalInfo.setFirstName(user.getFirstName());
             personalInfo.setLastName(user.getLastName());
@@ -271,7 +261,7 @@ public class ResumeGenerationService {
                 personalInfo.setAddress(profile.getAddress() != null ? profile.getAddress() : "");
             }
             result.setPersonalInfo(personalInfo);
-            
+
             return result;
         } catch (Exception e) {
             logger.error("Error parsing GPT response: {}", e.getMessage());
@@ -279,16 +269,13 @@ public class ResumeGenerationService {
         }
     }
 
-    //Test with mock data
     @Async
     public void generateResumeTest(User user, Long jobId, GeneratedResume savedResume, ProcessingStatus status) throws Exception {
         processingStatusService.startProcessing(status.getId());
         Thread.sleep(7000);
 
-        // TESTING: Use mock data instead of calling GPT API
         ResumeGenerationResult mockResult = new ResumeGenerationResult();
 
-        // Mock education data
         List<EducationData> mockEducationList = new ArrayList<>();
         EducationData mockEducation = new EducationData();
         mockEducation.setInstitution("University of Illinois at Urbana-Champaign");
@@ -301,17 +288,17 @@ public class ResumeGenerationService {
         mockEducationList.add(mockEducation);
         mockResult.setEducationList(mockEducationList);
 
-        // Mock work experience data
         List<WorkExperienceData> mockWorkExperienceList = new ArrayList<>();
-        
         WorkExperienceData mockWorkExp1 = new WorkExperienceData();
         mockWorkExp1.setCompany("Tech Innovators Inc.");
         mockWorkExp1.setJobTitle("Senior Software Engineer");
         mockWorkExp1.setStartDate("2020-06-01");
         mockWorkExp1.setEndDate("2023-08-01");
-        mockWorkExp1.setResponsibilities("• Led development of cloud-native microservices using Spring Boot and Kubernetes\n" +
-                                  "• Implemented CI/CD pipelines reducing deployment time by 60%\n" +
-                                  "• Mentored junior developers and conducted code reviews");
+        mockWorkExp1.setResponsibilities("""
+            • Led development of cloud-native microservices using Spring Boot and Kubernetes
+            • Implemented CI/CD pipelines reducing deployment time by 60%
+            • Mentored junior developers and conducted code reviews
+            """);
         mockWorkExperienceList.add(mockWorkExp1);
 
         WorkExperienceData mockWorkExp2 = new WorkExperienceData();
@@ -319,27 +306,26 @@ public class ResumeGenerationService {
         mockWorkExp2.setJobTitle("Software Developer");
         mockWorkExp2.setStartDate("2018-03-15");
         mockWorkExp2.setEndDate("2020-05-30");
-        mockWorkExp2.setResponsibilities("• Developed and maintained RESTful APIs using Java and Spring Framework\n" +
-                                  "• Optimized database queries improving application performance by 40%\n" +
-                                  "• Collaborated with cross-functional teams to deliver features on schedule");
+        mockWorkExp2.setResponsibilities("""
+            • Developed and maintained RESTful APIs using Java and Spring Framework
+            • Optimized database queries improving application performance by 40%
+            • Collaborated with cross-functional teams to deliver features on schedule
+            """);
         mockWorkExperienceList.add(mockWorkExp2);
 
         mockResult.setWorkExperienceList(mockWorkExperienceList);
 
-        // Mock skills
         mockResult.setSkills(Arrays.asList(
-            "Java", "Spring Boot", "Kubernetes", "Docker", "AWS",
-            "Microservices", "REST APIs", "CI/CD", "Git", "SQL",
-            "MongoDB", "React", "TypeScript", "Python", "Agile"
+                "Java", "Spring Boot", "Kubernetes", "Docker", "AWS",
+                "Microservices", "REST APIs", "CI/CD", "Git", "SQL",
+                "MongoDB", "React", "TypeScript", "Python", "Agile"
         ));
 
-        
-        // Simulate API delay
         Thread.sleep(2000);
-        
+
         savedResume.setContent(objectMapper.writeValueAsString(mockResult));
         savedResume.setUpdatedAt(Instant.now());
         resumeService.storeGeneratedResume(savedResume);
         processingStatusService.completeProcessing(status.getId());
     }
-} 
+}
