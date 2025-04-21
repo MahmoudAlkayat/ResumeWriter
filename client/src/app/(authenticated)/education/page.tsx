@@ -138,21 +138,34 @@ export default function EducationManager() {
     }
 
     // Validation
-    if (!formData.degree || !formData.institution || !formData.fieldOfStudy || !formData.startDate || !formData.endDate) {
-      showError("Please fill in all fields");
+    if (!formData.degree || !formData.institution) {
+      showError("Please fill in degree and institution");
       return;
     }
 
-    const startDate = new Date(formData.startDate);
-    const endDate = new Date(formData.endDate);
-
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      showError("Invalid date format");
-      return;
+    // Validate dates if provided
+    if (formData.startDate) {
+      const startDate = new Date(formData.startDate);
+      if (isNaN(startDate.getTime())) {
+        showError("Invalid start date format");
+        return;
+      }
     }
-    if (startDate > endDate) {
-      showError("Start date must be before end date");
-      return;
+
+    if (formData.endDate) {
+      const endDate = new Date(formData.endDate);
+      if (isNaN(endDate.getTime())) {
+        showError("Invalid end date format");
+        return;
+      }
+      // Compare dates if both are provided
+      if (formData.startDate) {
+        const startDate = new Date(formData.startDate);
+        if (startDate > endDate) {
+          showError("Start date must be before end date");
+          return;
+        }
+      }
     }
 
     try {
@@ -164,7 +177,11 @@ export default function EducationManager() {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
+            body: JSON.stringify({
+              ...formData,
+              startDate: formData.startDate || null,
+              endDate: formData.endDate || null
+            }),
           }
         );
         if (!res.ok) {
@@ -191,7 +208,11 @@ export default function EducationManager() {
             method: "PUT",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
+            body: JSON.stringify({
+              ...formData,
+              startDate: formData.startDate || null,
+              endDate: formData.endDate || null
+            }),
           }
         );
         if (!res.ok) {
@@ -406,10 +427,8 @@ export default function EducationManager() {
                                 {edu.institution}
                             </p>
                             <div className="flex items-center justify-center gap-2 text-md text-gray-500 dark:text-muted-foreground italic mb-4">
-                                <span>{edu.startDate ? new Date(edu.startDate).toISOString().slice(0, 10) : ""} -{" "}
-                                    {edu.endDate === "Present"
-                                        ? edu.endDate
-                                        : new Date(edu.endDate).toISOString().slice(0, 10)}</span>
+                                <span>{edu.startDate ? new Date(edu.startDate).toISOString().slice(0, 10) : "Unknown"} -{" "}
+                                    {edu.endDate ? new Date(edu.endDate).toISOString().slice(0, 10) : "Present"}</span>
                                 <span className="text-gray-400">•</span>
                                 <span>GPA: {edu.gpa}</span>
                             </div>

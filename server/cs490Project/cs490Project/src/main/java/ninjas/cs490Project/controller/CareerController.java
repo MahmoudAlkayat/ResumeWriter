@@ -1,43 +1,26 @@
 package ninjas.cs490Project.controller;
 
-import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.entity.User;
-import ninjas.cs490Project.entity.FreeformEntry;
-import ninjas.cs490Project.entity.ProcessingStatus;
-import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.UserRepository;
-import ninjas.cs490Project.repository.FreeformEntryRepository;
-import ninjas.cs490Project.service.AsyncResumeParser;
-import ninjas.cs490Project.service.ProcessingStatusService;
+import ninjas.cs490Project.service.CareerService;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/resumes/career")
 public class CareerController {
 
-    private final WorkExperienceRepository workExperienceRepository;
     private final UserRepository userRepository;
-    private final AsyncResumeParser asyncResumeParser;
-    private final FreeformEntryRepository freeformEntryRepository;
-    private final ProcessingStatusService processingStatusService;
+    private final CareerService careerService;
 
-    public CareerController(WorkExperienceRepository workExperienceRepository,
-                            UserRepository userRepository,
-                            AsyncResumeParser asyncResumeParser,
-                            FreeformEntryRepository freeformEntryRepository,
-                            ProcessingStatusService processingStatusService) {
-        this.workExperienceRepository = workExperienceRepository;
+    public CareerController(UserRepository userRepository,
+                          CareerService careerService) {
         this.userRepository = userRepository;
-        this.asyncResumeParser = asyncResumeParser;
-        this.freeformEntryRepository = freeformEntryRepository;
-        this.processingStatusService = processingStatusService;
+        this.careerService = careerService;
     }
 
     // ------------------------------
@@ -74,30 +57,11 @@ public class CareerController {
     // 1. GET all WorkExperience records for a user
     @GetMapping
     public ResponseEntity<?> getCareerHistory(Authentication authentication) {
-        // Ensure user exists
         User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
-            // Return empty if user not found
-            return ResponseEntity.ok(Collections.singletonMap("jobs", new ArrayList<>()));
+            return ResponseEntity.ok(Map.of("jobs", List.of()));
         }
-
-        // Retrieve all WorkExperience for this user
-        List<WorkExperience> jobList = workExperienceRepository.findByUserId(user.getId());
-
-        // Convert to a DTO-like structure
-        List<Map<String, Object>> jobsDtoList = new ArrayList<>();
-        for (WorkExperience job : jobList) {
-            Map<String, Object> jobMap = new HashMap<>();
-            jobMap.put("id", job.getId());
-            jobMap.put("title", job.getJobTitle() != null ? job.getJobTitle() : "N/A");
-            jobMap.put("company", job.getCompany() != null ? job.getCompany() : "N/A");
-            jobMap.put("startDate", job.getStartDate() != null ? job.getStartDate().toString() : "");
-            jobMap.put("endDate", job.getEndDate() != null ? job.getEndDate().toString() : "");
-            jobMap.put("responsibilities", job.getResponsibilities() != null ? job.getResponsibilities() : "N/A");
-            jobMap.put("accomplishments", job.getAccomplishments() != null ? job.getAccomplishments() : "N/A");
-            jobsDtoList.add(jobMap);
-        }
-        return ResponseEntity.ok(Collections.singletonMap("jobs", jobsDtoList));
+        return ResponseEntity.ok(careerService.getCareerHistory(user));
     }
 
     // 2. CREATE a new WorkExperience record for a user
@@ -109,31 +73,12 @@ public class CareerController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        // Validate required fields
-        if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Job title is required");
+        try {
+            careerService.createCareer(user, req);
+            return ResponseEntity.ok("Created new career record");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        if (req.getCompany() == null || req.getCompany().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Company is required");
-        }
-        if (req.getStartDate() == null || req.getStartDate().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Start date is required");
-        }
-
-        // Create and populate a new WorkExperience entity
-        WorkExperience job = new WorkExperience();
-        job.setUser(user);
-        job.setJobTitle(req.getTitle());
-        job.setCompany(req.getCompany());
-        job.setStartDate(LocalDate.parse(req.getStartDate()));
-        job.setEndDate(req.getEndDate() != null && !req.getEndDate().isEmpty() ? 
-            LocalDate.parse(req.getEndDate()) : null);
-        job.setResponsibilities(req.getResponsibilities());
-        job.setAccomplishments(req.getAccomplishments());
-
-        // Save the entity
-        workExperienceRepository.save(job);
-        return ResponseEntity.ok("Created new career record");
     }
 
     @PostMapping("/freeform")
@@ -144,34 +89,12 @@ public class CareerController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        String text = request.get("text");
-        if (text == null || text.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Text field is required");
+        try {
+            Map<String, Object> response = careerService.createFreeformCareer(user, request.get("text"));
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        // Create and save a new FreeformEntry
-        FreeformEntry entry = new FreeformEntry();
-        entry.setUser(user);
-        entry.setRawText(text);
-        entry.setCreatedAt(Instant.now());
-        entry.setUpdatedAt(Instant.now());
-        FreeformEntry savedEntry = freeformEntryRepository.save(entry);
-
-        // Create processing status
-        ProcessingStatus status = processingStatusService.createProcessingStatus(
-            user,
-            ProcessingStatus.ProcessingType.FREEFORM_ENTRY,
-            Long.valueOf(savedEntry.getId())
-        );
-        
-        processingStatusService.startProcessing(status.getId());
-        asyncResumeParser.parseFreeformCareer(text, user, savedEntry, status);
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Freeform career entry submitted for processing");
-        response.put("statusId", status.getId());
-        response.put("entryId", savedEntry.getId());
-        return ResponseEntity.ok(response);
     }
 
     // 3. UPDATE an existing WorkExperience record for a user
@@ -179,81 +102,34 @@ public class CareerController {
     public ResponseEntity<?> updateCareer(Authentication authentication,
                                           @PathVariable("jobId") int jobId,
                                           @RequestBody CareerRequest req) {
-        // Ensure user exists
         User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        // Validate required fields
-        if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Job title is required");
+        try {
+            careerService.updateCareer(user, jobId, req);
+            return ResponseEntity.ok("Updated career record");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        if (req.getCompany() == null || req.getCompany().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Company is required");
-        }
-        if (req.getStartDate() == null || req.getStartDate().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Start date is required");
-        }
-
-        // Check if the WorkExperience record exists
-        Optional<WorkExperience> optionalJob = workExperienceRepository.findById(jobId);
-        if (optionalJob.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        WorkExperience job = optionalJob.get();
-        // Ensure it belongs to the user in the path
-        if (job.getUser().getId() != user.getId()) {
-            return ResponseEntity.badRequest().body("This record doesn't belong to the specified user");
-        }
-
-        // Update the record
-        job.setJobTitle(req.getTitle());
-        job.setCompany(req.getCompany());
-        job.setStartDate(LocalDate.parse(req.getStartDate()));
-        job.setEndDate(req.getEndDate() != null && !req.getEndDate().isEmpty() ? 
-            LocalDate.parse(req.getEndDate()) : null);
-        job.setResponsibilities(req.getResponsibilities());
-        job.setAccomplishments(req.getAccomplishments());
-
-        // Save the changes
-        workExperienceRepository.save(job);
-        return ResponseEntity.ok("Updated career record");
     }
 
     // 4. DELETE an existing WorkExperience record
     @DeleteMapping("/{jobId}")
-    @Transactional
     public ResponseEntity<?> deleteCareer(Authentication authentication,
                                           @PathVariable("jobId") int jobId) {
-        // Ensure user exists
         User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        // Retrieve the record
-        Optional<WorkExperience> optionalJob = workExperienceRepository.findById(jobId);
-        if (optionalJob.isEmpty()) {
-            return ResponseEntity.notFound().build();
+        try {
+            careerService.deleteCareer(user, jobId);
+            return ResponseEntity.ok("Deleted career record");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        WorkExperience job = optionalJob.get();
-        // Check ownership
-        if (job.getUser().getId() != user.getId()) {
-            return ResponseEntity.badRequest().body("This record doesn't belong to the specified user");
-        }
-
-        // Delete associated FreeformEntry if it exists
-        FreeformEntry freeformEntry = job.getFreeformEntry();
-        if (freeformEntry != null) {
-            freeformEntryRepository.delete(freeformEntry);
-        }
-
-        // Delete the work experience
-        workExperienceRepository.delete(job);
-        return ResponseEntity.ok("Deleted career record");
     }
 
     @GetMapping("/freeform")
@@ -262,21 +138,16 @@ public class CareerController {
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
-        List<FreeformEntry> entries = freeformEntryRepository.findByUserId(user.getId());
-        List<Map<String, String>> response = new ArrayList<>();
-        for (FreeformEntry entry : entries) {
-            Map<String, String> entryMap = new HashMap<>();
-            entryMap.put("id", String.valueOf(entry.getId()));
-            entryMap.put("text", entry.getRawText());
-            entryMap.put("updatedAt", String.valueOf(entry.getUpdatedAt()));
-            entryMap.put("careerId", entry.getWorkExperience() != null ? String.valueOf(entry.getWorkExperience().getId()) : null);
-            response.add(entryMap);
+
+        try {
+            List<Map<String, String>> response = careerService.getFreeformCareer(user);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/freeform/{freeformId}")
-    @Transactional
     public ResponseEntity<?> updateFreeformCareer(Authentication authentication,
                                                 @PathVariable("freeformId") int freeformId,
                                                 @RequestBody Map<String, String> request) {
@@ -285,43 +156,11 @@ public class CareerController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        Optional<FreeformEntry> optionalEntry = freeformEntryRepository.findById(freeformId);
-        if (optionalEntry.isEmpty()) {
-            return ResponseEntity.notFound().build();
+        try {
+            Map<String, Object> response = careerService.updateFreeformCareer(user, freeformId, request.get("text"));
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        FreeformEntry entry = optionalEntry.get();
-        if (entry.getUser().getId() != user.getId()) {
-            return ResponseEntity.badRequest().body("This entry doesn't belong to the specified user");
-        }
-
-        String text = request.get("text");
-        if (text == null || text.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Text field is required");
-        }
-
-        if (text.equals(entry.getRawText())) {
-            return ResponseEntity.badRequest().body("No changes were made to the freeform entry");
-        }
-
-        entry.setRawText(text);
-        entry.setUpdatedAt(Instant.now());
-        freeformEntryRepository.save(entry);
-
-        // Create processing status for the update
-        ProcessingStatus status = processingStatusService.createProcessingStatus(
-            user,
-            ProcessingStatus.ProcessingType.FREEFORM_ENTRY,
-            Long.valueOf(freeformId)
-        );
-
-        processingStatusService.startProcessing(status.getId());
-        asyncResumeParser.parseFreeformCareer(text, user, entry, status);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Freeform career entry updated and submitted for processing");
-        response.put("statusId", status.getId());
-        response.put("entryId", freeformId);
-        return ResponseEntity.ok(response);
     }
 }
