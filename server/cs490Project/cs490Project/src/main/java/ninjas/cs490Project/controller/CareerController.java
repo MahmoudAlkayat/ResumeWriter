@@ -91,8 +91,8 @@ public class CareerController {
             jobMap.put("id", job.getId());
             jobMap.put("title", job.getJobTitle() != null ? job.getJobTitle() : "N/A");
             jobMap.put("company", job.getCompany() != null ? job.getCompany() : "N/A");
-            jobMap.put("startDate", job.getStartDate() != null ? job.getStartDate().toString() : "N/A");
-            jobMap.put("endDate", job.getEndDate() != null ? job.getEndDate().toString() : "Present");
+            jobMap.put("startDate", job.getStartDate() != null ? job.getStartDate().toString() : "");
+            jobMap.put("endDate", job.getEndDate() != null ? job.getEndDate().toString() : "");
             jobMap.put("responsibilities", job.getResponsibilities() != null ? job.getResponsibilities() : "N/A");
             jobMap.put("accomplishments", job.getAccomplishments() != null ? job.getAccomplishments() : "N/A");
             jobsDtoList.add(jobMap);
@@ -109,17 +109,25 @@ public class CareerController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
+        // Validate required fields
+        if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Job title is required");
+        }
+        if (req.getCompany() == null || req.getCompany().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Company is required");
+        }
+        if (req.getStartDate() == null || req.getStartDate().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Start date is required");
+        }
+
         // Create and populate a new WorkExperience entity
         WorkExperience job = new WorkExperience();
         job.setUser(user);
         job.setJobTitle(req.getTitle());
         job.setCompany(req.getCompany());
-        if (req.getStartDate() != null && !req.getStartDate().isEmpty()) {
-            job.setStartDate(LocalDate.parse(req.getStartDate()));
-        }
-        if (req.getEndDate() != null && !req.getEndDate().isEmpty()) {
-            job.setEndDate(LocalDate.parse(req.getEndDate()));
-        }
+        job.setStartDate(LocalDate.parse(req.getStartDate()));
+        job.setEndDate(req.getEndDate() != null && !req.getEndDate().isEmpty() ? 
+            LocalDate.parse(req.getEndDate()) : null);
         job.setResponsibilities(req.getResponsibilities());
         job.setAccomplishments(req.getAccomplishments());
 
@@ -177,6 +185,17 @@ public class CareerController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
+        // Validate required fields
+        if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Job title is required");
+        }
+        if (req.getCompany() == null || req.getCompany().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Company is required");
+        }
+        if (req.getStartDate() == null || req.getStartDate().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Start date is required");
+        }
+
         // Check if the WorkExperience record exists
         Optional<WorkExperience> optionalJob = workExperienceRepository.findById(jobId);
         if (optionalJob.isEmpty()) {
@@ -192,16 +211,9 @@ public class CareerController {
         // Update the record
         job.setJobTitle(req.getTitle());
         job.setCompany(req.getCompany());
-        if (req.getStartDate() != null && !req.getStartDate().isEmpty()) {
-            job.setStartDate(LocalDate.parse(req.getStartDate()));
-        } else {
-            job.setStartDate(null);
-        }
-        if (req.getEndDate() != null && !req.getEndDate().isEmpty()) {
-            job.setEndDate(LocalDate.parse(req.getEndDate()));
-        } else {
-            job.setEndDate(null);
-        }
+        job.setStartDate(LocalDate.parse(req.getStartDate()));
+        job.setEndDate(req.getEndDate() != null && !req.getEndDate().isEmpty() ? 
+            LocalDate.parse(req.getEndDate()) : null);
         job.setResponsibilities(req.getResponsibilities());
         job.setAccomplishments(req.getAccomplishments());
 

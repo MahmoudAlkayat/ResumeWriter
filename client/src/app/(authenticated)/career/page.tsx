@@ -134,21 +134,30 @@ export default function CareerPage() {
     }
 
     // Validation
-    if (!formData.title || !formData.company || !formData.startDate || !formData.endDate) {
-      showError("Please fill in all fields");
+    if (!formData.title || !formData.company || !formData.startDate) {
+      showError("Please fill in job title, company, and start date");
       return;
     }
 
+    // Validate start date format
     const startDate = new Date(formData.startDate);
-    const endDate = new Date(formData.endDate);
-
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      showError("Invalid date format");
+    if (isNaN(startDate.getTime())) {
+      showError("Invalid start date format");
       return;
     }
-    if (startDate > endDate) {
-      showError("Start date must be before end date");
-      return;
+
+    // Validate end date if provided
+    if (formData.endDate) {
+      const endDate = new Date(formData.endDate);
+      if (isNaN(endDate.getTime())) {
+        showError("Invalid end date format");
+        return;
+      }
+      // Compare dates if both are provided
+      if (startDate > endDate) {
+        showError("Start date must be before end date");
+        return;
+      }
     }
 
     try {
@@ -158,7 +167,10 @@ export default function CareerPage() {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            endDate: formData.endDate || null
+          }),
         });
         if (!res.ok) {
           const errText = await res.text();
@@ -182,7 +194,10 @@ export default function CareerPage() {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            endDate: formData.endDate || null
+          }),
         });
         if (!res.ok) {
           const errText = await res.text();
@@ -325,14 +340,15 @@ export default function CareerPage() {
                         <Input
                           className="dark:border-neutral-700"
                           name="startDate"
-                          placeholder="Start Date (YYYY-MM-DD)"
+                          placeholder="Start Date (YYYY-MM-DD) *"
                           value={formData.startDate}
                           onChange={handleFormChange}
+                          required
                         />
                         <Input
                           className="dark:border-neutral-700"
                           name="endDate"
-                          placeholder="End Date (YYYY-MM-DD)"
+                          placeholder="End Date (YYYY-MM-DD) or leave blank for Present"
                           value={formData.endDate}
                           onChange={handleFormChange}
                         />
@@ -405,10 +421,8 @@ export default function CareerPage() {
                             {job.company}
                           </p>
                           <p className="text-md text-gray-500 dark:text-muted-foreground italic mb-4">
-                            {job.startDate ? new Date(job.startDate).toISOString().slice(0, 10) : ""} -{" "}
-                            {job.endDate === "Present"
-                              ? job.endDate
-                              : new Date(job.endDate).toISOString().slice(0, 10)}
+                            {job.startDate ? new Date(job.startDate).toISOString().slice(0, 10) : "Unknown"} -{" "}
+                            {job.endDate ? new Date(job.endDate).toISOString().slice(0, 10) : "Present"}
                           </p>
                           {job.responsibilities && (
                             <div className="mb-4">
