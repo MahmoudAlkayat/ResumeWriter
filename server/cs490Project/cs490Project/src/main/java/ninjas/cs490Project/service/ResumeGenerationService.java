@@ -139,12 +139,13 @@ public class ResumeGenerationService {
         StringBuilder careerHistory = new StringBuilder();
         for (WorkExperience exp : workExperiences) {
             careerHistory.append(String.format(
-                    "Company: %s\nTitle: %s\nPeriod: %s to %s\nDescription: %s\n\n",
+                    "Company: %s\nTitle: %s\nPeriod: %s to %s\nResponsibilities: %s\nAccomplishments: %s\n\n",
                     exp.getCompany(),
                     exp.getJobTitle(),
                     exp.getStartDate(),
                     exp.getEndDate() != null ? exp.getEndDate() : "Present",
-                    exp.getResponsibilities()
+                    exp.getResponsibilities() != null ? exp.getResponsibilities() : "",
+                    exp.getAccomplishments() != null ? exp.getAccomplishments() : ""
             ));
         }
 
@@ -201,23 +202,25 @@ public class ResumeGenerationService {
                   "jobTitle": "string",
                   "startDate": "YYYY-MM-DD",
                   "endDate": "YYYY-MM-DD",
-                  "description": "string"
+                  "responsibilities": "string",
+                  "accomplishments": "string"
                 }
               ]
             }
 
             Instructions:
             1. Extract 8–12 relevant keywords from the job description and integrate them meaningfully.
-            2. Rewrite work experience bullet points with:
-               - Strong action verbs
-               - Quantifiable achievements
-               - Concise 1–2 line format
+            2. For work experience:
+               - Responsibilities should list daily tasks and duties
+               - Accomplishments should highlight specific achievements, metrics, and impact
+               - Format both as bullet points or short paragraphs
+               - Keep responsibilities and accomplishments separate and distinct
             3. Prioritize skills most relevant to the job.
             4. Maintain original job titles, company names, and date ranges.
             5. Ensure all dates maintain YYYY-MM-DD format.
-            6. Return ONLY the JSON with no additional commentary.
-               * Make sure "skills" is an actual JSON array, e.g.: ["Java","Python","SQL",…]
-            7. Use empty strings or 0 for any missing data, never null values.
+            6. Make sure "skills" is an actual JSON array, e.g.: ["Java","Python","SQL",…]
+            7. Return ONLY the JSON with no additional commentary.
+            8. Use empty strings or 0 for any missing data, never null values.
             """,
                 jobTitle,
                 jobDesc,

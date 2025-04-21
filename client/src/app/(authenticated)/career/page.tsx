@@ -20,6 +20,7 @@ interface Job {
   startDate: string;
   endDate: string;
   responsibilities: string;
+  accomplishments: string;
 }
 
 export default function CareerPage() {
@@ -48,6 +49,7 @@ export default function CareerPage() {
     startDate: "",
     endDate: "",
     responsibilities: "",
+    accomplishments: "",
   });
 
   // 2) Fetch career history whenever userId is available
@@ -91,6 +93,7 @@ export default function CareerPage() {
         startDate: "",
         endDate: "",
         responsibilities: "",
+        accomplishments: "",
       });
     }
     if (editingIndex !== null) {
@@ -101,6 +104,7 @@ export default function CareerPage() {
         startDate: "",
         endDate: "",
         responsibilities: "",
+        accomplishments: "",
       });
     }
   };
@@ -199,6 +203,7 @@ export default function CareerPage() {
         startDate: "",
         endDate: "",
         responsibilities: "",
+        accomplishments: "",
       });
     }
   };
@@ -338,6 +343,13 @@ export default function CareerPage() {
                           value={formData.responsibilities}
                           onChange={handleFormChange}
                         />
+                        <Textarea
+                          className="dark:border-neutral-700"
+                          name="accomplishments"
+                          placeholder="Accomplishments"
+                          value={formData.accomplishments}
+                          onChange={handleFormChange}
+                        />
                         <div className="flex gap-3 mt-4">
                           <Button
                             onClick={handleSave}
@@ -355,6 +367,7 @@ export default function CareerPage() {
                                 startDate: "",
                                 endDate: "",
                                 responsibilities: "",
+                                accomplishments: "",
                               });
                             }}
                           >
@@ -397,9 +410,22 @@ export default function CareerPage() {
                               ? job.endDate
                               : new Date(job.endDate).toISOString().slice(0, 10)}
                           </p>
-                          <p className="text-gray-700 dark:text-white leading-relaxed break-words whitespace-pre-wrap">
-                            {job.responsibilities}
-                          </p>
+                          {job.responsibilities && (
+                            <div className="mb-4">
+                              <h4 className="text-lg font-semibold text-gray-700 dark:text-white mb-2">Responsibilities:</h4>
+                              <p className="text-gray-700 dark:text-white leading-relaxed break-words whitespace-pre-wrap">
+                                {job.responsibilities}
+                              </p>
+                            </div>
+                          )}
+                          {job.accomplishments && (
+                            <div>
+                              <h4 className="text-lg font-semibold text-gray-700 dark:text-white mb-2">Accomplishments:</h4>
+                              <p className="text-gray-700 dark:text-white leading-relaxed break-words whitespace-pre-wrap">
+                                {job.accomplishments}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
@@ -481,19 +507,14 @@ export default function CareerPage() {
                   name="responsibilities"
                   placeholder="Enter your responsibilities"
                   value={formData.responsibilities}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                    const lines = e.target.value.split('\n');
-                    const formattedLines = lines.map((line: string) => {
-                      if (line.trim() && !line.startsWith('•')) {
-                        return `• ${line.trim()}`;
-                      }
-                      return line;
-                    });
-                    setFormData(prev => ({
-                      ...prev,
-                      responsibilities: formattedLines.join('\n')
-                    }));
-                  }}
+                  onChange={handleFormChange}
+                  className="min-h-[200px]"
+                />
+                <Textarea
+                  name="accomplishments"
+                  placeholder="Enter your accomplishments"
+                  value={formData.accomplishments}
+                  onChange={handleFormChange}
                   className="min-h-[200px]"
                 />
               </div>
@@ -517,6 +538,7 @@ export default function CareerPage() {
                   startDate: "",
                   endDate: "",
                   responsibilities: "",
+                  accomplishments: "",
                 });
                 setFreeform("");
               }}

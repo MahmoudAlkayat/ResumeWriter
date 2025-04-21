@@ -12,5 +12,4 @@ public class WorkExperienceData {
     private String endDate;
     private String responsibilities;
     private String accomplishments;
-    private String description;
 }

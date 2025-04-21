@@ -281,7 +281,7 @@ const Register: React.FC = () => {
                     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}&access_type=${accessType}&prompt=${prompt}`;
 
                     // Step 3: Redirect the user to Google
-                    window.location.replace(googleAuthUrl);
+                    window.location.href = googleAuthUrl
                   }}
                   className="w-full text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
                   <i className="fab fa-google mr-1"></i>
@@ -299,7 +299,7 @@ const Register: React.FC = () => {
 
                     const linkedinAuthUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=${responseType}&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
 
-                    window.location.replace(linkedinAuthUrl);
+                    window.location.href = linkedinAuthUrl
                   }}
                   className="w-full text-md bg-white py-2 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer whitespace-nowrap text-gray-600">
                   <i className="fab fa-linkedin mr-1"></i>
