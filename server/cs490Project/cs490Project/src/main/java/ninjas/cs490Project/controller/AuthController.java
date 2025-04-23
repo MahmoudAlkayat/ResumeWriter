@@ -22,8 +22,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Map;
 
 
 @RestController
@@ -90,7 +88,7 @@ public class AuthController {
 
         Map<String, String> userData = new HashMap<>();
         userData.put("id", String.valueOf(user.getId()));
-        userData.put("email", user.getEmail());
+        userData.put("email", user.getUsername());
         userData.put("firstName", user.getFirstName());
         userData.put("lastName", user.getLastName());
 
@@ -108,9 +106,10 @@ public class AuthController {
             User user = userRepository.findByEmail(email);
             Map <String, String> userData = new HashMap<>();
             userData.put("id", String.valueOf(user.getId()));
-            userData.put("email", user.getEmail());
+            userData.put("email", user.getUsername());
             userData.put("firstName", user.getFirstName());
             userData.put("lastName", user.getLastName());
+            userData.put("profilePictureUrl", user.getProfilePictureUrl());
             return ResponseEntity.ok(userData);
         } else {
             return ResponseEntity.status(401).body("Not authenticated");

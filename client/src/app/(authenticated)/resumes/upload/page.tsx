@@ -14,7 +14,7 @@ export default function ResumeUploadPage() {
   const [uploading, setUploading] = useState(false);
   const { showError, showInfo } = useToast();
   const { user } = useAuth();
-  const { setActiveResumeId } = useResumeProcessing();
+  const { addActiveProcess } = useResumeProcessing();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -59,7 +59,7 @@ export default function ResumeUploadPage() {
       }
 
       const data = await response.json();
-      setActiveResumeId(data.resumeId); // Set the active resume ID in the context
+      addActiveProcess(data.statusId, 'upload');
       showInfo("Resume uploaded. Please wait while we process your resume.");
     } catch (error) {
       showError("Error uploading resume");

@@ -3,121 +3,90 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useToast } from './ToastProvider';
 
+interface ActiveProcess {
+  id: number;
+  type: 'generate' | 'upload' | 'freeform';
+}
+
 interface ResumeProcessingContextType {
-    activeResumeId: number | null;
-    setActiveResumeId: (id: number | null) => void;
-    activeCareerUserId: number | null;
-    setActiveCareerUserId: (id: number | null) => void;
+  activeProcesses: ActiveProcess[];
+  addActiveProcess: (id: number, type: 'generate' | 'upload' | 'freeform') => void;
+  removeActiveProcess: (id: number) => void;
 }
 
 const ResumeProcessingContext = createContext<ResumeProcessingContextType | undefined>(undefined);
 
 export function ResumeProcessingProvider({ children }: { children: React.ReactNode }) {
-    const [activeResumeId, setActiveResumeId] = useState<number | null>(null);
-    const [activeCareerUserId, setActiveCareerUserId] = useState<number | null>(null);
+    const [activeProcesses, setActiveProcesses] = useState<ActiveProcess[]>([]);
     const { showSuccess, showError } = useToast();
 
-    // Handle resume processing notifications
+    const addActiveProcess = useCallback((id: number, type: 'generate' | 'upload' | 'freeform') => {
+        setActiveProcesses(prev => [...prev, { id, type }]);
+    }, []);
+
+    const removeActiveProcess = useCallback((id: number) => {
+        setActiveProcesses(prev => prev.filter(process => process.id !== id));
+    }, []);
+
+    // Poll for status updates
     useEffect(() => {
-        if (!activeResumeId) return;
+        if (activeProcesses.length === 0) return;
 
-        console.log('Connecting to SSE for resumeId:', activeResumeId);
-        const eventSource = new EventSource(`http://localhost:8080/api/resumes/${activeResumeId}/status`);
+        const checkStatuses = async () => {
+            for (const process of activeProcesses) {
+                try {
+                    console.log("Fetching", process.id)
+                    const response = await fetch(`http://localhost:8080/api/resumes/status/${process.id}`, {
+                        credentials: 'include'
+                    });
 
-        eventSource.onopen = () => {
-            console.log('SSE connection opened');
-        };
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch status');
+                    }
 
-        eventSource.addEventListener('processing-complete', (event) => {
-            console.log('Received processing-complete event:', event.data);
-            try {
-                const data = JSON.parse(event.data);
-                showSuccess('Resume processed!');
-                setActiveResumeId(null); // Clear the active resume ID after completion
-            } catch (error) {
-                console.error('Error parsing SSE data:', error);
-                showError('Error processing resume data');
+                    const status = await response.json();
+                    
+                    if (status.status === 'COMPLETED') {
+                        let message = '';
+                        
+                        switch (process.type) {
+                            case 'generate':
+                            message = 'Resume generation completed successfully!';
+                            break;
+                            case 'upload':
+                            message = 'Resume upload processed successfully!';
+                            break;
+                            case 'freeform':
+                            message = 'Freeform entry processed successfully!';
+                            break;
+                            default:
+                            message = 'Process completed successfully!';
+                        }
+                        showSuccess(message);
+                        removeActiveProcess(process.id);
+                    } else if (status.status === 'FAILED') {
+                        showError(status.error || 'Processing failed');
+                        removeActiveProcess(process.id);
+                    }
+                } catch (error) {
+                    console.error('Error checking status:', error);
+                    // Don't remove the process on network errors, let it retry
+                }
             }
-            eventSource.close();
-        });
-
-        eventSource.onerror = (error) => {
-            console.error('SSE Error:', error);
-            if (eventSource.readyState === EventSource.CLOSED) {
-                console.log('SSE connection closed');
-                showError('Connection to server lost. Please refresh the page.');
-            } else {
-                showError('Failed to process resume. Please try again.');
-            }
-            eventSource.close();
         };
 
-        return () => {
-            console.log('Cleaning up SSE connection');
-            eventSource.close();
-        };
-    }, [activeResumeId, showSuccess, showError]);
+        // Check immediately and then every 2 seconds
+        checkStatuses();
+        const interval = setInterval(checkStatuses, 2000);
 
-    // Handle career processing notifications
-    useEffect(() => {
-        if (!activeCareerUserId) return;
-
-        console.log('Connecting to SSE for career processing userId:', activeCareerUserId);
-        const eventSource = new EventSource(`http://localhost:8080/api/users/${activeCareerUserId}/career/status`);
-
-        eventSource.onopen = () => {
-            console.log('Career SSE connection opened');
-        };
-
-        eventSource.addEventListener('processing-complete', (event) => {
-            console.log('Received career processing-complete event:', event.data);
-            try {
-                const data = JSON.parse(event.data);
-                showSuccess('Freeform career entry processed!');
-                setActiveCareerUserId(null); // Clear the active user ID after completion
-            } catch (error) {
-                console.error('Error parsing career SSE data:', error);
-                showError('Error processing career data');
-            }
-            eventSource.close();
-        });
-
-        eventSource.addEventListener('processing-error', (event) => {
-            console.log('Received career processing-error event:', event.data);
-            try {
-                const data = JSON.parse(event.data);
-                showError(data.message || 'Failed to process career entry');
-                setActiveCareerUserId(null); // Clear the active user ID after error
-            } catch (error) {
-                console.error('Error parsing career error SSE data:', error);
-                showError('Error processing career data');
-            }
-            eventSource.close();
-        });
-
-        eventSource.onerror = (error) => {
-            console.error('Career SSE Error:', error);
-            if (eventSource.readyState === EventSource.CLOSED) {
-                console.log('Career SSE connection closed');
-                showError('Connection to server lost. Please refresh the page.');
-            } else {
-                showError('Failed to process career entries. Please try again.');
-            }
-            eventSource.close();
-        };
-
-        return () => {
-            console.log('Cleaning up career SSE connection');
-            eventSource.close();
-        };
-    }, [activeCareerUserId, showSuccess, showError]);
+        return () => clearInterval(interval);
+    }, [activeProcesses, showSuccess, showError, removeActiveProcess]);
 
     return (
         <ResumeProcessingContext.Provider value={{ 
-            activeResumeId, 
-            setActiveResumeId,
-            activeCareerUserId,
-            setActiveCareerUserId
+            activeProcesses,
+            addActiveProcess,
+            removeActiveProcess
         }}>
             {children}
         </ResumeProcessingContext.Provider>

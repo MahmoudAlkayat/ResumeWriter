@@ -3,7 +3,6 @@ package ninjas.cs490Project.service;
 import ninjas.cs490Project.entity.EmailVerificationToken;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.EmailVerificationTokenRepository;
-import ninjas.cs490Project.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +15,6 @@ public class EmailVerificationService {
 
     @Autowired
     private EmailVerificationTokenRepository tokenRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private MailService mailService;

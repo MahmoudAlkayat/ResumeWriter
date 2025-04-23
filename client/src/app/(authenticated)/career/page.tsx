@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Background } from "@/components/ui/background";
 import { Pencil, PlusIcon, Trash } from "lucide-react";
 import { useAuth } from "@/hooks/auth";
@@ -20,13 +20,13 @@ interface Job {
   startDate: string;
   endDate: string;
   responsibilities: string;
+  accomplishments: string;
 }
 
 export default function CareerPage() {
   const { user } = useAuth();
   const { showError, showSuccess, showInfo } = useToast();
-  const { activeResumeId } = useResumeProcessing();
-  const { activeCareerUserId, setActiveCareerUserId } = useResumeProcessing();
+  const { activeProcesses, addActiveProcess } = useResumeProcessing();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("freeform");
   const [freeform, setFreeform] = useState("");
@@ -49,6 +49,7 @@ export default function CareerPage() {
     startDate: "",
     endDate: "",
     responsibilities: "",
+    accomplishments: "",
   });
 
   // 2) Fetch career history whenever userId is available
@@ -56,7 +57,7 @@ export default function CareerPage() {
     if (!user?.id) return;
     try {
       console.log("Fetching career history for user:", user.id);
-      const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
+      const res = await fetch(`http://localhost:8080/api/resumes/career`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch career history");
@@ -80,7 +81,7 @@ export default function CareerPage() {
       fetchCareerHistory();
     }
     onUpdate();
-  },[activeResumeId, activeCareerUserId])
+  }, [activeProcesses]);
 
   // Start "Add New Career" flow
   const handleAdd = () => {
@@ -92,6 +93,7 @@ export default function CareerPage() {
         startDate: "",
         endDate: "",
         responsibilities: "",
+        accomplishments: "",
       });
     }
     if (editingIndex !== null) {
@@ -102,6 +104,7 @@ export default function CareerPage() {
         startDate: "",
         endDate: "",
         responsibilities: "",
+        accomplishments: "",
       });
     }
   };
@@ -131,31 +134,43 @@ export default function CareerPage() {
     }
 
     // Validation
-    if (!formData.title || !formData.company || !formData.startDate || !formData.endDate) {
-      showError("Please fill in all fields");
+    if (!formData.title || !formData.company || !formData.startDate) {
+      showError("Please fill in job title, company, and start date");
       return;
     }
 
+    // Validate start date format
     const startDate = new Date(formData.startDate);
-    const endDate = new Date(formData.endDate);
-
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      showError("Invalid date format");
+    if (isNaN(startDate.getTime())) {
+      showError("Invalid start date format");
       return;
     }
-    if (startDate > endDate) {
-      showError("Start date must be before end date");
-      return;
+
+    // Validate end date if provided
+    if (formData.endDate) {
+      const endDate = new Date(formData.endDate);
+      if (isNaN(endDate.getTime())) {
+        showError("Invalid end date format");
+        return;
+      }
+      // Compare dates if both are provided
+      if (startDate > endDate) {
+        showError("Start date must be before end date");
+        return;
+      }
     }
 
     try {
       if (editingIndex === -1) {
         // Create new career record
-        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career`, {
+        const res = await fetch(`http://localhost:8080/api/resumes/career`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            endDate: formData.endDate || null
+          }),
         });
         if (!res.ok) {
           const errText = await res.text();
@@ -175,11 +190,14 @@ export default function CareerPage() {
           showError("Missing job ID");
           return;
         }
-        const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/${jobId}`, {
+        const res = await fetch(`http://localhost:8080/api/resumes/career/${jobId}`, {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            endDate: formData.endDate || null
+          }),
         });
         if (!res.ok) {
           const errText = await res.text();
@@ -200,6 +218,7 @@ export default function CareerPage() {
         startDate: "",
         endDate: "",
         responsibilities: "",
+        accomplishments: "",
       });
     }
   };
@@ -216,7 +235,7 @@ export default function CareerPage() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/${jobId}`, {
+      const res = await fetch(`http://localhost:8080/api/resumes/career/${jobId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -250,7 +269,7 @@ export default function CareerPage() {
         text: freeform
       }
 
-      const res = await fetch(`http://localhost:8080/api/users/${user.id}/career/freeform`, {
+      const res = await fetch(`http://localhost:8080/api/resumes/career/freeform`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -263,7 +282,8 @@ export default function CareerPage() {
       }
 
       showInfo("Freeform entry submitted. Please wait while we process your entry.");
-      setActiveCareerUserId(user.id);
+      const entryData = await res.json();
+      addActiveProcess(entryData.statusId, 'freeform');
       setFreeform("");
       setEditingIndex(null);
     } catch (err) {
@@ -320,14 +340,15 @@ export default function CareerPage() {
                         <Input
                           className="dark:border-neutral-700"
                           name="startDate"
-                          placeholder="Start Date (YYYY-MM-DD)"
+                          placeholder="Start Date (YYYY-MM-DD) *"
                           value={formData.startDate}
                           onChange={handleFormChange}
+                          required
                         />
                         <Input
                           className="dark:border-neutral-700"
                           name="endDate"
-                          placeholder="End Date (YYYY-MM-DD)"
+                          placeholder="End Date (YYYY-MM-DD) or leave blank for Present"
                           value={formData.endDate}
                           onChange={handleFormChange}
                         />
@@ -336,6 +357,13 @@ export default function CareerPage() {
                           name="responsibilities"
                           placeholder="Responsibilities"
                           value={formData.responsibilities}
+                          onChange={handleFormChange}
+                        />
+                        <Textarea
+                          className="dark:border-neutral-700"
+                          name="accomplishments"
+                          placeholder="Accomplishments"
+                          value={formData.accomplishments}
                           onChange={handleFormChange}
                         />
                         <div className="flex gap-3 mt-4">
@@ -355,6 +383,7 @@ export default function CareerPage() {
                                 startDate: "",
                                 endDate: "",
                                 responsibilities: "",
+                                accomplishments: "",
                               });
                             }}
                           >
@@ -392,18 +421,38 @@ export default function CareerPage() {
                             {job.company}
                           </p>
                           <p className="text-md text-gray-500 dark:text-muted-foreground italic mb-4">
-                            {job.startDate ? new Date(job.startDate).toISOString().slice(0, 10) : ""} -{" "}
-                            {job.endDate === "Present"
-                              ? job.endDate
-                              : new Date(job.endDate).toISOString().slice(0, 10)}
+                            {job.startDate ? new Date(job.startDate).toISOString().slice(0, 10) : "Unknown"} -{" "}
+                            {job.endDate ? new Date(job.endDate).toISOString().slice(0, 10) : "Present"}
                           </p>
-                          <p className="text-gray-700 dark:text-white leading-relaxed">
-                            {job.responsibilities}
-                          </p>
+                          {job.responsibilities && (
+                            <div className="mb-4">
+                              <h4 className="text-lg font-semibold text-gray-700 dark:text-white mb-2">Responsibilities:</h4>
+                              <p className="text-gray-700 dark:text-white leading-relaxed break-words whitespace-pre-wrap">
+                                {job.responsibilities}
+                              </p>
+                            </div>
+                          )}
+                          {job.accomplishments && (
+                            <div>
+                              <h4 className="text-lg font-semibold text-gray-700 dark:text-white mb-2">Accomplishments:</h4>
+                              <p className="text-gray-700 dark:text-white leading-relaxed break-words whitespace-pre-wrap">
+                                {job.accomplishments}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
                   </CardContent>
+                  <CardFooter className="-mt-4">
+                      <div className="flex justify-between ml-auto">
+                          {job.id && (
+                              <p className="text-muted-foreground text-xs">
+                                  CareerID: {job.id}
+                              </p>
+                          )}
+                      </div>
+                  </CardFooter>
                 </Card>
               );
             })}
@@ -472,19 +521,14 @@ export default function CareerPage() {
                   name="responsibilities"
                   placeholder="Enter your responsibilities"
                   value={formData.responsibilities}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                    const lines = e.target.value.split('\n');
-                    const formattedLines = lines.map((line: string) => {
-                      if (line.trim() && !line.startsWith('•')) {
-                        return `• ${line.trim()}`;
-                      }
-                      return line;
-                    });
-                    setFormData(prev => ({
-                      ...prev,
-                      responsibilities: formattedLines.join('\n')
-                    }));
-                  }}
+                  onChange={handleFormChange}
+                  className="min-h-[200px]"
+                />
+                <Textarea
+                  name="accomplishments"
+                  placeholder="Enter your accomplishments"
+                  value={formData.accomplishments}
+                  onChange={handleFormChange}
                   className="min-h-[200px]"
                 />
               </div>
@@ -508,6 +552,7 @@ export default function CareerPage() {
                   startDate: "",
                   endDate: "",
                   responsibilities: "",
+                  accomplishments: "",
                 });
                 setFreeform("");
               }}

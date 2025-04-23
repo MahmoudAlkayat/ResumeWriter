@@ -1,42 +1,48 @@
 package ninjas.cs490Project.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import java.time.LocalDate;
 
 @Entity
+@Data
 @Table(name = "work_experience")
 public class WorkExperience {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @OneToOne
+    @JoinColumn(name = "freeform_entry_id")
+    private FreeformEntry freeformEntry;
 
     @Column(nullable = false)
     private String company;
 
-    @Column(name = "job_title", nullable = false)
+    @Column(nullable = false)
     private String jobTitle;
 
-    @Column(name = "start_date", nullable = false)
+    @Column(nullable = false)
     private LocalDate startDate;
 
-    @Column(name = "end_date")
-    private LocalDate endDate;  // Null if current job
+    private LocalDate endDate;
 
     @Column(columnDefinition = "TEXT")
-    private String description;
+    private String responsibilities;
 
-    // Instead of mapping to Resume, we now map directly to User.
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(columnDefinition = "TEXT")
+    private String accomplishments;
 
     // Getters and Setters
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -68,11 +74,18 @@ public class WorkExperience {
         this.endDate = endDate;
     }
 
-    public String getDescription() {
-        return description;
+    public String getResponsibilities() {
+        return responsibilities;
     }
-    public void setDescription(String description) {
-        this.description = description;
+    public void setResponsibilities(String responsibilities) {
+        this.responsibilities = responsibilities;
+    }
+
+    public String getAccomplishments() {
+        return accomplishments;
+    }
+    public void setAccomplishments(String accomplishments) {
+        this.accomplishments = accomplishments;
     }
 
     public User getUser() {
@@ -80,5 +93,12 @@ public class WorkExperience {
     }
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public FreeformEntry getFreeformEntry() {
+        return freeformEntry;
+    }
+    public void setFreeformEntry(FreeformEntry freeformEntry) {
+        this.freeformEntry = freeformEntry;
     }
 }

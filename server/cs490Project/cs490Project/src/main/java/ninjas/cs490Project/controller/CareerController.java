@@ -1,36 +1,26 @@
 package ninjas.cs490Project.controller;
 
-import ninjas.cs490Project.entity.WorkExperience;
 import ninjas.cs490Project.entity.User;
-import ninjas.cs490Project.repository.WorkExperienceRepository;
 import ninjas.cs490Project.repository.UserRepository;
-import ninjas.cs490Project.service.AsyncResumeParser;
-import ninjas.cs490Project.service.ResumeProcessingNotificationService;
-import org.springframework.http.MediaType;
+import ninjas.cs490Project.service.CareerService;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/users/{userId}/career")
+@RequestMapping("/api/resumes/career")
 public class CareerController {
 
-    private final WorkExperienceRepository workExperienceRepository;
     private final UserRepository userRepository;
-    private final AsyncResumeParser asyncResumeParser;
-    private final ResumeProcessingNotificationService notificationService;
+    private final CareerService careerService;
 
-    public CareerController(WorkExperienceRepository workExperienceRepository,
-                            UserRepository userRepository,
-                            AsyncResumeParser asyncResumeParser,
-                            ResumeProcessingNotificationService notificationService) {
-        this.workExperienceRepository = workExperienceRepository;
+    public CareerController(UserRepository userRepository,
+                          CareerService careerService) {
         this.userRepository = userRepository;
-        this.asyncResumeParser = asyncResumeParser;
-        this.notificationService = notificationService;
+        this.careerService = careerService;
     }
 
     // ------------------------------
@@ -42,6 +32,7 @@ public class CareerController {
         private String startDate;
         private String endDate;
         private String responsibilities;
+        private String accomplishments;
 
         // Getters and setters
         public String getTitle() { return title; }
@@ -58,154 +49,118 @@ public class CareerController {
 
         public String getResponsibilities() { return responsibilities; }
         public void setResponsibilities(String responsibilities) { this.responsibilities = responsibilities; }
+
+        public String getAccomplishments() { return accomplishments; }
+        public void setAccomplishments(String accomplishments) { this.accomplishments = accomplishments; }
     }
 
     // 1. GET all WorkExperience records for a user
     @GetMapping
-    public ResponseEntity<?> getCareerHistory(@PathVariable("userId") int userId) {
-        // Ensure user exists
-        User user = userRepository.findUserById(userId);
+    public ResponseEntity<?> getCareerHistory(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
-            // Return empty if user not found
-            return ResponseEntity.ok(Collections.singletonMap("jobs", new ArrayList<>()));
+            return ResponseEntity.ok(Map.of("jobs", List.of()));
         }
-
-        // Retrieve all WorkExperience for this user
-        List<WorkExperience> jobList = workExperienceRepository.findByUserId(userId);
-
-        // Convert to a DTO-like structure
-        List<Map<String, Object>> jobsDtoList = new ArrayList<>();
-        for (WorkExperience job : jobList) {
-            Map<String, Object> jobMap = new HashMap<>();
-            jobMap.put("id", job.getId());
-            jobMap.put("title", job.getJobTitle() != null ? job.getJobTitle() : "N/A");
-            jobMap.put("company", job.getCompany() != null ? job.getCompany() : "N/A");
-            jobMap.put("startDate", job.getStartDate() != null ? job.getStartDate().toString() : "N/A");
-            jobMap.put("endDate", job.getEndDate() != null ? job.getEndDate().toString() : "Present");
-            jobMap.put("responsibilities", job.getDescription() != null ? job.getDescription() : "N/A");
-            jobsDtoList.add(jobMap);
-        }
-        return ResponseEntity.ok(Collections.singletonMap("jobs", jobsDtoList));
+        return ResponseEntity.ok(careerService.getCareerHistory(user));
     }
 
     // 2. CREATE a new WorkExperience record for a user
     @PostMapping
-    public ResponseEntity<?> createCareer(@PathVariable("userId") int userId,
+    public ResponseEntity<?> createCareer(Authentication authentication,
                                           @RequestBody CareerRequest req) {
-        User user = userRepository.findUserById(userId);
+        User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        // Create and populate a new WorkExperience entity
-        WorkExperience job = new WorkExperience();
-        job.setUser(user);
-        job.setJobTitle(req.getTitle());
-        job.setCompany(req.getCompany());
-        if (req.getStartDate() != null && !req.getStartDate().isEmpty()) {
-            job.setStartDate(LocalDate.parse(req.getStartDate()));
+        try {
+            careerService.createCareer(user, req);
+            return ResponseEntity.ok("Created new career record");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        if (req.getEndDate() != null && !req.getEndDate().isEmpty()) {
-            job.setEndDate(LocalDate.parse(req.getEndDate()));
-        }
-        job.setDescription(req.getResponsibilities());
-
-        // Save the entity
-        workExperienceRepository.save(job);
-        return ResponseEntity.ok("Created new career record");
-    }
-
-    @GetMapping(value = "/status", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribeToCareerProcessingStatus(@PathVariable("userId") int userId) {
-        return notificationService.subscribeToCareerProcessing(userId);
     }
 
     @PostMapping("/freeform")
-    public ResponseEntity<?> createFreeformCareer(@PathVariable("userId") int userId,
+    public ResponseEntity<?> createFreeformCareer(Authentication authentication,
                                                  @RequestBody Map<String, String> request) {
-        User user = userRepository.findUserById(userId);
+        User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        String text = request.get("text");
-        if (text == null || text.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Text field is required");
+        try {
+            Map<String, Object> response = careerService.createFreeformCareer(user, request.get("text"));
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        // Process the freeform text asynchronously
-        asyncResumeParser.parseFreeformCareer(text, user);
-        
-        return ResponseEntity.ok("Freeform career entry submitted for processing");
     }
 
     // 3. UPDATE an existing WorkExperience record for a user
     @PutMapping("/{jobId}")
-    public ResponseEntity<?> updateCareer(@PathVariable("userId") int userId,
+    public ResponseEntity<?> updateCareer(Authentication authentication,
                                           @PathVariable("jobId") int jobId,
                                           @RequestBody CareerRequest req) {
-        // Ensure user exists
-        User user = userRepository.findUserById(userId);
+        User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        // Check if the WorkExperience record exists
-        Optional<WorkExperience> optionalJob = workExperienceRepository.findById(jobId);
-        if (optionalJob.isEmpty()) {
-            return ResponseEntity.notFound().build();
+        try {
+            careerService.updateCareer(user, jobId, req);
+            return ResponseEntity.ok("Updated career record");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        WorkExperience job = optionalJob.get();
-        // Ensure it belongs to the user in the path
-        if (job.getUser().getId() != userId) {
-            return ResponseEntity.badRequest().body("This record doesn't belong to the specified user");
-        }
-
-        // Update the record
-        job.setJobTitle(req.getTitle());
-        job.setCompany(req.getCompany());
-        if (req.getStartDate() != null && !req.getStartDate().isEmpty()) {
-            job.setStartDate(LocalDate.parse(req.getStartDate()));
-        } else {
-            job.setStartDate(null);
-        }
-        if (req.getEndDate() != null && !req.getEndDate().isEmpty()) {
-            job.setEndDate(LocalDate.parse(req.getEndDate()));
-        } else {
-            job.setEndDate(null);
-        }
-        job.setDescription(req.getResponsibilities());
-
-        // Save the changes
-        workExperienceRepository.save(job);
-        return ResponseEntity.ok("Updated career record");
     }
 
     // 4. DELETE an existing WorkExperience record
     @DeleteMapping("/{jobId}")
-    public ResponseEntity<?> deleteCareer(@PathVariable("userId") int userId,
+    public ResponseEntity<?> deleteCareer(Authentication authentication,
                                           @PathVariable("jobId") int jobId) {
-        // Ensure user exists
-        User user = userRepository.findUserById(userId);
+        User user = userRepository.findByEmail(authentication.getName());
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        // Retrieve the record
-        Optional<WorkExperience> optionalJob = workExperienceRepository.findById(jobId);
-        if (optionalJob.isEmpty()) {
-            return ResponseEntity.notFound().build();
+        try {
+            careerService.deleteCareer(user, jobId);
+            return ResponseEntity.ok("Deleted career record");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/freeform")
+    public ResponseEntity<?> getFreeformCareer(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName());
+        if (user == null) {
+            return ResponseEntity.badRequest().body("User not found");
         }
 
-        WorkExperience job = optionalJob.get();
-        // Check ownership
-        if (job.getUser().getId() != userId) {
-            return ResponseEntity.badRequest().body("This record doesn't belong to the specified user");
+        try {
+            List<Map<String, String>> response = careerService.getFreeformCareer(user);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/freeform/{freeformId}")
+    public ResponseEntity<?> updateFreeformCareer(Authentication authentication,
+                                                @PathVariable("freeformId") int freeformId,
+                                                @RequestBody Map<String, String> request) {
+        User user = userRepository.findByEmail(authentication.getName());
+        if (user == null) {
+            return ResponseEntity.badRequest().body("User not found");
         }
 
-        // Delete
-        workExperienceRepository.delete(job);
-        return ResponseEntity.ok("Deleted career record");
+        try {
+            Map<String, Object> response = careerService.updateFreeformCareer(user, freeformId, request.get("text"));
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

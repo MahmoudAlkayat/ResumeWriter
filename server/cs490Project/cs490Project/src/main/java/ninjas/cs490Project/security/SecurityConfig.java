@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -36,7 +35,9 @@ public class SecurityConfig {
                 .cors(withDefaults()) // uses the CorsConfigurationSource bean defined below
                 .authorizeHttpRequests(auth -> auth
                         // Add "/oauth/google/**" to your existing permit list:
-                        .requestMatchers("/api/register", "/login", "/auth/**", "/oauth/**","/api/resumes/**","/api/users/**").permitAll()
+                        .requestMatchers("/api/register", "/auth/**", "/oauth/**").permitAll()
+                        .requestMatchers("/api/resumes/*/status", "/api/resumes/career/*/status").permitAll()
+                        .requestMatchers("/api/resumes/**", "/api/profile/**", "/api/skills/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

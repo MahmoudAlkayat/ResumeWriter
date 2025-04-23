@@ -25,7 +25,7 @@ interface EducationEntry {
 export default function EducationManager() {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
-  const { activeResumeId } = useResumeProcessing();
+  const { activeProcesses } = useResumeProcessing();
   const [isLoading, setIsLoading] = useState(true);
 
   // Education data
@@ -51,7 +51,7 @@ export default function EducationManager() {
     try {
       // Fetch this user's education from the correct endpoint
       const eduRes = await fetch(
-        `http://localhost:8080/api/users/${user.id}/education`,
+        `http://localhost:8080/api/resumes/education`,
         { credentials: "include" }
       );
       if (!eduRes.ok) {
@@ -77,7 +77,7 @@ export default function EducationManager() {
       fetchEducation();
     }
     onUpdate();
-  },[activeResumeId])
+  }, [activeProcesses]);
 
   // 2) Handle starting the "add" flow
   const handleAdd = () => {
@@ -138,33 +138,50 @@ export default function EducationManager() {
     }
 
     // Validation
-    if (!formData.degree || !formData.institution || !formData.fieldOfStudy || !formData.startDate || !formData.endDate) {
-      showError("Please fill in all fields");
+    if (!formData.degree || !formData.institution) {
+      showError("Please fill in degree and institution");
       return;
     }
 
-    const startDate = new Date(formData.startDate);
-    const endDate = new Date(formData.endDate);
-
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      showError("Invalid date format");
-      return;
+    // Validate dates if provided
+    if (formData.startDate) {
+      const startDate = new Date(formData.startDate);
+      if (isNaN(startDate.getTime())) {
+        showError("Invalid start date format");
+        return;
+      }
     }
-    if (startDate > endDate) {
-      showError("Start date must be before end date");
-      return;
+
+    if (formData.endDate) {
+      const endDate = new Date(formData.endDate);
+      if (isNaN(endDate.getTime())) {
+        showError("Invalid end date format");
+        return;
+      }
+      // Compare dates if both are provided
+      if (formData.startDate) {
+        const startDate = new Date(formData.startDate);
+        if (startDate > endDate) {
+          showError("Start date must be before end date");
+          return;
+        }
+      }
     }
 
     try {
       if (editingIndex === -1) {
         // CREATE a new record using the correct endpoint
         const res = await fetch(
-          `http://localhost:8080/api/users/${user.id}/education`,
+          `http://localhost:8080/api/resumes/education`,
           {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
+            body: JSON.stringify({
+              ...formData,
+              startDate: formData.startDate || null,
+              endDate: formData.endDate || null
+            }),
           }
         );
         if (!res.ok) {
@@ -186,12 +203,16 @@ export default function EducationManager() {
         }
         // UPDATE existing record using the correct endpoint
         const res = await fetch(
-          `http://localhost:8080/api/users/${user.id}/education/${eduId}`,
+          `http://localhost:8080/api/resumes/education/${eduId}`,
           {
             method: "PUT",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
+            body: JSON.stringify({
+              ...formData,
+              startDate: formData.startDate || null,
+              endDate: formData.endDate || null
+            }),
           }
         );
         if (!res.ok) {
@@ -238,7 +259,7 @@ export default function EducationManager() {
 
     try {
       const res = await fetch(
-        `http://localhost:8080/api/users/${user.id}/education/${eduId}`,
+        `http://localhost:8080/api/resumes/education/${eduId}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -406,10 +427,8 @@ export default function EducationManager() {
                                 {edu.institution}
                             </p>
                             <div className="flex items-center justify-center gap-2 text-md text-gray-500 dark:text-muted-foreground italic mb-4">
-                                <span>{edu.startDate ? new Date(edu.startDate).toISOString().slice(0, 10) : ""} -{" "}
-                                    {edu.endDate === "Present"
-                                        ? edu.endDate
-                                        : new Date(edu.endDate).toISOString().slice(0, 10)}</span>
+                                <span>{edu.startDate ? new Date(edu.startDate).toISOString().slice(0, 10) : "Unknown"} -{" "}
+                                    {edu.endDate ? new Date(edu.endDate).toISOString().slice(0, 10) : "Present"}</span>
                                 <span className="text-gray-400">•</span>
                                 <span>GPA: {edu.gpa}</span>
                             </div>
