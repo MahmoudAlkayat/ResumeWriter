@@ -1,75 +1,120 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Background } from "@/components/ui/background";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/contexts/ToastProvider";
-import { Input } from "@/components/ui/input";
 import LoadingScreen from "@/components/LoadingScreen";
-import { useAuth } from "@/hooks/auth";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-interface Resume {
-  id: string;
-  title: string;
+interface GeneratedResume {
+  resumeId: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  jobId: string;
+  jobDescriptionTitle: string | null;
 }
 
+interface FormattedResume {
+  formattedResumeId: string;
+  formatType: string;
+  fileExtension: string;
+}
+
+const RESUMES_PER_PAGE = 5;
+
 export default function ResumeFormatPage() {
-  const { user } = useAuth();
   const { showError, showSuccess } = useToast();
-  const [resumes, setResumes] = useState<Resume[]>([]);
-  const [selectedResume, setSelectedResume] = useState('');
-  const [formatType, setFormatType] = useState('markdown');
+  const [resumes, setResumes] = useState<GeneratedResume[]>([]);
+  const [selectedResume, setSelectedResume] = useState<string>("");
+  const [formatType, setFormatType] = useState("markdown");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingResumes, setIsFetchingResumes] = useState(true);
-  const [formattedResumeId, setFormattedResumeId] = useState<string | null>(null);
+  const [formattedResume, setFormattedResume] =
+    useState<FormattedResume | null>(null);
+  const [expandedResumes, setExpandedResumes] = useState<Set<string>>(
+    new Set()
+  );
+  const paragraphRefs = useRef<Record<string, HTMLPreElement | null>>({});
+  const [overflowingResumes, setOverflowingResumes] = useState<Set<string>>(
+    new Set()
+  );
+  const [currentPage, setCurrentPage] = useState(1);
 
   const formatOptions = [
-    { value: 'markdown', label: 'Markdown (.md)' },
-    { value: 'html', label: 'HTML (.html)' },
-    { value: 'text', label: 'Plain Text (.txt)' },
+    { value: "markdown", label: "Markdown (.md)" },
+    { value: "html", label: "HTML (.html)" },
+    { value: "text", label: "Plain Text (.txt)" },
   ];
 
-  // Fetch user's resumes
+  // Calculate pagination values
+  const totalPages = Math.ceil(resumes.length / RESUMES_PER_PAGE);
+  const startIndex = (currentPage - 1) * RESUMES_PER_PAGE;
+  const endIndex = startIndex + RESUMES_PER_PAGE;
+  const currentResumes = resumes.slice(startIndex, endIndex);
+
+  // Fetch user's generated resumes
   useEffect(() => {
     const fetchResumes = async () => {
       try {
-        const response = await fetch('/api/resumes', {
-          credentials: "include"
-        });
+        const response = await fetch(
+          "http://localhost:8080/api/resumes/generate/history",
+          {
+            credentials: "include",
+          }
+        );
 
         if (!response.ok) {
-          throw new Error('Failed to fetch resumes');
+          throw new Error("Failed to fetch resumes");
         }
 
         const data = await response.json();
-        setResumes(data);
+        setResumes(data || []);
         setIsFetchingResumes(false);
       } catch (err) {
-        showError(err instanceof Error ? err.message : 'Failed to load resumes');
+        showError(
+          err instanceof Error ? err.message : "Failed to load resumes"
+        );
         setIsFetchingResumes(false);
       }
     };
 
-    if (user?.id) {
-      fetchResumes();
-    }
-  }, [user]);
+    fetchResumes();
+  }, []);
+
+  useEffect(() => {
+    const newOverflowing = new Set<string>();
+    resumes.forEach((resume) => {
+      const el = paragraphRefs.current[resume.resumeId];
+      if (el && el.scrollHeight > el.clientHeight) {
+        newOverflowing.add(resume.resumeId);
+      }
+    });
+    setOverflowingResumes(newOverflowing);
+  }, [resumes]);
 
   const handleFormatResume = async () => {
     if (!selectedResume) {
-      showError('Please select a resume');
+      showError("Please select a resume");
       return;
     }
 
     setIsLoading(true);
-    setFormattedResumeId(null);
+    setFormattedResume(null);
 
     try {
-      const response = await fetch('/api/resumes/format', {
-        method: 'POST',
+      const response = await fetch("http://localhost:8080/api/resumes/format", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         credentials: "include",
         body: JSON.stringify({
@@ -82,40 +127,51 @@ export default function ResumeFormatPage() {
         throw new Error(await response.text());
       }
 
-      const { formattedResumeId } = await response.json();
-      setFormattedResumeId(formattedResumeId);
-      showSuccess('Resume formatted successfully!');
+      const data = await response.json();
+      setFormattedResume(data);
+      showSuccess("Resume formatted successfully!");
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Failed to format resume');
+      showError(err instanceof Error ? err.message : "Failed to format resume");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDownload = async () => {
-    if (!formattedResumeId) return;
+    if (!formattedResume) return;
 
     try {
-      const response = await fetch(`/api/resumes/download/${formattedResumeId}`, {
-        credentials: "include"
-      });
+      const response = await fetch(
+        `http://localhost:8080/api/resumes/download/${formattedResume.formattedResumeId}`,
+        {
+          credentials: "include",
+        }
+      );
+
       if (!response.ok) {
-        throw new Error('Failed to download resume');
+        throw new Error("Failed to download resume");
       }
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `resume.${formatType}`;
+      a.download = `resume.${formattedResume.fileExtension}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
-      showSuccess('Download started!');
+      showSuccess("Download started!");
     } catch (error) {
-      showError('Failed to download resume');
+      showError("Failed to download resume");
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    // Clear selection when changing pages
+    setSelectedResume("");
+    setFormattedResume(null);
   };
 
   if (isFetchingResumes) {
@@ -123,72 +179,186 @@ export default function ResumeFormatPage() {
   }
 
   return (
-    <Background className="relative flex flex-col items-center justify-start min-h-screen p-8 text-center">
-      <h2 className="text-4xl font-bold text-primary mb-8 drop-shadow-md">
+    <Background className="relative flex flex-col items-center min-h-screen p-8">
+      <h1 className="text-4xl font-bold text-foreground drop-shadow-md text-center">
         Format and Download Resume
-      </h2>
-
-      <Card className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 dark:bg-neutral-900 dark:border-neutral-800">
-        <CardContent className="space-y-6">
-          <div className="space-y-2 text-left">
-            <label htmlFor="resume-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Select Resume
-            </label>
-            <select
-              id="resume-select"
-              value={selectedResume}
-              onChange={(e) => setSelectedResume(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              disabled={isLoading}
-            >
-              <option value="">Choose a resume</option>
-              {resumes.map((resume) => (
-                <option key={resume.id} value={resume.id}>
-                  {resume.title}
-                </option>
-              ))}
-            </select>
+      </h1>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 pt-8 p-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="h-8 w-8"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Page {currentPage} of {totalPages}
           </div>
-
-          <div className="space-y-2 text-left">
-            <label htmlFor="format-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Format Type
-            </label>
-            <select
-              id="format-select"
-              value={formatType}
-              onChange={(e) => setFormatType(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              disabled={isLoading}
-            >
-              {formatOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex justify-center gap-4 pt-4">
-            <Button
-              onClick={handleFormatResume}
-              disabled={isLoading || !selectedResume}
-              className={`${isLoading || !selectedResume ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
-            >
-              {isLoading ? 'Formatting...' : 'Format Resume'}
-            </Button>
-
-            {formattedResumeId && (
-              <Button
-                onClick={handleDownload}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Download Resume
-              </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="h-8 w-8"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      <div
+        className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
+      dark:bg-neutral-900 dark:border-neutral-800"
+      >
+        {resumes.length === 0 ? (
+          <p className="text-xl text-foreground mb-6 drop-shadow-sm text-center">
+            No resumes generated yet.
+          </p>
+        ) : (
+          <>
+            {!selectedResume && (
+              <h2 className="text-2xl font-semibold text-foreground mb-6 text-center">
+                Select a Generated Resume to Format
+              </h2>
             )}
-          </div>
-        </CardContent>
-      </Card>
+            {/* Format Controls - Only show when a resume is selected */}
+            {selectedResume && (
+              <div className="mb-6 space-y-6 dark:border-neutral-700">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="format-select"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Format Type
+                  </label>
+                  <select
+                    id="format-select"
+                    value={formatType}
+                    onChange={(e) => setFormatType(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+                    disabled={isLoading}
+                  >
+                    {formatOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex justify-center gap-4">
+                  <Button
+                    onClick={handleFormatResume}
+                    disabled={isLoading}
+                    className={`${
+                      isLoading
+                        ? "bg-blue-400"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`}
+                  >
+                    {isLoading ? "Formatting..." : "Format Resume"}
+                  </Button>
+
+                  {formattedResume && (
+                    <Button
+                      onClick={handleDownload}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Download Resume
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-8">
+              {currentResumes.map((resume) => (
+                <Card
+                  key={resume.resumeId}
+                  className={`p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700 ${
+                    selectedResume === resume.resumeId
+                      ? "ring-2 ring-blue-500"
+                      : ""
+                  }`}
+                  onClick={() => setSelectedResume(resume.resumeId)}
+                >
+                  <CardHeader className="-mb-4">
+                    <CardTitle className="line-clamp-1 text-lg">
+                      For:{" "}
+                      <span className="italic">
+                        {resume.jobDescriptionTitle
+                          ? resume.jobDescriptionTitle
+                          : `JobID ${resume.jobId}`}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!resume.content && (
+                      <p className="text-red-500">Failed to generate</p>
+                    )}
+                    <pre
+                      ref={(el) => {
+                        paragraphRefs.current[resume.resumeId] = el;
+                      }}
+                      className={`text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words ${
+                        !expandedResumes.has(resume.resumeId)
+                          ? "line-clamp-4"
+                          : ""
+                      }`}
+                    >
+                      {(() => {
+                        try {
+                          return JSON.stringify(
+                            JSON.parse(resume.content),
+                            null,
+                            2
+                          );
+                        } catch {
+                          return resume.content;
+                        }
+                      })()}
+                    </pre>
+                    {overflowingResumes.has(resume.resumeId) && (
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto text-sm mt-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newExpanded = new Set(expandedResumes);
+                          if (expandedResumes.has(resume.resumeId)) {
+                            newExpanded.delete(resume.resumeId);
+                          } else {
+                            newExpanded.add(resume.resumeId);
+                          }
+                          setExpandedResumes(newExpanded);
+                        }}
+                      >
+                        {expandedResumes.has(resume.resumeId)
+                          ? "Show less"
+                          : "Read more"}
+                      </Button>
+                    )}
+                  </CardContent>
+                  <CardFooter className="-mt-2">
+                    <div className="flex justify-between w-full items-center italic">
+                      <p className="ml-auto text-muted-foreground text-sm">
+                        Last Updated:{" "}
+                        {new Date(resume.updatedAt).toLocaleString("en-US", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </p>
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </Background>
   );
 }
