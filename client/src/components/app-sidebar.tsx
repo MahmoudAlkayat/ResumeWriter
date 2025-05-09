@@ -46,6 +46,10 @@ const data = {
         {
           title: "History",
           url: "/resumes/generate/history"
+        },
+        {
+          title: "Format",
+          url: "/resumes/generate/format"
         }
       ]
     },

@@ -92,14 +92,14 @@ export default function ResumeFormatPage() {
 
   useEffect(() => {
     const newOverflowing = new Set<string>();
-    resumes.forEach((resume) => {
+    currentResumes.forEach((resume) => {
       const el = paragraphRefs.current[resume.resumeId];
       if (el && el.scrollHeight > el.clientHeight) {
         newOverflowing.add(resume.resumeId);
       }
     });
     setOverflowingResumes(newOverflowing);
-  }, [resumes]);
+  }, [resumes, currentResumes]);
 
   const handleFormatResume = async () => {
     if (!selectedResume) {
@@ -180,12 +180,12 @@ export default function ResumeFormatPage() {
 
   return (
     <Background className="relative flex flex-col items-center min-h-screen p-8">
-      <h1 className="text-4xl font-bold text-foreground drop-shadow-md text-center">
+      <h1 className="text-4xl font-bold text-foreground drop-shadow-md text-center mb-4">
         Format and Download Resume
       </h1>
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 pt-8 p-4">
+        <div className="flex justify-center items-center gap-4 mb-4">
           <Button
             variant="outline"
             size="icon"
