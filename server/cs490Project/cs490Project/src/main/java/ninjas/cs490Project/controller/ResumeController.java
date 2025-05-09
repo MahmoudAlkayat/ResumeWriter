@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ninjas.cs490Project.service.ResumeService;
 import ninjas.cs490Project.service.ProcessingStatusService;
+import ninjas.cs490Project.service.ResumeFormattingService;
+import ninjas.cs490Project.entity.FormattedResume;
+import ninjas.cs490Project.repository.FormattedResumeRepository;
 
 import java.time.Instant;
 import java.util.*;
@@ -39,6 +42,8 @@ public class ResumeController {
     private final AsyncResumeParser asyncResumeParser;
     private final ResumeService resumeService;
     private final ProcessingStatusService processingStatusService;
+    private final ResumeFormattingService resumeFormattingService;
+    private final FormattedResumeRepository formattedResumeRepository;
 
     public ResumeController(UserRepository userRepository,
                           JobDescriptionRepository jobDescriptionRepository,
@@ -47,7 +52,9 @@ public class ResumeController {
                           ResumeGenerationService resumeGenerationService,
                           AsyncResumeParser asyncResumeParser,
                           ResumeService resumeService,
-                          ProcessingStatusService processingStatusService) {
+                          ProcessingStatusService processingStatusService,
+                          ResumeFormattingService resumeFormattingService,
+                          FormattedResumeRepository formattedResumeRepository) {
         this.userRepository = userRepository;
         this.jobDescriptionRepository = jobDescriptionRepository;
         this.uploadedResumeRepository = uploadedResumeRepository;
@@ -56,6 +63,8 @@ public class ResumeController {
         this.asyncResumeParser = asyncResumeParser;
         this.resumeService = resumeService;
         this.processingStatusService = processingStatusService;
+        this.resumeFormattingService = resumeFormattingService;
+        this.formattedResumeRepository = formattedResumeRepository;
     }
 
     /**
@@ -262,6 +271,146 @@ public class ResumeController {
             logger.error("Error in resume generation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error generating resume: " + e.getMessage());
+        }
+    }
+
+    public static class FormatResumeRequest {
+        private Long resumeId;
+        private String formatType;
+        private String templateId;
+        private String styleId;
+
+        public Long getResumeId() {
+            return resumeId;
+        }
+
+        public void setResumeId(Long resumeId) {
+            this.resumeId = resumeId;
+        }
+
+        public String getFormatType() {
+            return formatType;
+        }
+
+        public void setFormatType(String formatType) {
+            this.formatType = formatType;
+        }
+
+        public String getTemplateId() {
+            return templateId;
+        }
+
+        public void setTemplateId(String templateId) {
+            this.templateId = templateId;
+        }
+
+        public String getStyleId() {
+            return styleId;
+        }
+
+        public void setStyleId(String styleId) {
+            this.styleId = styleId;
+        }
+    }
+
+    @PostMapping("/format")
+    public ResponseEntity<?> formatResume(@RequestBody FormatResumeRequest request,
+                                        Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            User currentUser = userRepository.findByEmail(email);
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("User not found");
+            }
+
+            if (request.getResumeId() == null) {
+                return ResponseEntity.badRequest().body("resumeId is required");
+            }
+
+            GeneratedResume generatedResume = resumeService.getGeneratedResumeById(request.getResumeId());
+            if (generatedResume == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Resume not found");
+            }
+
+            if (currentUser.getId() != generatedResume.getUser().getId()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You don't have permission to access this resume");
+            }
+
+            String formatType = request.getFormatType() != null ? request.getFormatType() : "markdown";
+            FormattedResume formattedResume = resumeFormattingService.formatResume(
+                generatedResume,
+                formatType,
+                currentUser
+            );
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("formattedResumeId", formattedResume.getId());
+            response.put("formatType", formattedResume.getFormatType());
+            response.put("fileExtension", formattedResume.getFileExtension());
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid format type: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error formatting resume: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error formatting resume: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/download/{formattedResumeId}")
+    public ResponseEntity<?> downloadFormattedResume(@PathVariable Long formattedResumeId,
+                                                   Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            User currentUser = userRepository.findByEmail(email);
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("User not found");
+            }
+
+            FormattedResume formattedResume = formattedResumeRepository.findById(formattedResumeId)
+                    .orElseThrow(() -> new IllegalArgumentException("Formatted resume not found"));
+
+            if (currentUser.getId() != formattedResume.getUser().getId()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You don't have permission to access this file");
+            }
+
+            // Set up response headers for file download
+            HttpHeaders headers = new HttpHeaders();
+            String contentType;
+            switch (formattedResume.getFormatType().toLowerCase()) {
+                case "markdown":
+                    contentType = "text/markdown";
+                    break;
+                case "html":
+                    contentType = "text/html";
+                    break;
+                case "text":
+                    contentType = "text/plain";
+                    break;
+                default:
+                    contentType = "application/octet-stream";
+            }
+            headers.setContentType(MediaType.parseMediaType(contentType));
+            headers.setContentDispositionFormData("attachment", 
+                "resume." + formattedResume.getFileExtension());
+
+            return new ResponseEntity<>(formattedResume.getContent(), headers, HttpStatus.OK);
+
+        } catch (IllegalArgumentException e) {
+            logger.error("Error finding formatted resume: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error downloading formatted resume: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error downloading resume: " + e.getMessage());
         }
     }
 }
