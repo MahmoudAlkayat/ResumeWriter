@@ -91,15 +91,19 @@ export default function ResumeFormatPage() {
   }, []);
 
   useEffect(() => {
+    const startIndex = (currentPage - 1) * RESUMES_PER_PAGE;
+    const endIndex = startIndex + RESUMES_PER_PAGE;
+    const visibleResumes = resumes.slice(startIndex, endIndex);
+  
     const newOverflowing = new Set<string>();
-    currentResumes.forEach((resume) => {
+    visibleResumes.forEach((resume) => {
       const el = paragraphRefs.current[resume.resumeId];
       if (el && el.scrollHeight > el.clientHeight) {
         newOverflowing.add(resume.resumeId);
       }
     });
     setOverflowingResumes(newOverflowing);
-  }, [resumes, currentResumes]);
+  }, [resumes, currentPage]);  
 
   const handleFormatResume = async () => {
     if (!selectedResume) {
