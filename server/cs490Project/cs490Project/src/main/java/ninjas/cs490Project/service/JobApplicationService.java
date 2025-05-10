@@ -72,14 +72,9 @@ public class JobApplicationService {
                 record.put("jobId", String.valueOf(application.getJob().getId()));
                 record.put("appliedAt", application.getAppliedAt().toString());
                 
-                // Add optional metadata if available
-                if (application.getJob().getJobDescription() != null) {
-                    record.put("jobSummary", application.getJob().getJobDescription());
+                if (application.getJob().getJobTitle() != null) {
+                    record.put("jobTitle", application.getJob().getJobTitle());
                 }
-                if (application.getResume().getContent() != null) {
-                    record.put("resumeLabel", "Resume for " + application.getJob().getJobDescription());
-                }
-                
                 return record;
             })
             .collect(Collectors.toList());
