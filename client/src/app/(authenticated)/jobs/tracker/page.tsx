@@ -1,15 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Background } from "@/components/ui/background";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -18,11 +11,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+} from "@/components/ui/dialog";
 import { useToast } from "@/contexts/ToastProvider";
 import LoadingScreen from "@/components/LoadingScreen";
 import { GeneratedResume, JobDescription } from "@/lib/types";
 import GeneratedResumeCard from "@/components/GeneratedResumeCard";
 import JobDescriptionCard from "@/components/JobDescriptionCard";
+import { DialogTitle } from "@radix-ui/react-dialog";
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 interface JobApplication {
   applicationId: string;
@@ -43,6 +43,11 @@ export default function JobApplicationsPage() {
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogContent, setDialogContent] = useState<{
+    type: 'job' | 'resume';
+    data: JobDescription | GeneratedResume;
+  } | null>(null);
 
   // Fetch applications, jobs, and resumes
   useEffect(() => {
@@ -127,6 +132,24 @@ export default function JobApplicationsPage() {
       showError(err instanceof Error ? err.message : "Failed to create application");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCellClick = (type: 'job' | 'resume', id: string) => {
+    if (type === 'job') {
+      const job = jobs.find(j => {
+        return j.jobId == id;
+      });
+      if (!job) return;
+      setDialogContent({ type: 'job', data: job });
+      setDialogOpen(true);
+    } else if (type === 'resume') {
+      const resume = resumes.find(r => {
+        return r.resumeId == id;
+      });
+      if (!resume) return;
+      setDialogContent({ type: 'resume', data: resume });
+      setDialogOpen(true);
     }
   };
 
@@ -232,11 +255,22 @@ export default function JobApplicationsPage() {
               <TableBody>
                 {applications.map((application) => (
                   <TableRow key={application.applicationId}>
-                    <TableCell className="truncate pr-8">
-                      {application.jobTitle || `JobID: ${application.jobId}`}
+                    <TableCell
+                      className="truncate pr-8"
+                    >
+                      <span className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer" 
+                        onClick={() => handleCellClick('job', application.jobId)}>
+                        {application.jobTitle || `JobID: ${application.jobId}`}
+                      </span>
                     </TableCell>
-                    <TableCell className="truncate">
-                      {application.resumeTitle || `GenID: ${application.resumeId}`}
+                    <TableCell
+                      className="truncate"
+                    >
+                      <span className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                      onClick={() => handleCellClick('resume', application.resumeId)}
+                      >
+                        {application.resumeTitle || `GenID: ${application.resumeId}`}
+                      </span>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {new Date(application.appliedAt).toLocaleString("en-US", {
@@ -251,6 +285,27 @@ export default function JobApplicationsPage() {
           </div>
         )}
       </div>
+
+      {/* Dialog for showing job/resume details */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="min-w-4xl overflow-y-auto max-h-[90vh]">
+          <VisuallyHidden>
+            <DialogTitle/>
+          </VisuallyHidden>
+          <DialogHeader/>
+          {dialogContent && (
+            dialogContent.type === 'job' ? (
+              <JobDescriptionCard
+                job={dialogContent.data as JobDescription}
+              />
+            ) : (
+              <GeneratedResumeCard
+                resume={dialogContent.data as GeneratedResume}
+              />
+            )
+          )}
+        </DialogContent>
+      </Dialog>
     </Background>
   );
 } 

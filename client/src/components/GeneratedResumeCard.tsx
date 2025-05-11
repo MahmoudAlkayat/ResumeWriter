@@ -39,7 +39,7 @@ export default function GeneratedResumeCard({
 
   return (
     <Card
-      className={`p-4 shadow-md rounded-xl transition-all duration-200 relative ${
+      className={`p-4 shadow-md rounded-xl transition-all duration-200 relative overflow-hidden ${
         isSelected
           ? "border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20"
           : "border border-gray-300 dark:border-neutral-700"
