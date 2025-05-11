@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/auth";
 import { useToast } from "@/contexts/ToastProvider";
 import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
-import { Trash, Pencil, Plus } from "lucide-react";
+import { Trash, Pencil, Plus, Trash2 } from "lucide-react";
 import LoadingScreen from "@/components/LoadingScreen";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -307,7 +307,7 @@ export default function EducationManager() {
               return (
                 <Card
                   key={edu.id ?? index}
-                  className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700"
+                  className="relative p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700"
                 >
                   <CardContent className="flex flex-col gap-3">
                     {isEditing ? (
@@ -397,30 +397,27 @@ export default function EducationManager() {
                       // DISPLAY (NOT EDITING)
                       <>
                         <div className="flex flex-col">
-                            {/* Title and buttons inline */}
-                            <div className="relative flex items-center">
-                                <div className="absolute right-0">
-                                    <div className="flex gap-3">
-                                        <Button
-                                            onClick={() => handleEdit(index)}
-                                            className="bg-blue-600 text-white hover:bg-blue-700"
-                                        >
-                                            <Pencil size={16} />
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleDelete(index)}
-                                            className="bg-red-600 text-white hover:bg-red-700"
-                                        >
-                                            <Trash size={16} />
-                                        </Button>
-                                    </div>
-                                </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-2 right-12 h-8 w-8 rounded-full bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/20 dark:hover:bg-blue-900/40"
+                                onClick={() => handleEdit(index)}
+                              >
+                                <Pencil className="h-4 w-4 text-blue-600 dark:text-bluw-400" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40"
+                                onClick={() => handleDelete(index)}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                              </Button>
                                 <div className="w-full text-center">
                                     <h3 className="text-2xl font-bold text-primary">
                                         {edu.degree} - {edu.fieldOfStudy}
                                     </h3>
                                 </div>
-                            </div>
                             
                             {/* Rest of the content */}
                             <p className="text-lg text-gray-700 dark:text-white font-semibold">

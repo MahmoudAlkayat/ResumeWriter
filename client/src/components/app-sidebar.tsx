@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   Briefcase,
+  ClipboardCheck,
   FileUser,
   FolderClosed,
   GraduationCap,
@@ -54,6 +55,21 @@ const data = {
       ]
     },
     {
+      title: "Apply",
+      url: "",
+      icon: ClipboardCheck,
+      items: [
+        {
+          title: "Advice",
+          url: "/jobs/advice"
+        },
+        {
+          title: "Tracker",
+          url: "/jobs/tracker"
+        }
+      ]
+    },
+    {
       title: "Jobs",
       url: "",
       icon: Briefcase,
@@ -65,10 +81,6 @@ const data = {
         {
           title: "History",
           url: "/jobs/history",
-        },
-        {
-          title: "Advice",
-          url: "/jobs/advice"
         }
       ]
     },

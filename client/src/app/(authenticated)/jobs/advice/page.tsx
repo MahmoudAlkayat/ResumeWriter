@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Background } from "@/components/ui/background";
 import LoadingScreen from "@/components/LoadingScreen";
 import {
@@ -12,22 +12,10 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/contexts/ToastProvider";
 import { Button } from "@/components/ui/button";
-
-interface JobDescription {
-  jobId: string;
-  title?: string;
-  text: string;
-  submittedAt: string;
-}
-
-interface GeneratedResume {
-  resumeId: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  jobId: string;
-  jobDescriptionTitle: string | null;
-}
+import { GeneratedResume } from '@/lib/types';
+import GeneratedResumeCard from "@/components/GeneratedResumeCard";
+import JobDescriptionCard from "@/components/JobDescriptionCard";
+import { JobDescription } from "@/lib/types";
 
 interface AdviceResponse {
   advice: string;
@@ -41,18 +29,6 @@ export default function JobAdvicePage() {
   const [advice, setAdvice] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isGeneratingAdvice, setIsGeneratingAdvice] = useState<boolean>(false);
-  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
-  const [expandedResumes, setExpandedResumes] = useState<Set<string>>(
-    new Set()
-  );
-  const jobRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
-  const resumeRefs = useRef<Record<string, HTMLPreElement | null>>({});
-  const [overflowingJobs, setOverflowingJobs] = useState<Set<string>>(
-    new Set()
-  );
-  const [overflowingResumes, setOverflowingResumes] = useState<Set<string>>(
-    new Set()
-  );
   const { showError, showSuccess } = useToast();
 
   useEffect(() => {
@@ -85,28 +61,6 @@ export default function JobAdvicePage() {
 
     fetchData();
   }, []);
-
-  useEffect(() => {
-    const newOverflowingJobs = new Set<string>();
-    jobs.forEach((job) => {
-      const el = jobRefs.current[job.jobId];
-      if (el && el.scrollHeight > el.clientHeight) {
-        newOverflowingJobs.add(job.jobId);
-      }
-    });
-    setOverflowingJobs(newOverflowingJobs);
-  }, [jobs]);
-
-  useEffect(() => {
-    const newOverflowingResumes = new Set<string>();
-    resumes.forEach((resume) => {
-      const el = resumeRefs.current[resume.resumeId];
-      if (el && el.scrollHeight > el.clientHeight) {
-        newOverflowingResumes.add(resume.resumeId);
-      }
-    });
-    setOverflowingResumes(newOverflowingResumes);
-  }, [resumes]);
 
   const handleGenerateAdvice = async () => {
     if (!selectedJobId || !selectedResumeId) {
@@ -202,58 +156,12 @@ export default function JobAdvicePage() {
                 </p>
               ) : (
                 jobs.map((job) => (
-                  <Card
+                  <JobDescriptionCard
                     key={job.jobId}
-                    className={`p-4 shadow-md rounded-xl transition-all duration-200 ${
-                      selectedJobId === job.jobId
-                        ? "border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                        : "border border-gray-300 dark:border-neutral-700"
-                    }`}
+                    job={job}
+                    isSelected={selectedJobId === job.jobId}
                     onClick={() => setSelectedJobId(job.jobId)}
-                  >
-                    <CardHeader className="-mb-4">
-                      <CardTitle className="line-clamp-1 text-lg">
-                        {job.title || `Job ID: ${job.jobId}`}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p
-                        ref={(el) => {
-                          jobRefs.current[job.jobId] = el;
-                        }}
-                        className={`text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words ${
-                          !expandedJobs.has(job.jobId) ? "line-clamp-4" : ""
-                        }`}
-                      >
-                        {job.text}
-                      </p>
-                      {overflowingJobs.has(job.jobId) && (
-                        <Button
-                          variant="link"
-                          className="p-0 h-auto text-sm mt-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newExpanded = new Set(expandedJobs);
-                            if (expandedJobs.has(job.jobId)) {
-                              newExpanded.delete(job.jobId);
-                            } else {
-                              newExpanded.add(job.jobId);
-                            }
-                            setExpandedJobs(newExpanded);
-                          }}
-                        >
-                          {expandedJobs.has(job.jobId)
-                            ? "Show less"
-                            : "Read more"}
-                        </Button>
-                      )}
-                    </CardContent>
-                    <CardFooter className="-mt-2">
-                      <p className="text-sm text-muted-foreground">
-                        Submitted: {new Date(job.submittedAt).toLocaleString()}
-                      </p>
-                    </CardFooter>
-                  </Card>
+                  />
                 ))
               )}
             </div>
@@ -271,72 +179,12 @@ export default function JobAdvicePage() {
                 </p>
               ) : (
                 resumes.map((resume) => (
-                  <Card
+                  <GeneratedResumeCard
                     key={resume.resumeId}
-                    className={`p-4 shadow-md rounded-xl transition-all duration-200 ${
-                      selectedResumeId === resume.resumeId
-                        ? "border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                        : "border border-gray-300 dark:border-neutral-700"
-                    }`}
+                    resume={resume}
+                    isSelected={selectedResumeId === resume.resumeId}
                     onClick={() => setSelectedResumeId(resume.resumeId)}
-                  >
-                    <CardHeader className="-mb-4">
-                      <CardTitle className="line-clamp-1 text-lg">
-                        {resume.jobDescriptionTitle ||
-                          `Resume for Job ID: ${resume.jobId}`}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <pre
-                        ref={(el) => {
-                          resumeRefs.current[resume.resumeId] = el;
-                        }}
-                        className={`text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words ${
-                          !expandedResumes.has(resume.resumeId)
-                            ? "line-clamp-4"
-                            : ""
-                        }`}
-                      >
-                        {(() => {
-                          try {
-                            return JSON.stringify(
-                              JSON.parse(resume.content),
-                              null,
-                              2
-                            );
-                          } catch {
-                            return resume.content;
-                          }
-                        })()}
-                      </pre>
-                      {overflowingResumes.has(resume.resumeId) && (
-                        <Button
-                          variant="link"
-                          className="p-0 h-auto text-sm mt-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newExpanded = new Set(expandedResumes);
-                            if (expandedResumes.has(resume.resumeId)) {
-                              newExpanded.delete(resume.resumeId);
-                            } else {
-                              newExpanded.add(resume.resumeId);
-                            }
-                            setExpandedResumes(newExpanded);
-                          }}
-                        >
-                          {expandedResumes.has(resume.resumeId)
-                            ? "Show less"
-                            : "Read more"}
-                        </Button>
-                      )}
-                    </CardContent>
-                    <CardFooter className="-mt-2">
-                      <p className="text-sm text-muted-foreground">
-                        Last Updated:{" "}
-                        {new Date(resume.updatedAt).toLocaleString()}
-                      </p>
-                    </CardFooter>
-                  </Card>
+                  />
                 ))
               )}
             </div>

@@ -76,6 +76,10 @@ public class ProcessingStatusController {
                     } else { // No title, default to ID
                         statusMap.put("jobId", generatedResume.get().getJobDescription().getId());
                     }
+
+                    if (generatedResume.get().getTitle() != null) {
+                        statusMap.put("resumeName", generatedResume.get().getTitle());
+                    }
                 }
             }
             if (status.getProcessingType() == ProcessingStatus.ProcessingType.FREEFORM_ENTRY) {

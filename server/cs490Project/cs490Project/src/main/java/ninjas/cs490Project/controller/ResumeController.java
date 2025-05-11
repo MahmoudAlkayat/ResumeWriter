@@ -170,6 +170,7 @@ public class ResumeController {
             resumeMap.put("updatedAt", resume.getUpdatedAt());
             resumeMap.put("jobId", resume.getJobDescription().getId());
             resumeMap.put("jobDescriptionTitle", resume.getJobDescription().getJobTitle());
+            resumeMap.put("resumeTitle", resume.getTitle() != null ? resume.getTitle() : "");
             response.add(resumeMap);
         }
 
@@ -209,6 +210,7 @@ public class ResumeController {
 
     public static class GenerateResumeRequest {
         private Long jobId;
+        private String title;
 
         public Long getJobId() {
             return jobId;
@@ -216,6 +218,14 @@ public class ResumeController {
 
         public void setJobId(Long jobId) {
             this.jobId = jobId;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
         }
     }
 
@@ -247,6 +257,7 @@ public class ResumeController {
             resume.setUpdatedAt(Instant.now());
             resume.setJobDescription(jobDescription);
             resume.setUser(currentUser);
+            resume.setTitle(request.getTitle());
 
             GeneratedResume savedResume = resumeService.storeGeneratedResume(resume);
             logger.info("Created new resume with id: {}", savedResume.getId());
@@ -411,6 +422,39 @@ public class ResumeController {
             logger.error("Error downloading formatted resume: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error downloading resume: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/generate/{resumeId}")
+    public ResponseEntity<?> deleteGeneratedResume(@PathVariable Long resumeId,
+                                                 Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            User currentUser = userRepository.findByEmail(email);
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("User not found");
+            }
+
+            GeneratedResume resume = resumeService.getGeneratedResumeById(resumeId);
+            if (resume == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Resume not found");
+            }
+
+            // Check if the current user owns this resume
+            if (resume.getUser().getId() != currentUser.getId()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You don't have permission to delete this resume");
+            }
+
+            resumeService.deleteGeneratedResume(resumeId);
+            return ResponseEntity.ok().build();
+
+        } catch (Exception e) {
+            logger.error("Error deleting resume: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting resume: " + e.getMessage());
         }
     }
 }

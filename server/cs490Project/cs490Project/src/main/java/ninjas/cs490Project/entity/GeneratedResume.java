@@ -20,6 +20,9 @@ public class GeneratedResume {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Column(name = "title")
+    private String title;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -58,6 +61,14 @@ public class GeneratedResume {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public User getUser() {

@@ -39,5 +39,8 @@ public class ResumeService {
     public GeneratedResume getGeneratedResumeById(Long id) {
         return generatedResumeRepository.findById(id).orElse(null);
     }
-}
 
+    public void deleteGeneratedResume(Long id) {
+        generatedResumeRepository.deleteById(id);
+    }
+}

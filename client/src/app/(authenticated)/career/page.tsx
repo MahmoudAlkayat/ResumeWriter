@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Background } from "@/components/ui/background";
-import { Pencil, PlusIcon, Trash } from "lucide-react";
+import { Pencil, PlusIcon, Trash, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/auth";
 import { useToast } from "@/contexts/ToastProvider";
 import { useResumeProcessing } from "@/contexts/ResumeProcessingProvider";
@@ -318,7 +318,7 @@ export default function CareerPage() {
               return (
                 <Card
                   key={job.id ?? index}
-                  className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700"
+                  className="relative p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700"
                 >
                   <CardContent className="flex flex-col gap-3">
                     {isEditing ? (
@@ -394,29 +394,27 @@ export default function CareerPage() {
                     ) : (
                       <>
                         <div className="flex flex-col">
-                          <div className="relative flex items-center">
-                            <div className="absolute right-0">
-                              <div className="flex gap-3">
-                                <Button
-                                  onClick={() => handleEdit(index)}
-                                  className="bg-blue-600 text-white hover:bg-blue-700"
-                                >
-                              <Pencil size={16} />
-                            </Button>
-                            <Button
-                              onClick={() => handleDelete(index)}
-                              className="bg-red-600 text-white hover:bg-red-700"
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-2 right-12 h-8 w-8 rounded-full bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/20 dark:hover:bg-blue-900/40"
+                                onClick={() => handleEdit(index)}
                               >
-                              <Trash size={16} />
-                            </Button>
-                              </div>
-                            </div>
+                                <Pencil className="h-4 w-4 text-blue-600 dark:text-bluw-400" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40"
+                                onClick={() => handleDelete(index)}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                              </Button>
                             <div className="w-full text-center">
                               <h3 className="text-2xl font-bold text-primary">
                                 {job.title}
                               </h3>
                             </div>
-                          </div>
                           <p className="text-lg text-gray-700 dark:text-white font-semibold">
                             {job.company}
                           </p>
