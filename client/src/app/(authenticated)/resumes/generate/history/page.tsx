@@ -12,10 +12,7 @@ import GeneratedResumeCard from "@/components/GeneratedResumeCard";
 export default function GeneratedResumeHistoryPage() {
   const [resumes, setResumes] = useState<GeneratedResume[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [expandedResumes, setExpandedResumes] = useState<Set<string>>(new Set());
-  const paragraphRefs = useRef<Record<string, HTMLPreElement | null>>({});
-  const [overflowingResumes, setOverflowingResumes] = useState<Set<string>>(new Set());
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
 
   async function fetchGeneratedResumeHistory() {
     try {
@@ -33,20 +30,26 @@ export default function GeneratedResumeHistoryPage() {
     }
   }
 
+  async function handleDeleteResume(resumeId: string) {
+    try {
+      const response = await fetch(`http://localhost:8080/api/resumes/generate/${resumeId}`, {
+        method: 'DELETE',
+        credentials: "include"
+      });
+      
+      if (!response.ok) throw new Error("Failed to delete resume");
+      
+      setResumes(prevResumes => prevResumes.filter(resume => resume.resumeId !== resumeId));
+      showSuccess("Resume deleted successfully");
+    } catch (err) {
+      if (err instanceof Error) showError(err.message);
+      else showError("An unknown error occurred");
+    }
+  }
+
   useEffect(() => {
     fetchGeneratedResumeHistory();
   }, []);
-
-  useEffect(() => {
-    const newOverflowing = new Set<string>();
-    resumes.forEach(resume => {
-      const el = paragraphRefs.current[resume.resumeId];
-      if (el && el.scrollHeight > el.clientHeight) {
-        newOverflowing.add(resume.resumeId);
-      }
-    });
-    setOverflowingResumes(newOverflowing);
-  }, [resumes]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -70,6 +73,8 @@ export default function GeneratedResumeHistoryPage() {
               <GeneratedResumeCard
                 key={resume.resumeId}
                 resume={resume}
+                showDeleteButton={true}
+                onDelete={() => handleDeleteResume(resume.resumeId)}
               />
             ))}
           </div>

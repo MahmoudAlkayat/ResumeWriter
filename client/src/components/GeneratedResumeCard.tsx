@@ -8,12 +8,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { GeneratedResume } from "@/lib/types";
+import { Trash2 } from "lucide-react";
 
 interface GeneratedResumeCardProps {
   resume: GeneratedResume;
   isSelected?: boolean;
   onClick?: () => void;
   showExpandButton?: boolean;
+  onDelete?: () => void;
+  showDeleteButton?: boolean;
 }
 
 export default function GeneratedResumeCard({
@@ -21,6 +24,8 @@ export default function GeneratedResumeCard({
   isSelected = false,
   onClick,
   showExpandButton = true,
+  onDelete,
+  showDeleteButton = false,
 }: GeneratedResumeCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -34,13 +39,26 @@ export default function GeneratedResumeCard({
 
   return (
     <Card
-      className={`p-4 shadow-md rounded-xl transition-all duration-200 ${
+      className={`p-4 shadow-md rounded-xl transition-all duration-200 relative ${
         isSelected
           ? "border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20"
           : "border border-gray-300 dark:border-neutral-700"
       }`}
       onClick={onClick}
     >
+      {showDeleteButton && onDelete && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 h-8 w-8 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+        >
+          <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+        </Button>
+      )}
       <CardHeader className="-mb-4">
         <CardTitle className="line-clamp-1 text-lg text-center">
           {resume.resumeTitle ? (

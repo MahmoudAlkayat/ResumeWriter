@@ -424,4 +424,37 @@ public class ResumeController {
                     .body("Error downloading resume: " + e.getMessage());
         }
     }
+
+    @DeleteMapping("/generate/{resumeId}")
+    public ResponseEntity<?> deleteGeneratedResume(@PathVariable Long resumeId,
+                                                 Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            User currentUser = userRepository.findByEmail(email);
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("User not found");
+            }
+
+            GeneratedResume resume = resumeService.getGeneratedResumeById(resumeId);
+            if (resume == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Resume not found");
+            }
+
+            // Check if the current user owns this resume
+            if (resume.getUser().getId() != currentUser.getId()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You don't have permission to delete this resume");
+            }
+
+            resumeService.deleteGeneratedResume(resumeId);
+            return ResponseEntity.ok().build();
+
+        } catch (Exception e) {
+            logger.error("Error deleting resume: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting resume: " + e.getMessage());
+        }
+    }
 }
