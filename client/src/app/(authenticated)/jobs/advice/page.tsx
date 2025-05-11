@@ -13,6 +13,7 @@ import {
 import { useToast } from "@/contexts/ToastProvider";
 import { Button } from "@/components/ui/button";
 import { GeneratedResume } from '@/lib/types';
+import GeneratedResumeCard from "@/components/GeneratedResumeCard";
 
 interface JobDescription {
   jobId: string;
@@ -263,83 +264,12 @@ export default function JobAdvicePage() {
                 </p>
               ) : (
                 resumes.map((resume) => (
-                  <Card
+                  <GeneratedResumeCard
                     key={resume.resumeId}
-                    className={`p-4 shadow-md rounded-xl transition-all duration-200 ${
-                      selectedResumeId === resume.resumeId
-                        ? "border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                        : "border border-gray-300 dark:border-neutral-700"
-                    }`}
+                    resume={resume}
+                    isSelected={selectedResumeId === resume.resumeId}
                     onClick={() => setSelectedResumeId(resume.resumeId)}
-                  >
-                    <CardHeader className="-mb-4">
-                      <CardTitle className="line-clamp-1 text-lg">
-                      {resume.resumeTitle ? (resume.resumeTitle
-                      ) : (
-                        <>
-                        For: {" "}
-                        <span className="italic">
-                        {resume.jobDescriptionTitle ? (
-                          resume.jobDescriptionTitle
-                        ) : (
-                          `JobID ${resume.jobId}`
-                        )}
-                        </span>
-                        </>
-                      )}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <pre
-                        ref={(el) => {
-                          resumeRefs.current[resume.resumeId] = el;
-                        }}
-                        className={`text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words ${
-                          !expandedResumes.has(resume.resumeId)
-                            ? "line-clamp-4"
-                            : ""
-                        }`}
-                      >
-                        {(() => {
-                          try {
-                            return JSON.stringify(
-                              JSON.parse(resume.content),
-                              null,
-                              2
-                            );
-                          } catch {
-                            return resume.content;
-                          }
-                        })()}
-                      </pre>
-                      {overflowingResumes.has(resume.resumeId) && (
-                        <Button
-                          variant="link"
-                          className="p-0 h-auto text-sm mt-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newExpanded = new Set(expandedResumes);
-                            if (expandedResumes.has(resume.resumeId)) {
-                              newExpanded.delete(resume.resumeId);
-                            } else {
-                              newExpanded.add(resume.resumeId);
-                            }
-                            setExpandedResumes(newExpanded);
-                          }}
-                        >
-                          {expandedResumes.has(resume.resumeId)
-                            ? "Show less"
-                            : "Read more"}
-                        </Button>
-                      )}
-                    </CardContent>
-                    <CardFooter className="-mt-2">
-                      <p className="text-sm text-muted-foreground">
-                        Last Updated:{" "}
-                        {new Date(resume.updatedAt).toLocaleString()}
-                      </p>
-                    </CardFooter>
-                  </Card>
+                  />
                 ))
               )}
             </div>

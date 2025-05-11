@@ -23,7 +23,7 @@ export default function GeneratedResumeCard({
   showExpandButton = true,
 }: GeneratedResumeCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const contentRef = useRef<HTMLPreElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function GeneratedResumeCard({
       onClick={onClick}
     >
       <CardHeader className="-mb-4">
-        <CardTitle className="line-clamp-1 text-lg">
+        <CardTitle className="line-clamp-1 text-lg text-center">
           {resume.resumeTitle ? (
             resume.resumeTitle
           ) : (
@@ -58,22 +58,83 @@ export default function GeneratedResumeCard({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!resume.content && <p className="text-red-500">Failed to generate</p>}
-        <pre
-          ref={contentRef}
-          className={`text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words ${
-            !isExpanded ? "line-clamp-4" : ""
-          }`}
+        <div 
+          ref={contentRef} 
+          className={`space-y-4 ${!isExpanded ? 'line-clamp-[8]' : ''}`}
         >
           {(() => {
+            let parsedContent: any = null;
             try {
-              return JSON.stringify(JSON.parse(resume.content), null, 2);
-            } catch {
-              return resume.content;
+              parsedContent = JSON.parse(resume.content);
+            } catch (err) {
+              return (
+                <p className="text-red-500 text-sm">
+                  Failed to generate resume
+                </p>
+              );
             }
+
+            return (
+              <>
+                {/* Education */}
+                {parsedContent.educationList?.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Education</h3>
+                    <div className="space-y-2">
+                      {parsedContent.educationList.map((edu: any, index: number) => (
+                        <div key={index} className="mb-4">
+                          <p className="font-medium">{edu.institution}</p>
+                          <p>{edu.degree}, {edu.fieldOfStudy}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {edu.startDate} – {edu.endDate}
+                          </p>
+                          <p className="text-sm">{edu.description}</p>
+                          {edu.gpa && <p className="text-sm">GPA: {edu.gpa}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Work Experience */}
+                {parsedContent.workExperienceList?.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Work Experience</h3>
+                    <div className="space-y-2">
+                      {parsedContent.workExperienceList.map((job: any, index: number) => (
+                        <div key={index} className="mb-4">
+                          <p className="font-medium">{job.jobTitle} at {job.company}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {job.startDate} – {job.endDate}
+                          </p>
+                          <p className="text-sm whitespace-pre-line">{job.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Skills */}
+                {parsedContent.skills?.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Skills</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {parsedContent.skills.map((skill: string, index: number) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-gray-200 dark:bg-neutral-700 rounded-full text-sm"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
           })()}
-        </pre>
-        {showExpandButton && isOverflowing && (
+        </div>
+        {showExpandButton && (isOverflowing || isExpanded) && (
           <Button
             variant="link"
             className="p-0 h-auto text-sm mt-2"
