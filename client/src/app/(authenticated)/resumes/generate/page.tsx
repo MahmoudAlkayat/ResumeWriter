@@ -1,21 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Background } from '@/components/ui/background';
 import LoadingScreen from '@/components/LoadingScreen';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/contexts/ToastProvider';
 import { Button } from '@/components/ui/button';
 import { useResumeProcessing } from '@/contexts/ResumeProcessingProvider';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-interface JobDescription {
-  jobId: string;
-  title?: string;
-  text: string;
-  submittedAt: string;
-}
+import JobDescriptionCard from '@/components/JobDescriptionCard';
+import { JobDescription } from '@/lib/types';
 
 export default function GenerateResumePage() {
   const [jobs, setJobs] = useState<JobDescription[]>([]);
@@ -23,9 +17,6 @@ export default function GenerateResumePage() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [resumeTitle, setResumeTitle] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
-  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
-  const paragraphRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
-  const [overflowingJobs, setOverflowingJobs] = useState<Set<string>>(new Set());
   const { showError, showInfo } = useToast();
   const { addActiveProcess } = useResumeProcessing();
 
@@ -48,17 +39,6 @@ export default function GenerateResumePage() {
   useEffect(() => {
     fetchJobHistory();
   }, []);
-
-  useEffect(() => {
-    const newOverflowing = new Set<string>();
-    jobs.forEach(job => {
-      const el = paragraphRefs.current[job.jobId];
-      if (el && el.scrollHeight > el.clientHeight) {
-        newOverflowing.add(job.jobId);
-      }
-    });
-    setOverflowingJobs(newOverflowing);
-  }, [jobs]);
 
   const handleGenerate = async () => {
     if (!selectedJobId) {
@@ -161,56 +141,12 @@ export default function GenerateResumePage() {
             )}
               <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2">
                 {jobs.map((job) => (
-                  <Card
+                  <JobDescriptionCard
                     key={job.jobId}
-                    className={`p-4 shadow-md rounded-xl transition-all duration-200 ${
-                      selectedJobId === job.jobId
-                        ? "border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                        : "border border-gray-300 dark:border-neutral-700"
-                    }`}
+                    job={job}
+                    isSelected={selectedJobId === job.jobId}
                     onClick={() => setSelectedJobId(job.jobId)}
-                  >
-                    <CardHeader className="-mb-4">
-                      <CardTitle className="line-clamp-1 text-lg">
-                        {job.title || `JobID: ${job.jobId}`}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p
-                        ref={(el) => {
-                          paragraphRefs.current[job.jobId] = el;
-                        }}
-                        className={`text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words ${
-                          !expandedJobs.has(job.jobId) ? "line-clamp-4" : ""
-                        }`}
-                      >
-                        {job.text}
-                      </p>
-                      {overflowingJobs.has(job.jobId) && (
-                        <Button
-                          variant="link"
-                          className="p-0 h-auto text-sm mt-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newExpanded = new Set(expandedJobs);
-                            if (expandedJobs.has(job.jobId)) {
-                              newExpanded.delete(job.jobId);
-                            } else {
-                              newExpanded.add(job.jobId);
-                            }
-                            setExpandedJobs(newExpanded);
-                          }}
-                        >
-                          {expandedJobs.has(job.jobId) ? "Show less" : "Read more"}
-                        </Button>
-                      )}
-                    </CardContent>
-                    <CardFooter className="-mt-2">
-                      <p className="text-sm text-muted-foreground">
-                        Submitted: {new Date(job.submittedAt).toLocaleString()}
-                      </p>
-                    </CardFooter>
-                  </Card>
+                  />
                 ))}
               </div>
             </div>

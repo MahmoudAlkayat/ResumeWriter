@@ -8,3 +8,9 @@ export interface GeneratedResume {
     resumeTitle: string | null;
 }
 
+export interface JobDescription {
+    jobId: string;
+    title?: string;
+    text: string;
+    submittedAt: string;
+}

@@ -11,7 +11,6 @@ export default function JobDescriptionForm() {
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
-  const [jobId, setJobId] = useState<string | null>(null);
   const { showSuccess, showError } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,9 +50,7 @@ export default function JobDescriptionForm() {
         throw new Error(errorData.message || 'Failed to submit job description.');
       }
 
-      const data = await response.json();
       showSuccess('Job description submitted successfully!');
-      setJobId(data.jobId);
       setText('');
       setTitle('');
     } catch (err: any) {

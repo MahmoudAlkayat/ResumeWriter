@@ -1,25 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Background } from '@/components/ui/background';
 import LoadingScreen from '@/components/LoadingScreen';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/contexts/ToastProvider';
-import { Button } from '@/components/ui/button';
-
-interface JobDescription {
-  jobId: string;
-  title?: string;
-  text: string;
-  submittedAt: string;
-}
+import JobDescriptionCard from '@/components/JobDescriptionCard';
+import { JobDescription } from '@/lib/types';
 
 export default function JobHistoryPage() {
   const [jobs, setJobs] = useState<JobDescription[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
-  const paragraphRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
-  const [overflowingJobs, setOverflowingJobs] = useState<Set<string>>(new Set());
   const { showError } = useToast();
 
   async function fetchJobHistory() {
@@ -42,17 +32,6 @@ export default function JobHistoryPage() {
     fetchJobHistory();
   }, []);
 
-  useEffect(() => {
-    const newOverflowing = new Set<string>();
-    jobs.forEach(job => {
-      const el = paragraphRefs.current[job.jobId];
-      if (el && el.scrollHeight > el.clientHeight) {
-        newOverflowing.add(job.jobId);
-      }
-    });
-    setOverflowingJobs(newOverflowing);
-  }, [jobs]);
-
   if (loading) {
     return <LoadingScreen />;
   }
@@ -72,60 +51,10 @@ export default function JobHistoryPage() {
         ) : (
           <div className="space-y-8">
             {jobs.map((job) => (
-              <Card
+              <JobDescriptionCard
                 key={job.jobId}
-                className="p-4 py-8 shadow-md rounded-xl bg-gray-50 border border-gray-300 dark:bg-neutral-800 dark:border-neutral-700"
-              >
-                <CardHeader className="-mb-4">
-                  <CardTitle className="text-md text-muted-foreground"></CardTitle>
-                  <CardTitle className="line-clamp-1 text-lg">{job.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p
-                    ref={(el) => { paragraphRefs.current[job.jobId] = el; }}
-                    className={`text-md text-gray-700 dark:text-muted-foreground whitespace-pre-wrap break-all ${
-                      !expandedJobs.has(job.jobId) ? 'line-clamp-4' : ''
-                    }`}
-                  >
-                    {job.text}
-                  </p>
-                  <div className="flex items-center">
-                  {overflowingJobs.has(job.jobId) && (
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto text-sm mt-2"
-                      onClick={() => {
-                        const newExpanded = new Set(expandedJobs);
-                        if (expandedJobs.has(job.jobId)) {
-                          newExpanded.delete(job.jobId);
-                        } else {
-                          newExpanded.add(job.jobId);
-                        }
-                        setExpandedJobs(newExpanded);
-                      }}
-                    >
-                      {expandedJobs.has(job.jobId) ? 'Show less' : 'Read more'}
-                    </Button>
-                  )}
-                  
-                  </div>
-                </CardContent>
-                <CardFooter className="-mt-2">
-                  <div className="flex justify-between w-full items-center italic">
-                    <p className="text-muted-foreground text-sm">
-                    Submitted: {new Date(job.submittedAt).toLocaleString('en-US', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short'
-                    })}
-                    </p>
-                    {job.jobId && (
-                        <p className="text-muted-foreground text-xs">
-                            JobID: {job.jobId}
-                        </p>
-                    )}
-                  </div>
-                </CardFooter>
-              </Card>
+                job={job}
+              />
             ))}
           </div>
         )}
