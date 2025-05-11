@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/contexts/ToastProvider";
 import LoadingScreen from "@/components/LoadingScreen";
+import { GeneratedResume } from "@/lib/types";
 
 interface JobApplication {
   applicationId: string;
@@ -29,20 +30,11 @@ interface JobDescription {
     submittedAt: string;
   }
 
-interface Resume {
-  resumeId: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  jobId: string;
-  jobDescriptionTitle: string | null;
-}
-
 export default function JobApplicationsPage() {
   const { showError, showSuccess } = useToast();
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [jobs, setJobs] = useState<JobDescription[]>([]);
-  const [resumes, setResumes] = useState<Resume[]>([]);
+  const [resumes, setResumes] = useState<GeneratedResume[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -269,7 +261,20 @@ export default function JobApplicationsPage() {
                   >
                     <CardHeader className="-mb-4">
                       <CardTitle className="line-clamp-1 text-lg">
-                        {resume.jobDescriptionTitle || `Resume for Job ID: ${resume.jobId}`}
+                      {resume.resumeTitle ? (
+                        resume.resumeTitle
+                      ) : (
+                        <>
+                        For: {" "}
+                        <span className="italic">
+                        {resume.jobDescriptionTitle ? (
+                          resume.jobDescriptionTitle
+                        ) : (
+                          `JobID ${resume.jobId}`
+                        )}
+                        </span>
+                        </>
+                      )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>

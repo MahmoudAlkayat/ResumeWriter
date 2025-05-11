@@ -6,15 +6,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/contexts/ToastProvider';
 import { Button } from '@/components/ui/button';
-
-interface GeneratedResume {
-    resumeId: string;
-    content: string;
-    createdAt: string;
-    updatedAt: string;
-    jobId: string;
-    jobDescriptionTitle: string | null;
-}
+import { GeneratedResume } from '@/lib/types';
 
 export default function GeneratedResumeHistoryPage() {
   const [resumes, setResumes] = useState<GeneratedResume[]>([]);
@@ -80,14 +72,20 @@ export default function GeneratedResumeHistoryPage() {
               >
                 <CardHeader className="-mb-4">
                 <CardTitle className="line-clamp-1 text-lg">
-                  For: {" "}
-                  <span className="italic">
-                  {resume.jobDescriptionTitle ? (
-                    resume.jobDescriptionTitle
+                  {resume.resumeTitle ? (
+                    resume.resumeTitle
                   ) : (
-                    `JobID ${resume.jobId}`
+                    <>
+                    For: {" "}
+                    <span className="italic">
+                    {resume.jobDescriptionTitle ? (
+                      resume.jobDescriptionTitle
+                    ) : (
+                      `JobID ${resume.jobId}`
+                    )}
+                    </span>
+                    </>
                   )}
-                  </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

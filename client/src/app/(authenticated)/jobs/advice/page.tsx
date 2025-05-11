@@ -12,21 +12,13 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/contexts/ToastProvider";
 import { Button } from "@/components/ui/button";
+import { GeneratedResume } from '@/lib/types';
 
 interface JobDescription {
   jobId: string;
   title?: string;
   text: string;
   submittedAt: string;
-}
-
-interface GeneratedResume {
-  resumeId: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  jobId: string;
-  jobDescriptionTitle: string | null;
 }
 
 interface AdviceResponse {
@@ -282,8 +274,19 @@ export default function JobAdvicePage() {
                   >
                     <CardHeader className="-mb-4">
                       <CardTitle className="line-clamp-1 text-lg">
-                        {resume.jobDescriptionTitle ||
-                          `Resume for Job ID: ${resume.jobId}`}
+                      {resume.resumeTitle ? (resume.resumeTitle
+                      ) : (
+                        <>
+                        For: {" "}
+                        <span className="italic">
+                        {resume.jobDescriptionTitle ? (
+                          resume.jobDescriptionTitle
+                        ) : (
+                          `JobID ${resume.jobId}`
+                        )}
+                        </span>
+                        </>
+                      )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>

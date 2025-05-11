@@ -13,15 +13,7 @@ import {
 import { useToast } from "@/contexts/ToastProvider";
 import LoadingScreen from "@/components/LoadingScreen";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-interface GeneratedResume {
-  resumeId: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  jobId: string;
-  jobDescriptionTitle: string | null;
-}
+import { GeneratedResume } from '@/lib/types';
 
 interface FormattedResume {
   formattedResumeId: string;
@@ -291,12 +283,20 @@ export default function ResumeFormatPage() {
                 >
                   <CardHeader className="-mb-4">
                     <CardTitle className="line-clamp-1 text-lg">
-                      For:{" "}
-                      <span className="italic">
-                        {resume.jobDescriptionTitle
-                          ? resume.jobDescriptionTitle
-                          : `JobID ${resume.jobId}`}
-                      </span>
+                    {resume.resumeTitle ? (
+                      resume.resumeTitle
+                      ) : (
+                        <>
+                        For: {" "}
+                        <span className="italic">
+                        {resume.jobDescriptionTitle ? (
+                          resume.jobDescriptionTitle
+                        ) : (
+                          `JobID ${resume.jobId}`
+                        )}
+                        </span>
+                        </>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
