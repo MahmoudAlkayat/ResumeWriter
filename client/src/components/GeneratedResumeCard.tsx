@@ -147,10 +147,11 @@ export default function GeneratedResumeCard({
           </Button>
         )}
       </CardContent>
-      <CardFooter className="-mt-2">
-        <p className="text-sm text-muted-foreground">
+      <CardFooter className="-mt-2 justify-between text-xs text-muted-foreground items-center">
+        <p>
           Last Updated: {new Date(resume.updatedAt).toLocaleString()}
         </p>
+        <p>GenID: {resume.resumeId}</p>
       </CardFooter>
     </Card>
   );

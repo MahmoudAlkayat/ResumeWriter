@@ -106,7 +106,8 @@ export function StatusDialog({ open, onOpenChange }: StatusDialogProps) {
       case "UPLOADED_RESUME":
         return status.resumeName;
       case "GENERATED_RESUME":
-        return status.jobTitle ? 
+        return status.resumeName ? status.resumeName :
+        status.jobTitle ? 
           status.jobTitle.length > 40 ? 
             `for "${status.jobTitle.substring(0, 40)}..."` : 
             status.jobTitle

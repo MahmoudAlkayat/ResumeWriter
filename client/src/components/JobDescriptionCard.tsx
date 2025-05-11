@@ -43,7 +43,7 @@ export default function JobDescriptionCard({
     >
       <CardHeader className="-mb-4">
         <CardTitle className="line-clamp-1 text-lg">
-          {job.title || `JobID: ${job.jobId}`}
+          {job.title}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -68,10 +68,11 @@ export default function JobDescriptionCard({
           </Button>
         )}
       </CardContent>
-      <CardFooter className="-mt-2">
-        <p className="text-sm text-muted-foreground">
+      <CardFooter className="-mt-2 justify-between text-xs text-muted-foreground items-center">
+        <p>
           Submitted: {new Date(job.submittedAt).toLocaleString()}
         </p>
+        <p>JobID: {job.jobId}</p>
       </CardFooter>
     </Card>
   );

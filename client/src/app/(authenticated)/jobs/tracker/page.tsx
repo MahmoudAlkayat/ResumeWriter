@@ -10,6 +10,14 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/contexts/ToastProvider";
 import LoadingScreen from "@/components/LoadingScreen";
 import { GeneratedResume, JobDescription } from "@/lib/types";
@@ -22,6 +30,7 @@ interface JobApplication {
   jobId: string;
   appliedAt: string;
   jobTitle?: string;
+  resumeTitle?: string;
   resumeLabel?: string;
 }
 
@@ -211,35 +220,34 @@ export default function JobApplicationsPage() {
             No job applications submitted yet.
           </p>
         ) : (
-          <div className="space-y-6">
-            {applications.map((application) => (
-              <Card
-                key={application.applicationId}
-                className="p-4 shadow-md rounded-xl bg-gray-50 border border-gray-300 
-                  dark:bg-neutral-800 dark:border-neutral-700"
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg truncate">
-                    {application.resumeLabel || `Resume ${application.resumeId}`}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 break-words">
-                      <span className="font-medium">Job:</span>{" "}
-                      {application.jobTitle || `Job ${application.jobId}`}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      <span className="font-medium">Applied:</span>{" "}
+          <div className="w-full">
+            <Table className="table-fixed">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50%]">Job</TableHead>
+                  <TableHead className="w-[30%]">Resume</TableHead>
+                  <TableHead className="w-[20%]">Applied At</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {applications.map((application) => (
+                  <TableRow key={application.applicationId}>
+                    <TableCell className="truncate pr-8">
+                      {application.jobTitle || `JobID: ${application.jobId}`}
+                    </TableCell>
+                    <TableCell className="truncate">
+                      {application.resumeTitle || `GenID: ${application.resumeId}`}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {new Date(application.appliedAt).toLocaleString("en-US", {
                         dateStyle: "medium",
                         timeStyle: "short",
                       })}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>
