@@ -170,6 +170,7 @@ public class ResumeController {
             resumeMap.put("updatedAt", resume.getUpdatedAt());
             resumeMap.put("jobId", resume.getJobDescription().getId());
             resumeMap.put("jobDescriptionTitle", resume.getJobDescription().getJobTitle());
+            resumeMap.put("resumeTitle", resume.getTitle() != null ? resume.getTitle() : "");
             response.add(resumeMap);
         }
 
@@ -209,6 +210,7 @@ public class ResumeController {
 
     public static class GenerateResumeRequest {
         private Long jobId;
+        private String title;
 
         public Long getJobId() {
             return jobId;
@@ -216,6 +218,14 @@ public class ResumeController {
 
         public void setJobId(Long jobId) {
             this.jobId = jobId;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
         }
     }
 
@@ -247,6 +257,7 @@ public class ResumeController {
             resume.setUpdatedAt(Instant.now());
             resume.setJobDescription(jobDescription);
             resume.setUser(currentUser);
+            resume.setTitle(request.getTitle());
 
             GeneratedResume savedResume = resumeService.storeGeneratedResume(resume);
             logger.info("Created new resume with id: {}", savedResume.getId());

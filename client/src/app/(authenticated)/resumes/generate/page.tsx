@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { useToast } from '@/contexts/ToastProvider';
 import { Button } from '@/components/ui/button';
 import { useResumeProcessing } from '@/contexts/ResumeProcessingProvider';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface JobDescription {
@@ -21,6 +21,7 @@ export default function GenerateResumePage() {
   const [jobs, setJobs] = useState<JobDescription[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [resumeTitle, setResumeTitle] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const paragraphRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
@@ -73,7 +74,10 @@ export default function GenerateResumePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ jobId: selectedJobId }),
+        body: JSON.stringify({ 
+          jobId: selectedJobId,
+          title: resumeTitle.trim() || undefined
+        }),
       });
 
       if (!response.ok) {
@@ -84,6 +88,10 @@ export default function GenerateResumePage() {
       const data = await response.json();
       addActiveProcess(data.statusId, 'generate');
       showInfo("Resume generation started. You can track the progress in the status dialog.");
+      
+      // Reset form
+      setSelectedJobId(null);
+      setResumeTitle("");
     } catch (error) {
       if (error instanceof Error) showError(error.message);
       else showError("Failed to generate resume");
@@ -102,7 +110,7 @@ export default function GenerateResumePage() {
         Generate a Resume
       </h1>
 
-      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
+      <div className="w-full max-w-7xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
       dark:bg-neutral-900 dark:border-neutral-800">
         {jobs.length === 0 ? (
           <div className="text-center">
@@ -115,79 +123,96 @@ export default function GenerateResumePage() {
           </div>
         ) : (
           <>
-            <h2 className="text-2xl font-semibold mb-6">Select a Job Description</h2>
-            <RadioGroup
-              value={selectedJobId || ""}
-              onValueChange={(value) => setSelectedJobId(value)}
-              className="flex flex-col gap-4"
-            >
-              {jobs.map((job) => (
-                <div key={job.jobId} className="flex items-center space-x-3 w-full">
-                  <RadioGroupItem value={job.jobId} id={job.jobId} className="shrink-0" />
-                  <Label htmlFor={job.jobId} className="w-full cursor-pointer">
-                    <Card className={`p-4 transition-colors w-full ${selectedJobId === job.jobId ? 'bg-accent' : ''} hover:bg-accent`}>
-                      <CardHeader className="p-0">
-                        <CardTitle className="text-lg break-words">
-                          {job.title || "Untitled Job"}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-0 -mt-4">
-                        <p
-                          ref={(el) => { paragraphRefs.current[job.jobId] = el; }}
-                          className={`text-sm text-muted-foreground whitespace-pre-wrap break-all ${
-                            !expandedJobs.has(job.jobId) ? 'line-clamp-3' : ''
-                          }`}
-                        >
-                          {job.text}
-                        </p>
-                        {overflowingJobs.has(job.jobId) && (
-                          <Button
-                            variant="link"
-                            className="p-0 h-auto text-sm mt-2"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              const newExpanded = new Set(expandedJobs);
-                              if (expandedJobs.has(job.jobId)) {
-                                newExpanded.delete(job.jobId);
-                              } else {
-                                newExpanded.add(job.jobId);
-                              }
-                              setExpandedJobs(newExpanded);
-                            }}
-                          >
-                            {expandedJobs.has(job.jobId) ? 'Show less' : 'Show more'}
-                          </Button>
-                        )}
-                      </CardContent>
-                      <CardFooter className="p-0 font-normal">
-                        <div className="flex justify-between w-full items-center italic">
-                          <p className="text-muted-foreground text-sm">
-                          Submitted: {new Date(job.submittedAt).toLocaleString('en-US', {
-                              dateStyle: 'medium',
-                              timeStyle: 'short'
-                          })}
-                          </p>
-                          {job.jobId && (
-                              <p className="text-muted-foreground text-xs">
-                                  JobID: {job.jobId}
-                              </p>
-                          )}
-                        </div>
-                      </CardFooter>
-                    </Card>
+            <div className="">
+              {!selectedJobId && (
+                <h2 className="text-2xl font-semibold text-foreground mb-6 text-center">
+                Select a Job Description
+              </h2>
+              )}
+              {selectedJobId && (
+              <div className="space-y-6 mb-6">
+                <div className="space-y-2">
+                  <Label htmlFor="resumeTitle" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Resume Title
                   </Label>
+                  <Input
+                    id="resumeTitle"
+                    value={resumeTitle}
+                    onChange={(e) => setResumeTitle(e.target.value)}
+                    placeholder="Enter a title for your resume (optional)"
+                    className="w-full"
+                  />
                 </div>
-              ))}
-            </RadioGroup>
 
-            <div className="mt-8 flex justify-center">
-              <Button
-                onClick={handleGenerate}
-                disabled={!selectedJobId || submitting}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8"
-              >
-                {submitting ? "Submitting..." : "Generate Resume"}
-              </Button>
+                <div className="flex justify-center">
+                  <Button
+                    onClick={handleGenerate}
+                    disabled={submitting}
+                    className={`${
+                      submitting
+                        ? "bg-blue-400"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`}
+                  >
+                    {submitting ? "Generating..." : "Generate Resume"}
+                  </Button>
+                </div>
+              </div>
+            )}
+              <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2">
+                {jobs.map((job) => (
+                  <Card
+                    key={job.jobId}
+                    className={`p-4 shadow-md rounded-xl transition-all duration-200 ${
+                      selectedJobId === job.jobId
+                        ? "border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                        : "border border-gray-300 dark:border-neutral-700"
+                    }`}
+                    onClick={() => setSelectedJobId(job.jobId)}
+                  >
+                    <CardHeader className="-mb-4">
+                      <CardTitle className="line-clamp-1 text-lg">
+                        {job.title || `JobID: ${job.jobId}`}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p
+                        ref={(el) => {
+                          paragraphRefs.current[job.jobId] = el;
+                        }}
+                        className={`text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words ${
+                          !expandedJobs.has(job.jobId) ? "line-clamp-4" : ""
+                        }`}
+                      >
+                        {job.text}
+                      </p>
+                      {overflowingJobs.has(job.jobId) && (
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto text-sm mt-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newExpanded = new Set(expandedJobs);
+                            if (expandedJobs.has(job.jobId)) {
+                              newExpanded.delete(job.jobId);
+                            } else {
+                              newExpanded.add(job.jobId);
+                            }
+                            setExpandedJobs(newExpanded);
+                          }}
+                        >
+                          {expandedJobs.has(job.jobId) ? "Show less" : "Read more"}
+                        </Button>
+                      )}
+                    </CardContent>
+                    <CardFooter className="-mt-2">
+                      <p className="text-sm text-muted-foreground">
+                        Submitted: {new Date(job.submittedAt).toLocaleString()}
+                      </p>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
             </div>
           </>
         )}

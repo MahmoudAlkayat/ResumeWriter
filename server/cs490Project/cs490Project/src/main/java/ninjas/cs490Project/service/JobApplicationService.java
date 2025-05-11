@@ -75,6 +75,9 @@ public class JobApplicationService {
                 if (application.getJob().getJobTitle() != null) {
                     record.put("jobTitle", application.getJob().getJobTitle());
                 }
+                if (application.getResume().getTitle() != null) {
+                    record.put("resumeTitle", application.getResume().getTitle());
+                }
                 return record;
             })
             .collect(Collectors.toList());
