@@ -20,6 +20,7 @@ interface ResumeTemplate {
   name: string;
   description: string;
   previewUrl: string;
+  templateId: string;
 }
 
 const RESUMES_PER_PAGE = 5;
@@ -40,7 +41,7 @@ export default function ResumeFormatPage() {
     { value: "markdown", label: "Markdown (.md)" },
     { value: "html", label: "HTML (.html)" },
     { value: "text", label: "Plain Text (.txt)" },
-    { value: "latex", label: "LaTeX (.tex)"}
+    { value: "pdf", label: "LaTeX as PDF (.pdf)"}
   ];
 
   const totalPages = Math.ceil(resumes.length / RESUMES_PER_PAGE);
@@ -110,8 +111,8 @@ export default function ResumeFormatPage() {
       return;
     }
 
-    if (formatType === "latex" && !selectedTemplate) {
-      showError("Please select a template for LaTeX format");
+    if (formatType === "pdf" && !selectedTemplate) {
+      showError("Please select a template for PDF format");
       return;
     }
 
@@ -119,6 +120,7 @@ export default function ResumeFormatPage() {
     setFormattedResume(null);
 
     try {
+      console.log(formatType, selectedTemplate)
       const response = await fetch("http://localhost:8080/api/resumes/format", {
         method: "POST",
         headers: {
@@ -128,7 +130,7 @@ export default function ResumeFormatPage() {
         body: JSON.stringify({
           resumeId: selectedResume,
           formatType,
-          templateId: formatType === "latex" ? selectedTemplate : undefined,
+          templateId: formatType === "pdf" ? selectedTemplate : undefined,
         }),
       });
 
@@ -256,7 +258,7 @@ export default function ResumeFormatPage() {
                       </option>
                     ))}
                   </select>
-                  {formatType === 'latex' && (
+                  {formatType === 'pdf' && (
                     <div className="space-y-4">
                       <label
                         htmlFor="template-select"
@@ -269,11 +271,11 @@ export default function ResumeFormatPage() {
                           <div
                             key={template.id}
                             className={`relative cursor-pointer rounded-lg border-2 p-2 transition-all hover:border-blue-500 ${
-                              selectedTemplate === template.id
+                              selectedTemplate === template.templateId
                                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                                 : 'border-gray-200 dark:border-gray-700'
                             }`}
-                            onClick={() => setSelectedTemplate(template.id)}
+                            onClick={() => setSelectedTemplate(template.templateId)}
                           >
                             <div className="aspect-[3/4] w-full overflow-hidden rounded-md">
                               <img

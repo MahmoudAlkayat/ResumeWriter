@@ -1,16 +1,16 @@
 services:
-  frontend:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-      # args:
-      #   - NEXT_PUBLIC_API_URL=http://backend:8080
-    ports:
-      - "3000:3000"
-    networks:
-      - resumewriter
-    depends_on:
-      - backend
+  # frontend:
+  #   build:
+  #     context: ./client
+  #     dockerfile: Dockerfile
+  #     # args:
+  #     #   - NEXT_PUBLIC_API_URL=http://backend:8080
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - resumewriter
+  #   depends_on:
+  #     - backend
 
   backend:
     build:
@@ -26,6 +26,16 @@ services:
       - resumewriter
     depends_on:
       - db
+      - latex-service
+
+  latex-service:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.latex
+    ports:
+      - "5000:5000"
+    networks:
+      - resumewriter
 
   db:
     image: mysql:8.0

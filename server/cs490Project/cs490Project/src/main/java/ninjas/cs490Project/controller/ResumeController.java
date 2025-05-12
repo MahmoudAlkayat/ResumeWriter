@@ -294,7 +294,6 @@ public class ResumeController {
         private Long resumeId;
         private String formatType;
         private String templateId;
-        private String styleId;
 
         public Long getResumeId() {
             return resumeId;
@@ -318,14 +317,6 @@ public class ResumeController {
 
         public void setTemplateId(String templateId) {
             this.templateId = templateId;
-        }
-
-        public String getStyleId() {
-            return styleId;
-        }
-
-        public void setStyleId(String styleId) {
-            this.styleId = styleId;
         }
     }
 
@@ -411,12 +402,20 @@ public class ResumeController {
                 case "text":
                     contentType = "text/plain";
                     break;
+                case "pdf":
+                    contentType = "application/pdf";
+                    break;
                 default:
                     contentType = "application/octet-stream";
             }
             headers.setContentType(MediaType.parseMediaType(contentType));
             headers.setContentDispositionFormData("attachment", 
                 "resume." + formattedResume.getFileExtension());
+
+            // For LaTeX format, return the PDF content
+            if (formattedResume.getFormatType().toLowerCase().equals("pdf")) {
+                return new ResponseEntity<>(formattedResume.getPdfContent(), headers, HttpStatus.OK);
+            }
 
             return new ResponseEntity<>(formattedResume.getContent(), headers, HttpStatus.OK);
 

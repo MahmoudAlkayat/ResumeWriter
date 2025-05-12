@@ -22,6 +22,10 @@ public class FormattedResume {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @Lob
+    @Column(name = "pdf_content", columnDefinition = "LONGBLOB")
+    private byte[] pdfContent;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "generated_resume_id", nullable = false)
     private GeneratedResume generatedResume;
@@ -68,6 +72,14 @@ public class FormattedResume {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public byte[] getPdfContent() {
+        return pdfContent;
+    }
+
+    public void setPdfContent(byte[] pdfContent) {
+        this.pdfContent = pdfContent;
     }
 
     public GeneratedResume getGeneratedResume() {

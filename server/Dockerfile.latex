@@ -1,0 +1,29 @@
+FROM texlive/texlive:latest
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a virtual environment
+RUN python3 -m venv /venv
+
+# Activate the virtual environment and install Flask
+RUN /venv/bin/pip install --upgrade pip && /venv/bin/pip install flask
+
+# Set environment variables to use the venv by default
+ENV PATH="/venv/bin:$PATH"
+
+# Create working directory
+WORKDIR /app
+
+# Copy the API script
+COPY latex-service.py .
+
+# Expose the API port
+EXPOSE 5000
+
+# Run the API
+CMD ["python3", "latex-service.py"]

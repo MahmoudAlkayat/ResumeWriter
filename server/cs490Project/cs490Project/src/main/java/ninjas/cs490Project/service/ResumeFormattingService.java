@@ -7,8 +7,12 @@ import ninjas.cs490Project.entity.GeneratedResume;
 import ninjas.cs490Project.entity.ResumeTemplate;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.FormattedResumeRepository;
-
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -19,13 +23,18 @@ public class ResumeFormattingService {
     private final FormattedResumeRepository formattedResumeRepository;
     private final ObjectMapper objectMapper;
     private final ResumeTemplateService templateService;
+    private final RestTemplate restTemplate;
+    private final String latexServiceUrl;
 
     public ResumeFormattingService(FormattedResumeRepository formattedResumeRepository, 
                                  ObjectMapper objectMapper,
-                                 ResumeTemplateService templateService) {
+                                 ResumeTemplateService templateService,
+                                 @Value("${latex.service.url}") String latexServiceUrl) {
         this.formattedResumeRepository = formattedResumeRepository;
         this.objectMapper = objectMapper;
         this.templateService = templateService;
+        this.restTemplate = new RestTemplate();
+        this.latexServiceUrl = latexServiceUrl;
     }
 
     public FormattedResume formatResume(GeneratedResume generatedResume, String formatType, User user, String templateId) throws Exception {
@@ -35,6 +44,7 @@ public class ResumeFormattingService {
         // Format the resume based on the requested format
         String formattedContent;
         String fileExtension;
+        byte[] pdfContent = null;
         
         switch (formatType.toLowerCase()) {
             case "markdown":
@@ -49,12 +59,13 @@ public class ResumeFormattingService {
                 formattedContent = formatAsText(resumeData);
                 fileExtension = "txt";
                 break;
-            case "latex":
+            case "pdf":
                 ResumeTemplate template = templateId != null ? 
                     templateService.getTemplateById(templateId) : 
                     templateService.getTemplateById("classic");
                 formattedContent = formatAsLatex(resumeData, template);
-                fileExtension = "tex";
+                fileExtension = "pdf";
+                pdfContent = convertLatexToPdf(formattedContent);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported format type: " + formatType);
@@ -68,6 +79,9 @@ public class ResumeFormattingService {
         formattedResume.setCreatedAt(Instant.now());
         formattedResume.setGeneratedResume(generatedResume);
         formattedResume.setUser(user);
+        if (pdfContent != null) {
+            formattedResume.setPdfContent(pdfContent);
+        }
 
         return formattedResumeRepository.save(formattedResume);
     }
@@ -387,5 +401,21 @@ public class ResumeFormattingService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
         String formatted = obj.format(formatter);
         return formatted;
+    }
+
+    private byte[] convertLatexToPdf(String latexContent) throws Exception {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_PLAIN);
+            HttpEntity<String> request = new HttpEntity<>(latexContent, headers);
+            
+            return restTemplate.postForObject(
+                latexServiceUrl + "/convert",
+                request,
+                byte[].class
+            );
+        } catch (Exception e) {
+            throw new Exception("Failed to convert LaTeX to PDF: " + e.getMessage());
+        }
     }
 } 
