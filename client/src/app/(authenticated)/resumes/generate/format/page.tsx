@@ -1,15 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Background } from "@/components/ui/background";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useToast } from "@/contexts/ToastProvider";
 import LoadingScreen from "@/components/LoadingScreen";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -22,6 +15,14 @@ interface FormattedResume {
   fileExtension: string;
 }
 
+interface ResumeTemplate {
+  id: string;
+  name: string;
+  description: string;
+  previewUrl: string;
+  templateId: string;
+}
+
 const RESUMES_PER_PAGE = 5;
 
 export default function ResumeFormatPage() {
@@ -31,30 +32,23 @@ export default function ResumeFormatPage() {
   const [formatType, setFormatType] = useState("markdown");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingResumes, setIsFetchingResumes] = useState(true);
-  const [formattedResume, setFormattedResume] =
-    useState<FormattedResume | null>(null);
-  const [expandedResumes, setExpandedResumes] = useState<Set<string>>(
-    new Set()
-  );
-  const paragraphRefs = useRef<Record<string, HTMLPreElement | null>>({});
-  const [overflowingResumes, setOverflowingResumes] = useState<Set<string>>(
-    new Set()
-  );
+  const [templates, setTemplates] = useState<ResumeTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [formattedResume, setFormattedResume] = useState<FormattedResume | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const formatOptions = [
     { value: "markdown", label: "Markdown (.md)" },
     { value: "html", label: "HTML (.html)" },
     { value: "text", label: "Plain Text (.txt)" },
+    { value: "pdf", label: "LaTeX as PDF (.pdf)"}
   ];
 
-  // Calculate pagination values
   const totalPages = Math.ceil(resumes.length / RESUMES_PER_PAGE);
   const startIndex = (currentPage - 1) * RESUMES_PER_PAGE;
   const endIndex = startIndex + RESUMES_PER_PAGE;
   const currentResumes = resumes.slice(startIndex, endIndex);
 
-  // Fetch user's generated resumes
   useEffect(() => {
     const fetchResumes = async () => {
       try {
@@ -84,19 +78,32 @@ export default function ResumeFormatPage() {
   }, []);
 
   useEffect(() => {
-    const startIndex = (currentPage - 1) * RESUMES_PER_PAGE;
-    const endIndex = startIndex + RESUMES_PER_PAGE;
-    const visibleResumes = resumes.slice(startIndex, endIndex);
-  
-    const newOverflowing = new Set<string>();
-    visibleResumes.forEach((resume) => {
-      const el = paragraphRefs.current[resume.resumeId];
-      if (el && el.scrollHeight > el.clientHeight) {
-        newOverflowing.add(resume.resumeId);
+    const fetchTemplates = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:8080/api/resumes/templates",
+          {
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch templates");
+        }
+
+        const data = await response.json();
+        setTemplates(data || []);
+        console.log(templates);
+        console.log(data)
+      } catch (err) {
+        showError(
+          err instanceof Error ? err.message : "Failed to load templates"
+        );
       }
-    });
-    setOverflowingResumes(newOverflowing);
-  }, [resumes, currentPage]);  
+    };
+
+    fetchTemplates();
+  }, []);
 
   const handleFormatResume = async () => {
     if (!selectedResume) {
@@ -104,10 +111,16 @@ export default function ResumeFormatPage() {
       return;
     }
 
+    if (formatType === "pdf" && !selectedTemplate) {
+      showError("Please select a template for PDF format");
+      return;
+    }
+
     setIsLoading(true);
     setFormattedResume(null);
 
     try {
+      console.log(formatType, selectedTemplate)
       const response = await fetch("http://localhost:8080/api/resumes/format", {
         method: "POST",
         headers: {
@@ -117,6 +130,7 @@ export default function ResumeFormatPage() {
         body: JSON.stringify({
           resumeId: selectedResume,
           formatType,
+          templateId: formatType === "pdf" ? selectedTemplate : undefined,
         }),
       });
 
@@ -244,6 +258,45 @@ export default function ResumeFormatPage() {
                       </option>
                     ))}
                   </select>
+                  {formatType === 'pdf' && (
+                    <div className="space-y-4">
+                      <label
+                        htmlFor="template-select"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Select a Template
+                      </label>
+                      <div className="grid grid-cols-3 gap-4">
+                        {templates.map((template) => (
+                          <div
+                            key={template.id}
+                            className={`relative cursor-pointer rounded-lg border-2 p-2 transition-all hover:border-blue-500 ${
+                              selectedTemplate === template.templateId
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                : 'border-gray-200 dark:border-gray-700'
+                            }`}
+                            onClick={() => setSelectedTemplate(template.templateId)}
+                          >
+                            <div className="aspect-[3/4] w-full overflow-hidden rounded-md">
+                              <img
+                                src={template.previewUrl}
+                                alt={`${template.name} preview`}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                            <div className="mt-2 space-y-1">
+                              <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                                {template.name}
+                              </h3>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {template.description}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-center gap-4">

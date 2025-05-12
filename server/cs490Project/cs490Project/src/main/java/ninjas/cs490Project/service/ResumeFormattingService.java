@@ -4,29 +4,47 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ninjas.cs490Project.dto.ResumeGenerationResult;
 import ninjas.cs490Project.entity.FormattedResume;
 import ninjas.cs490Project.entity.GeneratedResume;
+import ninjas.cs490Project.entity.ResumeTemplate;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.FormattedResumeRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
 
 @Service
 public class ResumeFormattingService {
     private final FormattedResumeRepository formattedResumeRepository;
     private final ObjectMapper objectMapper;
+    private final ResumeTemplateService templateService;
+    private final RestTemplate restTemplate;
+    private final String latexServiceUrl;
 
-    public ResumeFormattingService(FormattedResumeRepository formattedResumeRepository, ObjectMapper objectMapper) {
+    public ResumeFormattingService(FormattedResumeRepository formattedResumeRepository, 
+                                 ObjectMapper objectMapper,
+                                 ResumeTemplateService templateService,
+                                 @Value("${latex.service.url}") String latexServiceUrl) {
         this.formattedResumeRepository = formattedResumeRepository;
         this.objectMapper = objectMapper;
+        this.templateService = templateService;
+        this.restTemplate = new RestTemplate();
+        this.latexServiceUrl = latexServiceUrl;
     }
 
-    public FormattedResume formatResume(GeneratedResume generatedResume, String formatType, User user) throws Exception {
+    public FormattedResume formatResume(GeneratedResume generatedResume, String formatType, User user, String templateId) throws Exception {
         // Parse the JSON content
         ResumeGenerationResult resumeData = objectMapper.readValue(generatedResume.getContent(), ResumeGenerationResult.class);
         
         // Format the resume based on the requested format
         String formattedContent;
         String fileExtension;
+        byte[] pdfContent = null;
         
         switch (formatType.toLowerCase()) {
             case "markdown":
@@ -41,6 +59,14 @@ public class ResumeFormattingService {
                 formattedContent = formatAsText(resumeData);
                 fileExtension = "txt";
                 break;
+            case "pdf":
+                ResumeTemplate template = templateId != null ? 
+                    templateService.getTemplateById(templateId) : 
+                    templateService.getTemplateById("classic");
+                formattedContent = formatAsPdf(resumeData, template);
+                fileExtension = "pdf";
+                pdfContent = convertLatexToPdf(formattedContent);
+                break;
             default:
                 throw new IllegalArgumentException("Unsupported format type: " + formatType);
         }
@@ -53,6 +79,9 @@ public class ResumeFormattingService {
         formattedResume.setCreatedAt(Instant.now());
         formattedResume.setGeneratedResume(generatedResume);
         formattedResume.setUser(user);
+        if (pdfContent != null) {
+            formattedResume.setPdfContent(pdfContent);
+        }
 
         return formattedResumeRepository.save(formattedResume);
     }
@@ -276,5 +305,335 @@ public class ResumeFormattingService {
         }
 
         return text.toString();
+    }
+
+    private String formatAsPdf(ResumeGenerationResult resumeData, ResumeTemplate template) {
+        String templateId = template.getTemplateId().toLowerCase();
+        switch (templateId) {
+            case "classic":
+                return formatClassic(resumeData, template);
+            case "compact":
+                return formatCompact(resumeData, template);
+            case "twocolumn":
+                return formatTwoColumn(resumeData, template);
+            default:
+                return formatClassic(resumeData, template);
+        }
+    }
+
+    private String formatClassic(ResumeGenerationResult resumeData, ResumeTemplate template) {
+        String templateContent = template.getTemplateContent();
+
+        // Replace personal info placeholders
+        templateContent = templateContent.replace("{{NAME}}", 
+            sanitize(resumeData.getPersonalInfo().getFirstName() + " " + resumeData.getPersonalInfo().getLastName()));
+        templateContent = templateContent.replace("{{EMAIL}}", 
+            sanitize(resumeData.getPersonalInfo().getEmail() != null ? resumeData.getPersonalInfo().getEmail() : ""));
+        templateContent = templateContent.replace("{{PHONE}}", 
+            sanitize(resumeData.getPersonalInfo().getPhone() != null ? resumeData.getPersonalInfo().getPhone() : ""));
+        templateContent = templateContent.replace("{{ADDRESS}}",
+            sanitize(resumeData.getPersonalInfo().getAddress() != null ? resumeData.getPersonalInfo().getAddress() : ""));
+
+        // Build education section
+        StringBuilder educationContent = new StringBuilder();
+        if (resumeData.getEducationList() != null && !resumeData.getEducationList().isEmpty()) {
+            educationContent.append("  \\resumeSubHeadingListStart\n");
+            for (var edu : resumeData.getEducationList()) {
+                educationContent.append("    \\resumeSubheading\n")
+                    .append("      {").append(sanitize(edu.getInstitution())).append("}{\n")
+                    .append(dateToString(edu.getStartDate())).append(" -- ").append(edu.getEndDate() != null ? dateToString(edu.getEndDate()) : "Present").append("}\n")
+                    .append("      {").append(sanitize(edu.getDegree())).append(" in ").append(sanitize(edu.getFieldOfStudy())).append("}{}");
+                
+                educationContent.append("  \\resumeSubHeadingListEnd\n");
+                
+                if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty())) {
+                    educationContent.append("\\resumeItemListStart\n");
+                    if (edu.getGpa() > 0) {
+                        educationContent.append("\\resumeItem{\\textbf{GPA: ").append(sanitize(String.valueOf(edu.getGpa()))).append("}}\n");
+                    }
+                    if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
+                        educationContent.append("\\resumeItem{").append(sanitize(edu.getDescription())).append("}\n");
+                    }
+                    educationContent.append("\\resumeItemListEnd");
+                }
+            }
+        }
+        templateContent = templateContent.replace("{{EDUCATION_SECTION}}", educationContent.toString());
+
+        // Build experience section
+        StringBuilder experienceContent = new StringBuilder();
+        if (resumeData.getWorkExperienceList() != null && !resumeData.getWorkExperienceList().isEmpty()) {
+            experienceContent.append("  \\resumeSubHeadingListStart\n");
+            for (var exp : resumeData.getWorkExperienceList()) {
+                experienceContent.append("    \\resumeSubheading\n")
+                    .append("      {").append(sanitize(exp.getJobTitle())).append("}{")
+                    .append(dateToString(exp.getStartDate())).append(" -- ").append(exp.getEndDate() != null ? dateToString(exp.getEndDate()) : "Present").append("}\n")
+                    .append("      {").append(sanitize(exp.getCompany())).append("}{}\n")
+                    .append("      \\resumeItemListStart\n");
+                if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
+                    experienceContent.append("        \\resumeItem{").append(sanitize(exp.getResponsibilities())).append("}\n");
+                }
+                if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
+                    experienceContent.append("        \\resumeItem{").append(sanitize(exp.getAccomplishments())).append("}\n");
+                }
+                experienceContent.append("      \\resumeItemListEnd\n");
+            }
+            experienceContent.append("  \\resumeSubHeadingListEnd\n");
+        }
+        templateContent = templateContent.replace("{{EXPERIENCE_SECTION}}", experienceContent.toString());
+
+        // Build skills section
+        StringBuilder skillsContent = new StringBuilder();
+        if (resumeData.getSkills() != null && !resumeData.getSkills().isEmpty()) {
+            skillsContent.append(" \\begin{itemize}[leftmargin=0.15in, label={}]\n")
+                .append("    \\small{\\item{\n")
+                .append("     \\textbf{Skills}{: ").append(sanitize(String.join(", ", resumeData.getSkills()))).append("}\n")
+                .append("    }}\n")
+                .append(" \\end{itemize}\n");
+        }
+        templateContent = templateContent.replace("{{SKILLS_SECTION}}", skillsContent.toString());
+
+        return templateContent;
+    }
+
+    private String formatCompact(ResumeGenerationResult resumeData, ResumeTemplate template) {
+        String templateContent = template.getTemplateContent();
+
+        // Replace personal info placeholders
+        templateContent = templateContent.replace("{{NAME}}", 
+            sanitize(resumeData.getPersonalInfo().getFirstName() + " " + resumeData.getPersonalInfo().getLastName()));
+        templateContent = templateContent.replace("{{EMAIL}}", 
+            sanitize(resumeData.getPersonalInfo().getEmail() != null ? resumeData.getPersonalInfo().getEmail() : ""));
+        templateContent = templateContent.replace("{{PHONE}}", 
+            sanitize(resumeData.getPersonalInfo().getPhone() != null ? resumeData.getPersonalInfo().getPhone() : ""));
+        templateContent = templateContent.replace("{{ADDRESS}}",
+            sanitize(resumeData.getPersonalInfo().getAddress() != null ? resumeData.getPersonalInfo().getAddress() : ""));
+
+        // Build education section with compact style
+        StringBuilder educationContent = new StringBuilder();
+        if (resumeData.getEducationList() != null && !resumeData.getEducationList().isEmpty()) {
+            for (var edu : resumeData.getEducationList()) {
+                educationContent.append("\\subsection{")
+                    .append(sanitize(edu.getDegree()))
+                    .append(" in ")
+                    .append(sanitize(edu.getFieldOfStudy()))
+                    .append("\\hfill \\normalfont ")
+                    .append(dateToString(edu.getStartDate()).split(" ")[1])
+                    .append("}\n\n");
+
+                educationContent.append("\\subsubsection{")
+                    .append(sanitize(edu.getInstitution()))
+                    .append("}\n");
+
+                educationContent.append("\\begin{itemize}\n");
+                if (edu.getGpa() > 0) {
+                    educationContent.append("    \\item \\textit{GPA}: ")
+                        .append(sanitize(String.valueOf(edu.getGpa())))
+                        .append("/4.0\n");
+                }
+                if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
+                    educationContent.append("    \\item \\textit{Related coursework}: ")
+                        .append(sanitize(edu.getDescription()))
+                        .append("\n");
+                }
+                educationContent.append("\\end{itemize}\n\n");
+            }
+        }
+        templateContent = templateContent.replace("{{EDUCATION_SECTION}}", educationContent.toString());
+
+        // Build experience section with compact style
+        StringBuilder experienceContent = new StringBuilder();
+        if (resumeData.getWorkExperienceList() != null && !resumeData.getWorkExperienceList().isEmpty()) {
+            for (var exp : resumeData.getWorkExperienceList()) {
+                experienceContent.append("\\subsection{")
+                    .append(sanitize(exp.getJobTitle()))
+                    .append(" \\hfill \\normalfont ")
+                    .append(dateToString(exp.getStartDate()))
+                    .append(" -- ")
+                    .append(exp.getEndDate() != null ? dateToString(exp.getEndDate()) : "Present")
+                    .append("}\n");
+
+                experienceContent.append("\\subsubsection{")
+                    .append(sanitize(exp.getCompany()))
+                    .append("}\n");
+
+                experienceContent.append("\\begin{itemize}\n");
+                if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
+                    experienceContent.append("    \\item ")
+                        .append(sanitize(exp.getResponsibilities()))
+                        .append("\n");
+                }
+                if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
+                    experienceContent.append("    \\item ")
+                        .append(sanitize(exp.getAccomplishments()))
+                        .append("\n");
+                }
+                experienceContent.append("\\end{itemize}\n\n");
+            }
+        }
+        templateContent = templateContent.replace("{{EXPERIENCE_SECTION}}", experienceContent.toString());
+
+        // Build skills section with compact style
+        StringBuilder skillsContent = new StringBuilder();
+        if (resumeData.getSkills() != null && !resumeData.getSkills().isEmpty()) {
+            skillsContent.append("{")
+                .append(sanitize(String.join(", ", resumeData.getSkills())))
+                .append("}");
+        }
+        templateContent = templateContent.replace("{{SKILLS_SECTION}}", skillsContent.toString());
+
+        return templateContent;
+    }
+
+    private String formatTwoColumn(ResumeGenerationResult resumeData, ResumeTemplate template) {
+        String templateContent = template.getTemplateContent();
+
+        // Replace personal info placeholders
+        templateContent = templateContent.replace("{{NAME}}", 
+            sanitize(resumeData.getPersonalInfo().getFirstName() + " " + resumeData.getPersonalInfo().getLastName()));
+        templateContent = templateContent.replace("{{EMAIL}}", 
+            sanitize(resumeData.getPersonalInfo().getEmail() != null ? resumeData.getPersonalInfo().getEmail() : ""));
+        templateContent = templateContent.replace("{{PHONE}}", 
+            sanitize(resumeData.getPersonalInfo().getPhone() != null ? resumeData.getPersonalInfo().getPhone() : ""));
+        templateContent = templateContent.replace("{{ADDRESS}}",
+            sanitize(resumeData.getPersonalInfo().getAddress() != null ? resumeData.getPersonalInfo().getAddress() : ""));
+        
+        // Add a default headline if none is provided
+        templateContent = templateContent.replace("{{HEADLINE}}", 
+            "Professional Resume");
+
+        // Build experience section with modern style
+        StringBuilder experienceContent = new StringBuilder();
+        if (resumeData.getWorkExperienceList() != null && !resumeData.getWorkExperienceList().isEmpty()) {
+            for (var exp : resumeData.getWorkExperienceList()) {
+                experienceContent.append("\\entry{")
+                    .append(sanitize(exp.getCompany()))
+                    .append("}{")
+                    .append(sanitize(exp.getJobTitle()))
+                    .append("}{")
+                    .append(dateToYearOnly(exp.getStartDate()))
+                    .append(" -- ")
+                    .append(exp.getEndDate() != null ? dateToYearOnly(exp.getEndDate()) : "Present")
+                    .append("}\n");
+
+                experienceContent.append("\\begin{itemize}[noitemsep,leftmargin=3.5mm,rightmargin=0mm,topsep=6pt]\n");
+                if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
+                    experienceContent.append("  \\item ")
+                        .append(sanitize(exp.getResponsibilities()))
+                        .append("\n");
+                }
+                if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
+                    experienceContent.append("  \\item ")
+                        .append(sanitize(exp.getAccomplishments()))
+                        .append("\n");
+                }
+                experienceContent.append("\\end{itemize}\n\n");
+            }
+        }
+        templateContent = templateContent.replace("{{EXPERIENCE_SECTION}}", experienceContent.toString());
+
+        // Build education section with modern style
+        StringBuilder educationContent = new StringBuilder();
+        if (resumeData.getEducationList() != null && !resumeData.getEducationList().isEmpty()) {
+            for (var edu : resumeData.getEducationList()) {
+                educationContent.append("\\entry{")
+                    .append(sanitize(edu.getInstitution()))
+                    .append("}{")
+                    .append(sanitize(edu.getDegree()))
+                    .append(", ")
+                    .append(sanitize(edu.getFieldOfStudy()))
+                    .append("}{")
+                    .append(dateToYearOnly(edu.getStartDate()))
+                    .append(" -- ")
+                    .append(edu.getEndDate() != null ? dateToYearOnly(edu.getEndDate()) : "Present")
+                    .append("}\n");
+
+                if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty())) {
+                    educationContent.append("\\begin{itemize}[noitemsep,leftmargin=3.5mm,rightmargin=0mm,topsep=6pt]\n");
+                    if (edu.getGpa() > 0) {
+                        educationContent.append("  \\item GPA: ")
+                            .append(sanitize(String.valueOf(edu.getGpa())))
+                            .append("/4.0\n");
+                    }
+                    if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
+                        educationContent.append("  \\item ")
+                            .append(sanitize(edu.getDescription()))
+                            .append("\n");
+                    }
+                    educationContent.append("\\end{itemize}\n");
+                }
+                educationContent.append("\\medskip\n\n");
+            }
+        }
+        templateContent = templateContent.replace("{{EDUCATION_SECTION}}", educationContent.toString());
+
+        // Build skills section with modern style
+        StringBuilder skillsContent = new StringBuilder();
+        if (resumeData.getSkills() != null && !resumeData.getSkills().isEmpty()) {
+            skillsContent.append("\\begin{supertabular}{rl}\n");
+            String[] skills = resumeData.getSkills().toArray(new String[0]);
+            for (int i = 0; i < skills.length; i += 3) {
+                StringBuilder skillLine = new StringBuilder();
+                for (int j = 0; j < 3 && (i + j) < skills.length; j++) {
+                    if (j > 0) skillLine.append(" \\textperiodcentered{} ");
+                    skillLine.append(sanitize(skills[i + j]));
+                }
+                skillsContent.append("  \\tableentry{")
+                    .append(i == 0 ? "\\footnotesize\\faCode" : "")
+                    .append("}{")
+                    .append(skillLine)
+                    .append("}{")
+                    .append(i + 3 >= skills.length ? "" : "")
+                    .append("}\n");
+            }
+            skillsContent.append("\\end{supertabular}\n");
+        }
+        templateContent = templateContent.replace("{{SKILLS_SECTION}}", skillsContent.toString());
+
+        return templateContent;
+    }
+
+    private String sanitize(String text) {
+        if (text == null) return "";
+        return text.replace("\\", "\\textbackslash{}")
+                  .replace("%", "\\%")
+                  .replace("&", "\\&")
+                  .replace("#", "\\#")
+                  .replace("$", "\\$")
+                  .replace("_", "\\_")
+                  .replace("{", "\\{")
+                  .replace("}", "\\}")
+                  .replace("~", "\\textasciitilde{}")
+                  .replace("^", "\\textasciicircum{}");
+    }
+
+    private String dateToString(String date) {
+        LocalDate obj = LocalDate.parse(date);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+        String formatted = obj.format(formatter);
+        return formatted;
+    }
+
+    private String dateToYearOnly(String date) {
+        LocalDate obj = LocalDate.parse(date);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy");
+        String formatted = obj.format(formatter);
+        return formatted;
+    }
+
+    private byte[] convertLatexToPdf(String latexContent) throws Exception {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_PLAIN);
+            HttpEntity<String> request = new HttpEntity<>(latexContent, headers);
+            
+            return restTemplate.postForObject(
+                latexServiceUrl + "/convert",
+                request,
+                byte[].class
+            );
+        } catch (Exception e) {
+            throw new Exception("Failed to convert LaTeX to PDF: " + e.getMessage());
+        }
     }
 } 

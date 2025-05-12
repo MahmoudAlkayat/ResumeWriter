@@ -25,6 +25,8 @@ import ninjas.cs490Project.service.ProcessingStatusService;
 import ninjas.cs490Project.service.ResumeFormattingService;
 import ninjas.cs490Project.entity.FormattedResume;
 import ninjas.cs490Project.repository.FormattedResumeRepository;
+import ninjas.cs490Project.service.ResumeTemplateService;
+import ninjas.cs490Project.entity.ResumeTemplate;
 
 import java.time.Instant;
 import java.util.*;
@@ -44,6 +46,7 @@ public class ResumeController {
     private final ProcessingStatusService processingStatusService;
     private final ResumeFormattingService resumeFormattingService;
     private final FormattedResumeRepository formattedResumeRepository;
+    private final ResumeTemplateService templateService;
 
     public ResumeController(UserRepository userRepository,
                           JobDescriptionRepository jobDescriptionRepository,
@@ -54,7 +57,8 @@ public class ResumeController {
                           ResumeService resumeService,
                           ProcessingStatusService processingStatusService,
                           ResumeFormattingService resumeFormattingService,
-                          FormattedResumeRepository formattedResumeRepository) {
+                          FormattedResumeRepository formattedResumeRepository,
+                          ResumeTemplateService templateService) {
         this.userRepository = userRepository;
         this.jobDescriptionRepository = jobDescriptionRepository;
         this.uploadedResumeRepository = uploadedResumeRepository;
@@ -65,6 +69,7 @@ public class ResumeController {
         this.processingStatusService = processingStatusService;
         this.resumeFormattingService = resumeFormattingService;
         this.formattedResumeRepository = formattedResumeRepository;
+        this.templateService = templateService;
     }
 
     /**
@@ -289,7 +294,6 @@ public class ResumeController {
         private Long resumeId;
         private String formatType;
         private String templateId;
-        private String styleId;
 
         public Long getResumeId() {
             return resumeId;
@@ -313,14 +317,6 @@ public class ResumeController {
 
         public void setTemplateId(String templateId) {
             this.templateId = templateId;
-        }
-
-        public String getStyleId() {
-            return styleId;
-        }
-
-        public void setStyleId(String styleId) {
-            this.styleId = styleId;
         }
     }
 
@@ -354,7 +350,8 @@ public class ResumeController {
             FormattedResume formattedResume = resumeFormattingService.formatResume(
                 generatedResume,
                 formatType,
-                currentUser
+                currentUser,
+                request.getTemplateId()
             );
 
             Map<String, Object> response = new HashMap<>();
@@ -405,12 +402,20 @@ public class ResumeController {
                 case "text":
                     contentType = "text/plain";
                     break;
+                case "pdf":
+                    contentType = "application/pdf";
+                    break;
                 default:
                     contentType = "application/octet-stream";
             }
             headers.setContentType(MediaType.parseMediaType(contentType));
             headers.setContentDispositionFormData("attachment", 
                 "resume." + formattedResume.getFileExtension());
+
+            // For LaTeX format, return the PDF content
+            if (formattedResume.getFormatType().toLowerCase().equals("pdf")) {
+                return new ResponseEntity<>(formattedResume.getPdfContent(), headers, HttpStatus.OK);
+            }
 
             return new ResponseEntity<>(formattedResume.getContent(), headers, HttpStatus.OK);
 
@@ -455,6 +460,18 @@ public class ResumeController {
             logger.error("Error deleting resume: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error deleting resume: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/templates")
+    public ResponseEntity<?> getTemplates() {
+        try {
+            List<ResumeTemplate> templates = templateService.getAllTemplates();
+            return ResponseEntity.ok(templates);
+        } catch (Exception e) {
+            logger.error("Error retrieving templates: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving templates: " + e.getMessage());
         }
     }
 }

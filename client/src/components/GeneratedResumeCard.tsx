@@ -148,6 +148,19 @@ export default function GeneratedResumeCard({
                     </div>
                   </div>
                 )}
+
+                {/* Contact Information */}
+                {parsedContent.personalInfo && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Contact Information</h3>
+                    <div className="flex flex-col space y-2">
+                      {parsedContent.personalInfo.firstName && parsedContent.personalInfo.lastName && (<span>{parsedContent.personalInfo.firstName}{" "}{parsedContent.personalInfo.lastName}</span>)}
+                      {parsedContent.personalInfo.email && (<span>Email: {parsedContent.personalInfo.email}</span>)}
+                      {parsedContent.personalInfo.phone && (<span>Phone: {parsedContent.personalInfo.phone}</span>)}
+                      {parsedContent.personalInfo.address && (<span>Address: {parsedContent.personalInfo.address}</span>)}
+                    </div>
+                  </div>
+                )}
               </>
             );
           })()}
