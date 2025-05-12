@@ -195,3 +195,83 @@ VALUES (
 
 \\end{document}'
 );
+
+INSERT INTO resume_templates (template_id, name, description, format_type, template_content)
+VALUES (
+    'twocolumn',
+    'Two Column',
+    'A two-column LaTeX resume template with clean typography and efficient space usage',
+    'latex',
+    '\\documentclass[12pt]{article}
+\\usepackage[english]{babel}
+\\usepackage{cmbright}
+\\usepackage{enumitem}
+\\usepackage{fancyhdr}
+\\usepackage{fontawesome5}
+\\usepackage{geometry}
+\\usepackage{hyperref}
+\\usepackage[sf]{libertine}
+\\usepackage{microtype}
+\\usepackage{paracol}
+\\usepackage{supertabular}
+\\usepackage{titlesec}
+\\hypersetup{colorlinks, urlcolor=black, linkcolor=black}
+
+% Geometry
+\\geometry{hmargin=1.75cm, vmargin=2.5cm}
+\\columnratio{0.60, 0.40}
+\\setlength\\columnsep{0.05\\textwidth}
+\\setlength\\parindent{0pt}
+\\setlength{\\smallskipamount}{8pt plus 3pt minus 3pt}
+\\setlength{\\medskipamount}{16pt plus 6pt minus 6pt}
+\\setlength{\\bigskipamount}{24pt plus 8pt minus 8pt}
+
+% Style
+\\pagestyle{empty}
+\\titleformat{\\section}{\\scshape\\LARGE\\raggedright}{}{0em}{}[\\titlerule]
+\\titlespacing{\\section}{0pt}{\\bigskipamount}{\\smallskipamount}
+\\newcommand{\\heading}[2]{\\centering{\\sffamily\\Huge #1}\\\\\\smallskip{\\large{#2}}}
+\\newcommand{\\entry}[3]{%
+  {\\textbf{#1}}\\hfill#3\\\\%
+  \\raggedright{#2}}
+\\newcommand{\\tableentry}[3]{\\textsc{#1} & #2\\expandafter\\ifstrequal\\expandafter{#3}{}{\\\\}{\\\\[6pt]}}
+
+\\begin{document}
+
+\\vspace*{\\fill}
+
+\\begin{paracol}{2}
+
+% Name & headline
+\\heading{{{NAME}}}{{{HEADLINE}}}
+
+\\switchcolumn
+
+% Identity card
+\\vspace{0.01\\textheight}
+\\begin{supertabular}{ll}
+  \\footnotesize\\faPhone & {{PHONE}} \\\\
+  \\footnotesize\\faEnvelope & \\href{mailto:{{EMAIL}}}{{{EMAIL}}} \\\\
+  \\footnotesize\\faMapMarker & {{ADDRESS}} \\\\
+\\end{supertabular}
+
+\\bigskip
+\\switchcolumn*
+
+\\section{experience}
+{{EXPERIENCE_SECTION}}
+
+\\switchcolumn
+
+\\section{education}
+{{EDUCATION_SECTION}}
+
+\\section{skills}
+{{SKILLS_SECTION}}
+
+\\end{paracol}
+
+\\vspace*{\\fill}
+
+\\end{document}'
+);
