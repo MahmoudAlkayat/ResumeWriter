@@ -15,7 +15,8 @@ public class Education {
     private String degree;
     private String fieldOfStudy;    // If you don't need fieldOfStudy, you can remove it
     @Column(columnDefinition = "TEXT")
-    private String description;     // If you don’t need a description, you can remove it
+    private String description;
+    private String location;
 
     private Double gpa;
 
@@ -74,6 +75,14 @@ public class Education {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public Double getGpa() {

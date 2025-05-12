@@ -38,6 +38,7 @@ public class EducationService {
             eduMap.put("startDate", e.getStartDate() != null ? e.getStartDate().toString() : "");
             eduMap.put("endDate", e.getEndDate() != null ? e.getEndDate().toString() : "");
             eduMap.put("gpa", e.getGpa() != null ? e.getGpa() : 0.0);
+            eduMap.put("location", e.getLocation() != null ? e.getLocation() : "N/A");
             eduDtoList.add(eduMap);
         }
         return Collections.singletonMap("education", eduDtoList);
@@ -58,6 +59,7 @@ public class EducationService {
         education.setDegree(req.getDegree());
         education.setFieldOfStudy(req.getFieldOfStudy());
         education.setDescription(req.getDescription());
+        education.setLocation(req.getLocation());
 
         try {
             if (req.getStartDate() != null && !req.getStartDate().isEmpty()) {
@@ -103,6 +105,7 @@ public class EducationService {
         education.setDegree(req.getDegree());
         education.setFieldOfStudy(req.getFieldOfStudy());
         education.setDescription(req.getDescription());
+        education.setLocation(req.getLocation());
 
         try {
             if (req.getStartDate() != null && !req.getStartDate().isEmpty()) {

@@ -139,23 +139,25 @@ public class ResumeGenerationService {
         StringBuilder careerHistory = new StringBuilder();
         for (WorkExperience exp : workExperiences) {
             careerHistory.append(String.format(
-                    "Company: %s\nTitle: %s\nPeriod: %s to %s\nResponsibilities: %s\nAccomplishments: %s\n\n",
+                    "Company: %s\nTitle: %s\nLocation: %s\nPeriod: %s to %s\nResponsibilities:\n%s\nAccomplishments:\n%s\n\n",
                     exp.getCompany(),
                     exp.getJobTitle(),
+                    exp.getLocation() != null ? exp.getLocation() : "N/A",
                     exp.getStartDate(),
                     exp.getEndDate() != null ? exp.getEndDate() : "Present",
-                    exp.getResponsibilities() != null ? exp.getResponsibilities() : "",
-                    exp.getAccomplishments() != null ? exp.getAccomplishments() : ""
+                    exp.getResponsibilities() != null ? String.join("\n", exp.getResponsibilities()) : "",
+                    exp.getAccomplishments() != null ? String.join("\n", exp.getAccomplishments()) : ""
             ));
         }
 
         StringBuilder educationHistory = new StringBuilder();
         for (Education edu : educationList) {
             educationHistory.append(String.format(
-                    "Institution: %s\nDegree: %s\nField: %s\nPeriod: %s to %s\nGPA: %s\nDescription: %s\n\n",
+                    "Institution: %s\nDegree: %s\nField: %s\nLocation: %s\nPeriod: %s to %s\nGPA: %s\nDescription: %s\n\n",
                     edu.getInstitution(),
                     edu.getDegree(),
                     edu.getFieldOfStudy(),
+                    edu.getLocation() != null ? edu.getLocation() : "N/A",
                     edu.getStartDate(),
                     edu.getEndDate(),
                     edu.getGpa(),
@@ -193,7 +195,8 @@ public class ResumeGenerationService {
                   "startDate": "YYYY-MM-DD",
                   "endDate": "YYYY-MM-DD",
                   "description": "string",
-                  "gpa": number
+                  "gpa": number,
+                  "location": "string"
                 }
               ],
               "workExperienceList": [
@@ -202,8 +205,9 @@ public class ResumeGenerationService {
                   "jobTitle": "string",
                   "startDate": "YYYY-MM-DD",
                   "endDate": "YYYY-MM-DD",
-                  "responsibilities": "string",
-                  "accomplishments": "string"
+                  "responsibilities": ["string", "string", ...],
+                  "accomplishments": ["string", "string", ...],
+                  "location": "string"
                 }
               ]
             }
@@ -211,16 +215,31 @@ public class ResumeGenerationService {
             Instructions:
             1. Extract 8–12 relevant keywords from the job description and integrate them meaningfully.
             2. For work experience:
-               - Responsibilities should list daily tasks and duties
-               - Accomplishments should highlight specific achievements, metrics, and impact
-               - Format both as bullet points or short paragraphs
+               - DO NOT simply copy the original responsibilities and accomplishments
+               - Rewrite and tailor each responsibility to highlight relevant skills and experiences that match the job requirements
+               - Transform accomplishments to emphasize achievements that align with the job's needs
+               - Use action verbs and quantifiable metrics where possible
+               - Prioritize experiences that directly relate to the job description
                - Keep responsibilities and accomplishments separate and distinct
-            3. Prioritize skills most relevant to the job.
-            4. Maintain original job titles, company names, and date ranges.
-            5. Ensure all dates maintain YYYY-MM-DD format.
-            6. Make sure "skills" is an actual JSON array, e.g.: ["Java","Python","SQL",…]
-            7. Return ONLY the JSON with no additional commentary.
-            8. Use empty strings or 0 for any missing data, never null values.
+               - Include location for each work experience
+               - Each responsibility and accomplishment should be a separate string in the array
+            3. For education:
+               - Include location for each education entry
+               - Format dates as YYYY-MM-DD
+            4. For skills:
+               - Prioritize skills mentioned in the job description
+               - Include both technical and soft skills that are relevant
+               - Order skills by relevance to the job
+               - Make sure "skills" is an actual JSON array
+            5. General guidelines:
+               - Maintain original job titles, company names, and date ranges
+               - Ensure all dates maintain YYYY-MM-DD format
+               - Use industry-specific terminology from the job description
+               - Quantify achievements with numbers and percentages where possible
+               - Focus on transferable skills and experiences
+               - Remove or de-emphasize irrelevant experiences
+            6. Return ONLY the JSON with no additional commentary.
+            7. Use empty strings or 0 for any missing data, never null values.
             """,
                 jobTitle,
                 jobDesc,
@@ -287,6 +306,7 @@ public class ResumeGenerationService {
         mockEducation.setStartDate("2023-08-15");
         mockEducation.setEndDate("2025-05-15");
         mockEducation.setGpa(3.9);
+        mockEducation.setLocation("Urbana, IL");
         mockEducation.setDescription("Specialized in Artificial Intelligence and Machine Learning");
         mockEducationList.add(mockEducation);
         mockResult.setEducationList(mockEducationList);
@@ -297,11 +317,17 @@ public class ResumeGenerationService {
         mockWorkExp1.setJobTitle("Senior Software Engineer");
         mockWorkExp1.setStartDate("2020-06-01");
         mockWorkExp1.setEndDate("2023-08-01");
-        mockWorkExp1.setResponsibilities("""
-            • Led development of cloud-native microservices using Spring Boot and Kubernetes
-            • Implemented CI/CD pipelines reducing deployment time by 60%
-            • Mentored junior developers and conducted code reviews
-            """);
+        mockWorkExp1.setLocation("San Francisco, CA");
+        mockWorkExp1.setResponsibilities(Arrays.asList(
+            "Led development of cloud-native microservices using Spring Boot and Kubernetes",
+            "Implemented CI/CD pipelines reducing deployment time by 60%",
+            "Mentored junior developers and conducted code reviews"
+        ));
+        mockWorkExp1.setAccomplishments(Arrays.asList(
+            "Reduced system downtime by 40% through implementation of automated monitoring",
+            "Led a team of 5 developers to deliver a critical project 2 weeks ahead of schedule",
+            "Optimized database queries resulting in 50% faster response times"
+        ));
         mockWorkExperienceList.add(mockWorkExp1);
 
         WorkExperienceData mockWorkExp2 = new WorkExperienceData();
@@ -309,11 +335,17 @@ public class ResumeGenerationService {
         mockWorkExp2.setJobTitle("Software Developer");
         mockWorkExp2.setStartDate("2018-03-15");
         mockWorkExp2.setEndDate("2020-05-30");
-        mockWorkExp2.setResponsibilities("""
-            • Developed and maintained RESTful APIs using Java and Spring Framework
-            • Optimized database queries improving application performance by 40%
-            • Collaborated with cross-functional teams to deliver features on schedule
-            """);
+        mockWorkExp2.setLocation("Seattle, WA");
+        mockWorkExp2.setResponsibilities(Arrays.asList(
+            "Developed and maintained RESTful APIs using Java and Spring Framework",
+            "Optimized database queries improving application performance by 40%",
+            "Collaborated with cross-functional teams to deliver features on schedule"
+        ));
+        mockWorkExp2.setAccomplishments(Arrays.asList(
+            "Implemented automated testing reducing bug reports by 35%",
+            "Designed and deployed a new caching system improving response times by 60%",
+            "Received 'Employee of the Year' award for outstanding contributions"
+        ));
         mockWorkExperienceList.add(mockWorkExp2);
 
         mockResult.setWorkExperienceList(mockWorkExperienceList);

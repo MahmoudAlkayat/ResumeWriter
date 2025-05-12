@@ -11,4 +11,5 @@ public class EducationData {
     private String endDate = "N/A";
     private String description = "N/A";
     private double gpa = 0.0;
+    private String location = "N/A";
 }

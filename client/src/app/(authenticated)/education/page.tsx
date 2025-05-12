@@ -20,6 +20,7 @@ interface EducationEntry {
   endDate: string;
   gpa: number;
   description: string;
+  location: string;
 }
 
 export default function EducationManager() {
@@ -44,6 +45,7 @@ export default function EducationManager() {
     endDate: "",
     gpa: 0,
     description: "",
+    location: "",
   });
 
   async function fetchEducation() {
@@ -91,6 +93,7 @@ export default function EducationManager() {
         endDate: "",
         gpa: 0,
         description: "",
+        location: "",
       });
     }
     if (editingIndex == -1) {
@@ -103,6 +106,7 @@ export default function EducationManager() {
         endDate: "",
         gpa: 0,
         description: "",
+        location: "",
       });
     }
   };
@@ -240,6 +244,7 @@ export default function EducationManager() {
         endDate: "",
         gpa: 0,
         description: "",
+        location: "",
       });
     }
   };
@@ -336,6 +341,13 @@ export default function EducationManager() {
                         />
                         <Input
                           className="dark:border-neutral-700"
+                          name="location"
+                          placeholder="Location"
+                          value={formData.location}
+                          onChange={handleFormChange}
+                        />
+                        <Input
+                          className="dark:border-neutral-700"
                           name="startDate"
                           placeholder="Start Date (YYYY-MM-DD)"
                           value={formData.startDate}
@@ -386,6 +398,7 @@ export default function EducationManager() {
                                 endDate: "",
                                 gpa: 0,
                                 description: "",
+                                location: "",
                               });
                             }}
                           >
@@ -428,6 +441,12 @@ export default function EducationManager() {
                                     {edu.endDate ? new Date(edu.endDate).toISOString().slice(0, 10) : "Present"}</span>
                                 <span className="text-gray-400">•</span>
                                 <span>GPA: {edu.gpa}</span>
+                                {edu.location && (
+                                  <>
+                                    <span className="text-gray-400">•</span>
+                                    <span>{edu.location}</span>
+                                  </>
+                                )}
                             </div>
                             <p className="text-gray-700 dark:text-white leading-relaxed">
                                 {edu.description}
@@ -476,6 +495,12 @@ export default function EducationManager() {
               onChange={handleFormChange}
             />
             <Input
+              name="location"
+              placeholder="Location"
+              value={formData.location}
+              onChange={handleFormChange}
+            />
+            <Input
               name="startDate"
               placeholder="Start Date (YYYY-MM-DD)"
               value={formData.startDate}
@@ -521,6 +546,7 @@ export default function EducationManager() {
                   endDate: "",
                   gpa: 0,
                   description: "",
+                  location: "",
                 });
               }}
             >

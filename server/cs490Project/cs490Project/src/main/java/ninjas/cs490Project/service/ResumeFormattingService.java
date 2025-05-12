@@ -115,14 +115,26 @@ public class ResumeFormattingService {
             markdown.append("## Work Experience\n\n");
             for (var exp : resumeData.getWorkExperienceList()) {
                 markdown.append("### ").append(exp.getJobTitle()).append(" at ").append(exp.getCompany()).append("\n");
-                markdown.append(exp.getStartDate()).append(" - ").append(exp.getEndDate()).append("\n\n");
+                markdown.append(exp.getStartDate()).append(" - ").append(exp.getEndDate()).append("\n");
+                if (exp.getLocation() != null && !exp.getLocation().isEmpty()) {
+                    markdown.append(exp.getLocation()).append("\n");
+                }
+                markdown.append("\n");
                 
                 if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
-                    markdown.append("**Responsibilities:**\n").append(exp.getResponsibilities()).append("\n\n");
+                    markdown.append("**Responsibilities:**\n");
+                    for (String resp : exp.getResponsibilities()) {
+                        markdown.append("- ").append(resp).append("\n");
+                    }
+                    markdown.append("\n");
                 }
                 
                 if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
-                    markdown.append("**Accomplishments:**\n").append(exp.getAccomplishments()).append("\n\n");
+                    markdown.append("**Accomplishments:**\n");
+                    for (String acc : exp.getAccomplishments()) {
+                        markdown.append("- ").append(acc).append("\n");
+                    }
+                    markdown.append("\n");
                 }
             }
         }
@@ -196,14 +208,24 @@ public class ResumeFormattingService {
                     .append("<h3>").append(exp.getJobTitle()).append(" at ").append(exp.getCompany()).append("</h3>\n")
                     .append("<p>").append(exp.getStartDate()).append(" - ").append(exp.getEndDate()).append("</p>\n");
                 
+                if (exp.getLocation() != null && !exp.getLocation().isEmpty()) {
+                    html.append("<p>").append(exp.getLocation()).append("</p>\n");
+                }
+                
                 if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
-                    html.append("<h4>Responsibilities:</h4>\n")
-                        .append("<p>").append(exp.getResponsibilities()).append("</p>\n");
+                    html.append("<h4>Responsibilities:</h4>\n<ul>\n");
+                    for (String resp : exp.getResponsibilities()) {
+                        html.append("<li>").append(resp).append("</li>\n");
+                    }
+                    html.append("</ul>\n");
                 }
                 
                 if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
-                    html.append("<h4>Accomplishments:</h4>\n")
-                        .append("<p>").append(exp.getAccomplishments()).append("</p>\n");
+                    html.append("<h4>Accomplishments:</h4>\n<ul>\n");
+                    for (String acc : exp.getAccomplishments()) {
+                        html.append("<li>").append(acc).append("</li>\n");
+                    }
+                    html.append("</ul>\n");
                 }
                 
                 html.append("</div>\n");
@@ -271,14 +293,26 @@ public class ResumeFormattingService {
             
             for (var exp : resumeData.getWorkExperienceList()) {
                 text.append(exp.getJobTitle()).append(" at ").append(exp.getCompany()).append("\n");
-                text.append(exp.getStartDate()).append(" - ").append(exp.getEndDate()).append("\n\n");
+                text.append(exp.getStartDate()).append(" - ").append(exp.getEndDate()).append("\n");
+                if (exp.getLocation() != null && !exp.getLocation().isEmpty()) {
+                    text.append(exp.getLocation()).append("\n");
+                }
+                text.append("\n");
                 
                 if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
-                    text.append("Responsibilities:\n").append(exp.getResponsibilities()).append("\n\n");
+                    text.append("Responsibilities:\n");
+                    for (String resp : exp.getResponsibilities()) {
+                        text.append("- ").append(resp).append("\n");
+                    }
+                    text.append("\n");
                 }
                 
                 if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
-                    text.append("Accomplishments:\n").append(exp.getAccomplishments()).append("\n\n");
+                    text.append("Accomplishments:\n");
+                    for (String acc : exp.getAccomplishments()) {
+                        text.append("- ").append(acc).append("\n");
+                    }
+                    text.append("\n");
                 }
             }
         }
@@ -368,14 +402,22 @@ public class ResumeFormattingService {
                 experienceContent.append("    \\resumeSubheading\n")
                     .append("      {").append(sanitize(exp.getJobTitle())).append("}{")
                     .append(dateToString(exp.getStartDate())).append(" -- ").append(exp.getEndDate() != null ? dateToString(exp.getEndDate()) : "Present").append("}\n")
-                    .append("      {").append(sanitize(exp.getCompany())).append("}{}\n")
+                    .append("      {").append(sanitize(exp.getCompany())).append("}{")
+                    .append(exp.getLocation() != null ? sanitize(exp.getLocation()) : "").append("}\n")
                     .append("      \\resumeItemListStart\n");
+                
                 if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
-                    experienceContent.append("        \\resumeItem{").append(sanitize(exp.getResponsibilities())).append("}\n");
+                    for (String resp : exp.getResponsibilities()) {
+                        experienceContent.append("        \\resumeItem{").append(sanitize(resp)).append("}\n");
+                    }
                 }
+                
                 if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
-                    experienceContent.append("        \\resumeItem{").append(sanitize(exp.getAccomplishments())).append("}\n");
+                    for (String acc : exp.getAccomplishments()) {
+                        experienceContent.append("        \\resumeItem{").append(sanitize(acc)).append("}\n");
+                    }
                 }
+                
                 experienceContent.append("      \\resumeItemListEnd\n");
             }
             experienceContent.append("  \\resumeSubHeadingListEnd\n");
@@ -455,18 +497,23 @@ public class ResumeFormattingService {
 
                 experienceContent.append("\\subsubsection{")
                     .append(sanitize(exp.getCompany()))
+                    .append(exp.getLocation() != null ? " \\hfill " + sanitize(exp.getLocation()) : "")
                     .append("}\n");
 
                 experienceContent.append("\\begin{itemize}\n");
                 if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
-                    experienceContent.append("    \\item ")
-                        .append(sanitize(exp.getResponsibilities()))
-                        .append("\n");
+                    for (String resp : exp.getResponsibilities()) {
+                        experienceContent.append("    \\item ")
+                            .append(sanitize(resp))
+                            .append("\n");
+                    }
                 }
                 if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
-                    experienceContent.append("    \\item ")
-                        .append(sanitize(exp.getAccomplishments()))
-                        .append("\n");
+                    for (String acc : exp.getAccomplishments()) {
+                        experienceContent.append("    \\item ")
+                            .append(sanitize(acc))
+                            .append("\n");
+                    }
                 }
                 experienceContent.append("\\end{itemize}\n\n");
             }
@@ -506,6 +553,7 @@ public class ResumeFormattingService {
         StringBuilder experienceContent = new StringBuilder();
         if (resumeData.getWorkExperienceList() != null && !resumeData.getWorkExperienceList().isEmpty()) {
             for (var exp : resumeData.getWorkExperienceList()) {
+                System.out.println(exp);
                 experienceContent.append("\\entry{")
                     .append(sanitize(exp.getCompany()))
                     .append("}{")
@@ -516,16 +564,24 @@ public class ResumeFormattingService {
                     .append(exp.getEndDate() != null ? dateToYearOnly(exp.getEndDate()) : "Present")
                     .append("}\n");
 
+                if (exp.getLocation() != null && !exp.getLocation().isEmpty()) {
+                    experienceContent.append("\\textit{").append(sanitize(exp.getLocation())).append("}\n");
+                }
+
                 experienceContent.append("\\begin{itemize}[noitemsep,leftmargin=3.5mm,rightmargin=0mm,topsep=6pt]\n");
                 if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
-                    experienceContent.append("  \\item ")
-                        .append(sanitize(exp.getResponsibilities()))
-                        .append("\n");
+                    for (String resp : exp.getResponsibilities()) {
+                        experienceContent.append("  \\item ")
+                            .append(sanitize(resp))
+                            .append("\n");
+                    }
                 }
                 if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
-                    experienceContent.append("  \\item ")
-                        .append(sanitize(exp.getAccomplishments()))
-                        .append("\n");
+                    for (String acc : exp.getAccomplishments()) {
+                        experienceContent.append("  \\item ")
+                            .append(sanitize(acc))
+                            .append("\n");
+                    }
                 }
                 experienceContent.append("\\end{itemize}\n\n");
             }
@@ -608,6 +664,7 @@ public class ResumeFormattingService {
     }
 
     private String dateToString(String date) {
+        if (date.equals("Present")) return "Present";
         LocalDate obj = LocalDate.parse(date);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
         String formatted = obj.format(formatter);
@@ -615,6 +672,7 @@ public class ResumeFormattingService {
     }
 
     private String dateToYearOnly(String date) {
+        if (date.equals("Present")) return "Present";
         LocalDate obj = LocalDate.parse(date);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy");
         String formatted = obj.format(formatter);

@@ -31,8 +31,9 @@ public class CareerController {
         private String company;
         private String startDate;
         private String endDate;
-        private String responsibilities;
-        private String accomplishments;
+        private List<String> responsibilities;
+        private List<String> accomplishments;
+        private String location;
 
         // Getters and setters
         public String getTitle() { return title; }
@@ -47,11 +48,14 @@ public class CareerController {
         public String getEndDate() { return endDate; }
         public void setEndDate(String endDate) { this.endDate = endDate; }
 
-        public String getResponsibilities() { return responsibilities; }
-        public void setResponsibilities(String responsibilities) { this.responsibilities = responsibilities; }
+        public List<String> getResponsibilities() { return responsibilities; }
+        public void setResponsibilities(List<String> responsibilities) { this.responsibilities = responsibilities; }
 
-        public String getAccomplishments() { return accomplishments; }
-        public void setAccomplishments(String accomplishments) { this.accomplishments = accomplishments; }
+        public List<String> getAccomplishments() { return accomplishments; }
+        public void setAccomplishments(List<String> accomplishments) { this.accomplishments = accomplishments; }
+
+        public String getLocation() { return location; }
+        public void setLocation(String location) { this.location = location; }
     }
 
     // 1. GET all WorkExperience records for a user

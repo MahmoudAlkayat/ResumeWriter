@@ -19,8 +19,9 @@ interface Job {
   company: string;
   startDate: string;
   endDate: string;
-  responsibilities: string;
-  accomplishments: string;
+  responsibilities: string | string[]; // Can be either string (for editing) or string[] (for display)
+  accomplishments: string | string[]; // Can be either string (for editing) or string[] (for display)
+  location: string;
 }
 
 export default function CareerPage() {
@@ -50,6 +51,7 @@ export default function CareerPage() {
     endDate: "",
     responsibilities: "",
     accomplishments: "",
+    location: "",
   });
 
   // 2) Fetch career history whenever userId is available
@@ -94,6 +96,7 @@ export default function CareerPage() {
         endDate: "",
         responsibilities: "",
         accomplishments: "",
+        location: "",
       });
     }
     if (editingIndex !== null) {
@@ -105,6 +108,7 @@ export default function CareerPage() {
         endDate: "",
         responsibilities: "",
         accomplishments: "",
+        location: "",
       });
     }
   };
@@ -112,7 +116,12 @@ export default function CareerPage() {
   // Start "Edit" flow for a specific job
   const handleEdit = (index: number) => {
     setEditingIndex(index);
-    setFormData(careerHistory[index]);
+    const job = careerHistory[index];
+    setFormData({
+      ...job,
+      responsibilities: Array.isArray(job.responsibilities) ? job.responsibilities.join("\n") : job.responsibilities,
+      accomplishments: Array.isArray(job.accomplishments) ? job.accomplishments.join("\n") : job.accomplishments,
+    });
   };
 
   // Handle changes in the form fields (input & textarea)
@@ -120,10 +129,18 @@ export default function CareerPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (name === "responsibilities" || name === "accomplishments") {
+      // Store the raw text value for the textarea
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   // Handle save: CREATE (if adding new) or UPDATE (if editing)
@@ -138,6 +155,17 @@ export default function CareerPage() {
       showError("Please fill in job title, company, and start date");
       return;
     }
+
+    // Process responsibilities and accomplishments into arrays before saving
+    const processedData = {
+      ...formData,
+      responsibilities: (typeof formData.responsibilities === 'string' ? formData.responsibilities : formData.responsibilities.join("\n"))
+        .split("\n")
+        .filter((line: string) => line.trim() !== ""),
+      accomplishments: (typeof formData.accomplishments === 'string' ? formData.accomplishments : formData.accomplishments.join("\n"))
+        .split("\n")
+        .filter((line: string) => line.trim() !== ""),
+    };
 
     // Validate start date format
     const startDate = new Date(formData.startDate);
@@ -168,7 +196,7 @@ export default function CareerPage() {
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...formData,
+            ...processedData,
             endDate: formData.endDate || null
           }),
         });
@@ -195,7 +223,7 @@ export default function CareerPage() {
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...formData,
+            ...processedData,
             endDate: formData.endDate || null
           }),
         });
@@ -219,6 +247,7 @@ export default function CareerPage() {
         endDate: "",
         responsibilities: "",
         accomplishments: "",
+        location: "",
       });
     }
   };
@@ -339,6 +368,13 @@ export default function CareerPage() {
                         />
                         <Input
                           className="dark:border-neutral-700"
+                          name="location"
+                          placeholder="Location"
+                          value={formData.location}
+                          onChange={handleFormChange}
+                        />
+                        <Input
+                          className="dark:border-neutral-700"
                           name="startDate"
                           placeholder="Start Date (YYYY-MM-DD) *"
                           value={formData.startDate}
@@ -355,15 +391,15 @@ export default function CareerPage() {
                         <Textarea
                           className="dark:border-neutral-700"
                           name="responsibilities"
-                          placeholder="Responsibilities"
-                          value={formData.responsibilities}
+                          placeholder="Responsibilities (one per line)"
+                          value={typeof formData.responsibilities === 'string' ? formData.responsibilities : formData.responsibilities.join("\n")}
                           onChange={handleFormChange}
                         />
                         <Textarea
                           className="dark:border-neutral-700"
                           name="accomplishments"
-                          placeholder="Accomplishments"
-                          value={formData.accomplishments}
+                          placeholder="Accomplishments (one per line)"
+                          value={typeof formData.accomplishments === 'string' ? formData.accomplishments : formData.accomplishments.join("\n")}
                           onChange={handleFormChange}
                         />
                         <div className="flex gap-3 mt-4">
@@ -384,6 +420,7 @@ export default function CareerPage() {
                                 endDate: "",
                                 responsibilities: "",
                                 accomplishments: "",
+                                location: "",
                               });
                             }}
                           >
@@ -419,23 +456,29 @@ export default function CareerPage() {
                             {job.company}
                           </p>
                           <p className="text-md text-gray-500 dark:text-muted-foreground italic mb-4">
-                            {job.startDate ? new Date(job.startDate).toISOString().slice(0, 10) : "Unknown"} -{" "}
-                            {job.endDate ? new Date(job.endDate).toISOString().slice(0, 10) : "Present"}
+                            {job.location}
                           </p>
-                          {job.responsibilities && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {job.startDate} - {job.endDate || "Present"}
+                          </p>
+                          {Array.isArray(job.responsibilities) && job.responsibilities.length > 0 && (
                             <div className="mb-4">
                               <h4 className="text-lg font-semibold text-gray-700 dark:text-white mb-2">Responsibilities:</h4>
-                              <p className="text-gray-700 dark:text-white leading-relaxed break-words whitespace-pre-wrap">
-                                {job.responsibilities}
-                              </p>
+                              <ul className="list-disc list-inside text-gray-700 dark:text-white leading-relaxed">
+                                {job.responsibilities.map((resp, i) => (
+                                  <li key={i}>{resp}</li>
+                                ))}
+                              </ul>
                             </div>
                           )}
-                          {job.accomplishments && (
+                          {Array.isArray(job.accomplishments) && job.accomplishments.length > 0 && (
                             <div>
                               <h4 className="text-lg font-semibold text-gray-700 dark:text-white mb-2">Accomplishments:</h4>
-                              <p className="text-gray-700 dark:text-white leading-relaxed break-words whitespace-pre-wrap">
-                                {job.accomplishments}
-                              </p>
+                              <ul className="list-disc list-inside text-gray-700 dark:text-white leading-relaxed">
+                                {job.accomplishments.map((acc, i) => (
+                                  <li key={i}>{acc}</li>
+                                ))}
+                              </ul>
                             </div>
                           )}
                         </div>
@@ -504,6 +547,12 @@ export default function CareerPage() {
                   onChange={handleFormChange}
                 />
                 <Input
+                  name="location"
+                  placeholder="Location"
+                  value={formData.location}
+                  onChange={handleFormChange}
+                />
+                <Input
                   name="startDate"
                   placeholder="Start Date (YYYY-MM-DD)"
                   value={formData.startDate}
@@ -551,6 +600,7 @@ export default function CareerPage() {
                   endDate: "",
                   responsibilities: "",
                   accomplishments: "",
+                  location: "",
                 });
                 setFreeform("");
               }}

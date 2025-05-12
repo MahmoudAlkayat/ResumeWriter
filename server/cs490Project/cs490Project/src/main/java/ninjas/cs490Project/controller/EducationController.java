@@ -34,6 +34,7 @@ public class EducationController {
         private String startDate;
         private String endDate;
         private Double gpa;
+        private String location;        // optional
 
         // Getters and setters
         public String getInstitution() { return institution; }
@@ -56,6 +57,9 @@ public class EducationController {
 
         public Double getGpa() { return gpa; }
         public void setGpa(Double gpa) { this.gpa = gpa; }
+
+        public String getLocation() { return location; }
+        public void setLocation(String location) { this.location = location; }
     }
 
     // 1. GET all education for a user

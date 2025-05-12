@@ -48,8 +48,9 @@ public class CareerService {
             jobMap.put("company", job.getCompany() != null ? job.getCompany() : "N/A");
             jobMap.put("startDate", job.getStartDate() != null ? job.getStartDate().toString() : "");
             jobMap.put("endDate", job.getEndDate() != null ? job.getEndDate().toString() : "");
-            jobMap.put("responsibilities", job.getResponsibilities() != null ? job.getResponsibilities() : "N/A");
-            jobMap.put("accomplishments", job.getAccomplishments() != null ? job.getAccomplishments() : "N/A");
+            jobMap.put("responsibilities", job.getResponsibilities() != null ? job.getResponsibilities() : new ArrayList<>());
+            jobMap.put("accomplishments", job.getAccomplishments() != null ? job.getAccomplishments() : new ArrayList<>());
+            jobMap.put("location", job.getLocation() != null ? job.getLocation() : "N/A");
             jobsDtoList.add(jobMap);
         }
         
@@ -72,6 +73,7 @@ public class CareerService {
         job.setUser(user);
         job.setJobTitle(req.getTitle());
         job.setCompany(req.getCompany());
+        job.setLocation(req.getLocation());
 
         try {
             job.setStartDate(LocalDate.parse(req.getStartDate()));
@@ -86,8 +88,8 @@ public class CareerService {
             throw new IllegalArgumentException("Invalid end date format. Please use YYYY-MM-DD format");
         }
 
-        job.setResponsibilities(req.getResponsibilities());
-        job.setAccomplishments(req.getAccomplishments());
+        job.setResponsibilities(req.getResponsibilities() != null ? req.getResponsibilities() : new ArrayList<>());
+        job.setAccomplishments(req.getAccomplishments() != null ? req.getAccomplishments() : new ArrayList<>());
 
         workExperienceRepository.save(job);
     }
@@ -144,6 +146,7 @@ public class CareerService {
 
         job.setJobTitle(req.getTitle());
         job.setCompany(req.getCompany());
+        job.setLocation(req.getLocation());
 
         try {
             job.setStartDate(LocalDate.parse(req.getStartDate()));
@@ -158,8 +161,8 @@ public class CareerService {
             throw new IllegalArgumentException("Invalid end date format. Please use YYYY-MM-DD format");
         }
 
-        job.setResponsibilities(req.getResponsibilities());
-        job.setAccomplishments(req.getAccomplishments());
+        job.setResponsibilities(req.getResponsibilities() != null ? req.getResponsibilities() : new ArrayList<>());
+        job.setAccomplishments(req.getAccomplishments() != null ? req.getAccomplishments() : new ArrayList<>());
 
         workExperienceRepository.save(job);
     }

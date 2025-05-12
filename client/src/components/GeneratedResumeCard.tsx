@@ -106,8 +106,17 @@ export default function GeneratedResumeCard({
                           <p className="text-sm text-muted-foreground">
                             {edu.startDate} – {edu.endDate}
                           </p>
-                          <p className="text-sm">{edu.description}</p>
-                          {edu.gpa && <p className="text-sm">GPA: {edu.gpa}</p>}
+                          {edu.location && (
+                            <p className="text-sm text-muted-foreground italic">
+                              {edu.location}
+                            </p>
+                          )}
+                          {edu.description && (
+                            <p className="text-sm mt-1">{edu.description}</p>
+                          )}
+                          {edu.gpa && (
+                            <p className="text-sm">GPA: {edu.gpa}</p>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -125,7 +134,31 @@ export default function GeneratedResumeCard({
                           <p className="text-sm text-muted-foreground">
                             {job.startDate} – {job.endDate}
                           </p>
-                          <p className="text-sm whitespace-pre-line">{job.description}</p>
+                          {job.location && (
+                            <p className="text-sm text-muted-foreground italic">
+                              {job.location}
+                            </p>
+                          )}
+                          {job.responsibilities?.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-sm font-medium">Responsibilities:</p>
+                              <ul className="list-disc list-inside text-sm space-y-1 mt-1">
+                                {job.responsibilities.map((resp: string, i: number) => (
+                                  <li key={i}>{resp}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {job.accomplishments?.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-sm font-medium">Accomplishments:</p>
+                              <ul className="list-disc list-inside text-sm space-y-1 mt-1">
+                                {job.accomplishments.map((acc: string, i: number) => (
+                                  <li key={i}>{acc}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

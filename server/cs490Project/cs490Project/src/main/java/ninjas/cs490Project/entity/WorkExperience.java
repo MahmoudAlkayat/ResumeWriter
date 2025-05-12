@@ -3,6 +3,7 @@ package ninjas.cs490Project.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Data
@@ -31,11 +32,17 @@ public class WorkExperience {
 
     private LocalDate endDate;
 
-    @Column(columnDefinition = "TEXT")
-    private String responsibilities;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "work_experience_responsibilities", joinColumns = @JoinColumn(name = "work_experience_id"))
+    @Column(name = "responsibility", columnDefinition = "TEXT")
+    private List<String> responsibilities;
 
-    @Column(columnDefinition = "TEXT")
-    private String accomplishments;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "work_experience_accomplishments", joinColumns = @JoinColumn(name = "work_experience_id"))
+    @Column(name = "accomplishment", columnDefinition = "TEXT")
+    private List<String> accomplishments;
+
+    private String location;
 
     // Getters and Setters
 
@@ -74,18 +81,25 @@ public class WorkExperience {
         this.endDate = endDate;
     }
 
-    public String getResponsibilities() {
+    public List<String> getResponsibilities() {
         return responsibilities;
     }
-    public void setResponsibilities(String responsibilities) {
+    public void setResponsibilities(List<String> responsibilities) {
         this.responsibilities = responsibilities;
     }
 
-    public String getAccomplishments() {
+    public List<String> getAccomplishments() {
         return accomplishments;
     }
-    public void setAccomplishments(String accomplishments) {
+    public void setAccomplishments(List<String> accomplishments) {
         this.accomplishments = accomplishments;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public User getUser() {
