@@ -4,23 +4,31 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ninjas.cs490Project.dto.ResumeGenerationResult;
 import ninjas.cs490Project.entity.FormattedResume;
 import ninjas.cs490Project.entity.GeneratedResume;
+import ninjas.cs490Project.entity.ResumeTemplate;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.FormattedResumeRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
 
 @Service
 public class ResumeFormattingService {
     private final FormattedResumeRepository formattedResumeRepository;
     private final ObjectMapper objectMapper;
+    private final ResumeTemplateService templateService;
 
-    public ResumeFormattingService(FormattedResumeRepository formattedResumeRepository, ObjectMapper objectMapper) {
+    public ResumeFormattingService(FormattedResumeRepository formattedResumeRepository, 
+                                 ObjectMapper objectMapper,
+                                 ResumeTemplateService templateService) {
         this.formattedResumeRepository = formattedResumeRepository;
         this.objectMapper = objectMapper;
+        this.templateService = templateService;
     }
 
-    public FormattedResume formatResume(GeneratedResume generatedResume, String formatType, User user) throws Exception {
+    public FormattedResume formatResume(GeneratedResume generatedResume, String formatType, User user, String templateId) throws Exception {
         // Parse the JSON content
         ResumeGenerationResult resumeData = objectMapper.readValue(generatedResume.getContent(), ResumeGenerationResult.class);
         
@@ -40,6 +48,13 @@ public class ResumeFormattingService {
             case "text":
                 formattedContent = formatAsText(resumeData);
                 fileExtension = "txt";
+                break;
+            case "latex":
+                ResumeTemplate template = templateId != null ? 
+                    templateService.getTemplateById(templateId) : 
+                    templateService.getTemplateById("classic");
+                formattedContent = formatAsLatex(resumeData, template);
+                fileExtension = "tex";
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported format type: " + formatType);
@@ -276,5 +291,101 @@ public class ResumeFormattingService {
         }
 
         return text.toString();
+    }
+
+    private String formatAsLatex(ResumeGenerationResult resumeData, ResumeTemplate template) {
+        String templateContent = template.getTemplateContent();
+
+        // Replace personal info placeholders
+        templateContent = templateContent.replace("{{NAME}}", 
+            sanitize(resumeData.getPersonalInfo().getFirstName() + " " + resumeData.getPersonalInfo().getLastName()));
+        templateContent = templateContent.replace("{{EMAIL}}", 
+            sanitize(resumeData.getPersonalInfo().getEmail() != null ? resumeData.getPersonalInfo().getEmail() : ""));
+        templateContent = templateContent.replace("{{PHONE}}", 
+            sanitize(resumeData.getPersonalInfo().getPhone() != null ? resumeData.getPersonalInfo().getPhone() : ""));
+        templateContent = templateContent.replace("{{ADDRESS}}",
+            sanitize(resumeData.getPersonalInfo().getAddress() != null ? resumeData.getPersonalInfo().getAddress() : ""));
+
+        // Build education section
+        StringBuilder educationContent = new StringBuilder();
+        if (resumeData.getEducationList() != null && !resumeData.getEducationList().isEmpty()) {
+            educationContent.append("  \\resumeSubHeadingListStart\n");
+            for (var edu : resumeData.getEducationList()) {
+                educationContent.append("    \\resumeSubheading\n")
+                    .append("      {").append(sanitize(edu.getInstitution())).append("}{\n")
+                    .append(dateToString(edu.getStartDate())).append(" -- ").append(edu.getEndDate() != null ? dateToString(edu.getEndDate()) : "Present").append("}\n")
+                    .append("      {").append(sanitize(edu.getDegree())).append(" in ").append(sanitize(edu.getFieldOfStudy())).append("}{}");
+                
+                educationContent.append("  \\resumeSubHeadingListEnd\n");
+                
+                if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty())) {
+                    educationContent.append("\\resumeItemListStart\n");
+                    if (edu.getGpa() > 0) {
+                        educationContent.append("\\resumeItem{\\textbf{GPA: ").append(sanitize(String.valueOf(edu.getGpa()))).append("}}\n");
+                    }
+                    if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
+                        educationContent.append("\\resumeItem{").append(sanitize(edu.getDescription())).append("}\n");
+                    }
+                    educationContent.append("\\resumeItemListEnd");
+                }
+            }
+        }
+        templateContent = templateContent.replace("{{EDUCATION_SECTION}}", educationContent.toString());
+
+        // Build experience section
+        StringBuilder experienceContent = new StringBuilder();
+        if (resumeData.getWorkExperienceList() != null && !resumeData.getWorkExperienceList().isEmpty()) {
+            experienceContent.append("  \\resumeSubHeadingListStart\n");
+            for (var exp : resumeData.getWorkExperienceList()) {
+                experienceContent.append("    \\resumeSubheading\n")
+                    .append("      {").append(sanitize(exp.getJobTitle())).append("}{")
+                    .append(dateToString(exp.getStartDate())).append(" -- ").append(exp.getEndDate() != null ? dateToString(exp.getEndDate()) : "Present").append("}\n")
+                    .append("      {").append(sanitize(exp.getCompany())).append("}{}\n")
+                    .append("      \\resumeItemListStart\n");
+                if (exp.getResponsibilities() != null && !exp.getResponsibilities().isEmpty()) {
+                    experienceContent.append("        \\resumeItem{").append(sanitize(exp.getResponsibilities())).append("}\n");
+                }
+                if (exp.getAccomplishments() != null && !exp.getAccomplishments().isEmpty()) {
+                    experienceContent.append("        \\resumeItem{").append(sanitize(exp.getAccomplishments())).append("}\n");
+                }
+                experienceContent.append("      \\resumeItemListEnd\n");
+            }
+            experienceContent.append("  \\resumeSubHeadingListEnd\n");
+        }
+        templateContent = templateContent.replace("{{EXPERIENCE_SECTION}}", experienceContent.toString());
+
+        // Build skills section
+        StringBuilder skillsContent = new StringBuilder();
+        if (resumeData.getSkills() != null && !resumeData.getSkills().isEmpty()) {
+            skillsContent.append(" \\begin{itemize}[leftmargin=0.15in, label={}]\n")
+                .append("    \\small{\\item{\n")
+                .append("     \\textbf{Skills}{: ").append(sanitize(String.join(", ", resumeData.getSkills()))).append("}\n")
+                .append("    }}\n")
+                .append(" \\end{itemize}\n");
+        }
+        templateContent = templateContent.replace("{{SKILLS_SECTION}}", skillsContent.toString());
+
+        return templateContent;
+    }
+
+    private String sanitize(String text) {
+        if (text == null) return "";
+        return text.replace("\\", "\\textbackslash{}")
+                  .replace("%", "\\%")
+                  .replace("&", "\\&")
+                  .replace("#", "\\#")
+                  .replace("$", "\\$")
+                  .replace("_", "\\_")
+                  .replace("{", "\\{")
+                  .replace("}", "\\}")
+                  .replace("~", "\\textasciitilde{}")
+                  .replace("^", "\\textasciicircum{}");
+    }
+
+    private String dateToString(String date) {
+        LocalDate obj = LocalDate.parse(date);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+        String formatted = obj.format(formatter);
+        return formatted;
     }
 } 
