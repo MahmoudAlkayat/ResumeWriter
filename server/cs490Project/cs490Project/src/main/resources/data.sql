@@ -1,9 +1,10 @@
-INSERT INTO resume_templates (template_id, name, description, format_type, template_content)
+INSERT INTO resume_templates (template_id, name, description, format_type, preview_url, template_content)
 VALUES (
     'classic',
     'Classic',
     'A clean and professional LaTeX resume template with a modern layout',
-    'latex',
+    'pdf',
+    'https://i.imgur.com/abA9Nq4l.png',
     '\\documentclass[letterpaper,11pt]{article}
 
 \\usepackage{latexsym}
@@ -104,12 +105,13 @@ VALUES (
 \\end{document}'
 );
 
-INSERT INTO resume_templates (template_id, name, description, format_type, template_content)
+INSERT INTO resume_templates (template_id, name, description, format_type, preview_url, template_content)
 VALUES (
     'compact',
     'Compact',
     'A modern and compact LaTeX resume template with clean typography and efficient use of space',
-    'latex',
+    'pdf',
+    'https://i.imgur.com/yIMarY0l.png',
     '\\documentclass[11pt]{article}
 
 \\usepackage[T1]{fontenc}
@@ -196,12 +198,13 @@ VALUES (
 \\end{document}'
 );
 
-INSERT INTO resume_templates (template_id, name, description, format_type, template_content)
+INSERT INTO resume_templates (template_id, name, description, format_type, preview_url, template_content)
 VALUES (
     'twocolumn',
     'Two Column',
     'A two-column LaTeX resume template with clean typography and efficient space usage',
-    'latex',
+    'pdf',
+    'https://i.imgur.com/m9zpZSil.png',
     '\\documentclass[12pt]{article}
 \\usepackage[english]{babel}
 \\usepackage{cmbright}
@@ -231,9 +234,7 @@ VALUES (
 \\titleformat{\\section}{\\scshape\\LARGE\\raggedright}{}{0em}{}[\\titlerule]
 \\titlespacing{\\section}{0pt}{\\bigskipamount}{\\smallskipamount}
 \\newcommand{\\heading}[2]{\\centering{\\sffamily\\Huge #1}\\\\\\smallskip{\\large{#2}}}
-\\newcommand{\\entry}[3]{%
-  {\\textbf{#1}}\\hfill#3\\\\%
-  \\raggedright{#2}}
+\\newcommand{\\entry}[4]{{{\\textbf{#1}}} \\hfill #3 \\\\ #2 \\hfill #4}
 \\newcommand{\\tableentry}[3]{\\textsc{#1} & #2\\expandafter\\ifstrequal\\expandafter{#3}{}{\\\\}{\\\\[6pt]}}
 
 \\begin{document}

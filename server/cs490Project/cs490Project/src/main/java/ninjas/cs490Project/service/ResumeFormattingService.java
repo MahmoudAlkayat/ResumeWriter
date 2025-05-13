@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.time.LocalDate;
 
 @Service
@@ -376,17 +377,20 @@ public class ResumeFormattingService {
                 educationContent.append("    \\resumeSubheading\n")
                     .append("      {").append(sanitize(edu.getInstitution())).append("}{\n")
                     .append(dateToString(edu.getStartDate())).append(" -- ").append(edu.getEndDate() != null ? dateToString(edu.getEndDate()) : "Present").append("}\n")
-                    .append("      {").append(sanitize(edu.getDegree())).append(" in ").append(sanitize(edu.getFieldOfStudy())).append("}{}");
-                
+                    .append("      {").append(sanitize(edu.getDegree())).append(" in ").append(sanitize(edu.getFieldOfStudy())).append("}{")
+                    .append(sanitize(edu.getLocation())).append("}");
                 educationContent.append("  \\resumeSubHeadingListEnd\n");
+                educationContent.append("\\vspace{-12pt}\n");
                 
                 if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty())) {
                     educationContent.append("\\resumeItemListStart\n");
                     if (edu.getGpa() > 0) {
                         educationContent.append("\\resumeItem{\\textbf{GPA: ").append(sanitize(String.valueOf(edu.getGpa()))).append("}}\n");
+                        educationContent.append("\\vspace{-6pt}\n");
                     }
                     if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
                         educationContent.append("\\resumeItem{").append(sanitize(edu.getDescription())).append("}\n");
+                        educationContent.append("\\vspace{-6pt}\n");
                     }
                     educationContent.append("\\resumeItemListEnd");
                 }
@@ -429,7 +433,7 @@ public class ResumeFormattingService {
         if (resumeData.getSkills() != null && !resumeData.getSkills().isEmpty()) {
             skillsContent.append(" \\begin{itemize}[leftmargin=0.15in, label={}]\n")
                 .append("    \\small{\\item{\n")
-                .append("     \\textbf{Skills}{: ").append(sanitize(String.join(", ", resumeData.getSkills()))).append("}\n")
+                .append("     {").append(sanitize(String.join(", ", resumeData.getSkills()))).append("}\n")
                 .append("    }}\n")
                 .append(" \\end{itemize}\n");
         }
@@ -465,16 +469,17 @@ public class ResumeFormattingService {
 
                 educationContent.append("\\subsubsection{")
                     .append(sanitize(edu.getInstitution()))
+                    .append(edu.getLocation() != null ? " \\hfill " + sanitize(edu.getLocation()) : "")
                     .append("}\n");
 
                 educationContent.append("\\begin{itemize}\n");
                 if (edu.getGpa() > 0) {
-                    educationContent.append("    \\item \\textit{GPA}: ")
+                    educationContent.append("    \\item GPA: ")
                         .append(sanitize(String.valueOf(edu.getGpa())))
                         .append("/4.0\n");
                 }
                 if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
-                    educationContent.append("    \\item \\textit{Related coursework}: ")
+                    educationContent.append("    \\item ")
                         .append(sanitize(edu.getDescription()))
                         .append("\n");
                 }
@@ -559,9 +564,9 @@ public class ResumeFormattingService {
                     .append("}{")
                     .append(sanitize(exp.getJobTitle()))
                     .append("}{")
-                    .append(dateToYearOnly(exp.getStartDate()))
+                    .append(dateToStringShort(exp.getStartDate()))
                     .append(" -- ")
-                    .append(exp.getEndDate() != null ? dateToYearOnly(exp.getEndDate()) : "Present")
+                    .append(exp.getEndDate() != null ? dateToStringShort(exp.getEndDate()) : "Present")
                     .append("}\n");
 
                 if (exp.getLocation() != null && !exp.getLocation().isEmpty()) {
@@ -595,14 +600,15 @@ public class ResumeFormattingService {
                 educationContent.append("\\entry{")
                     .append(sanitize(edu.getInstitution()))
                     .append("}{")
-                    .append(sanitize(edu.getDegree()))
-                    .append(", ")
-                    .append(sanitize(edu.getFieldOfStudy()))
-                    .append("}{")
                     .append(dateToYearOnly(edu.getStartDate()))
                     .append(" -- ")
                     .append(edu.getEndDate() != null ? dateToYearOnly(edu.getEndDate()) : "Present")
-                    .append("}\n");
+                    .append("}{")
+                    .append(sanitize(edu.getDegree()))
+                    .append(", ")
+                    .append(sanitize(edu.getFieldOfStudy()))
+                    .append("}")
+                    .append("\\textit{").append(edu.getLocation() != null ? edu.getLocation() : "N/A").append("}\n");
 
                 if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty())) {
                     educationContent.append("\\begin{itemize}[noitemsep,leftmargin=3.5mm,rightmargin=0mm,topsep=6pt]\n");
@@ -626,22 +632,15 @@ public class ResumeFormattingService {
         // Build skills section with modern style
         StringBuilder skillsContent = new StringBuilder();
         if (resumeData.getSkills() != null && !resumeData.getSkills().isEmpty()) {
-            skillsContent.append("\\begin{supertabular}{rl}\n");
-            String[] skills = resumeData.getSkills().toArray(new String[0]);
-            for (int i = 0; i < skills.length; i += 3) {
-                StringBuilder skillLine = new StringBuilder();
-                for (int j = 0; j < 3 && (i + j) < skills.length; j++) {
-                    if (j > 0) skillLine.append(" \\textperiodcentered{} ");
-                    skillLine.append(sanitize(skills[i + j]));
+            skillsContent.append("\\begin{supertabular}{p{0.95\\columnwidth}}\n");
+            List<String> skills = resumeData.getSkills();
+            for (int i = 0; i < skills.size(); i++) {
+                skillsContent.append(sanitize(skills.get(i)));
+                if (i < skills.size() - 1) {
+                    skillsContent.append(" \\textperiodcentered{} ");
                 }
-                skillsContent.append("  \\tableentry{")
-                    .append(i == 0 ? "\\footnotesize\\faCode" : "")
-                    .append("}{")
-                    .append(skillLine)
-                    .append("}{")
-                    .append(i + 3 >= skills.length ? "" : "")
-                    .append("}\n");
             }
+            skillsContent.append("\\\\");
             skillsContent.append("\\end{supertabular}\n");
         }
         templateContent = templateContent.replace("{{SKILLS_SECTION}}", skillsContent.toString());
@@ -675,6 +674,14 @@ public class ResumeFormattingService {
         if (date.equals("Present")) return "Present";
         LocalDate obj = LocalDate.parse(date);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy");
+        String formatted = obj.format(formatter);
+        return formatted;
+    }
+
+    private String dateToStringShort(String date) {
+        if (date.equals("Present")) return "Present";
+        LocalDate obj = LocalDate.parse(date);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy");
         String formatted = obj.format(formatter);
         return formatted;
     }
