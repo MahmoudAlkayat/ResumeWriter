@@ -126,15 +126,17 @@ public class AsyncResumeParser {
 
                     // Safe date parsing
                     edu.setStartDate(
-                            data.getStartDate() != null
+                            !data.getStartDate().equals("N/A")
                                     ? LocalDate.parse(data.getStartDate())
                                     : LocalDate.of(2021, 9, 1)
                     );
-                    edu.setEndDate(
-                            data.getEndDate() != null
-                                    ? LocalDate.parse(data.getEndDate())
-                                    : LocalDate.of(2025, 12, 1)
-                    );
+                    
+                    String endDateStr = data.getEndDate();
+                    if (endDateStr == null || endDateStr.trim().isEmpty() || endDateStr.equalsIgnoreCase("N/A")) {
+                        edu.setEndDate(null);
+                    } else {
+                        edu.setEndDate(LocalDate.parse(endDateStr));
+                    }
 
                     // Handle GPA
                     Double gpaValue = data.getGpa();
@@ -236,7 +238,7 @@ public class AsyncResumeParser {
                 if (endDateStr == null || endDateStr.trim().isEmpty() || endDateStr.equalsIgnoreCase("N/A")) {
                     we.setEndDate(null);
                 } else if (endDateStr.equalsIgnoreCase("Present")) {
-                    we.setEndDate(LocalDate.now());
+                    we.setEndDate(null);
                 } else {
                     we.setEndDate(LocalDate.parse(endDateStr));
                 }
