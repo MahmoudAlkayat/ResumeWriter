@@ -23,6 +23,7 @@ import GeneratedResumeCard from "@/components/GeneratedResumeCard";
 import JobDescriptionCard from "@/components/JobDescriptionCard";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
+import { Card, CardContent } from "@/components/ui/card";
 
 interface JobApplication {
   applicationId: string;
@@ -166,9 +167,23 @@ export default function JobApplicationsPage() {
       {/* Create New Application Section */}
       <div className="w-full max-w-7xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
         dark:bg-neutral-900 dark:border-neutral-800">
-        <h2 className="text-2xl font-semibold text-foreground mb-6 text-center">
-          Record New Application
-        </h2>
+        <Card className="mb-8 border-2 border-gray-500 bg-gray-50 dark:bg-gray-900/20">
+          <CardContent>
+            <div className="prose dark:prose-invert max-w-none">
+              <p className="text-sm text-foreground">
+                Keep track of all your job applications in one place. Record which resume you used for each application
+                and monitor your application history to stay organized in your job search.
+              </p>
+              <ul className="mt-4 text-sm text-muted-foreground list-disc list-inside space-y-1">
+                <li>Record new job applications with ease</li>
+                <li>Track which resume you used for each application</li>
+                <li>View your complete application history</li>
+                <li>Click on job titles or resumes to view details</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Job Descriptions Section */}
           <div className="space-y-4">

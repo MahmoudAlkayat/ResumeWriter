@@ -8,6 +8,7 @@ import LoadingScreen from "@/components/LoadingScreen";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { GeneratedResume } from '@/lib/types';
 import GeneratedResumeCard from "@/components/GeneratedResumeCard";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface FormattedResume {
   formattedResumeId: string;
@@ -194,36 +195,27 @@ export default function ResumeFormatPage() {
       <h1 className="text-4xl font-bold text-foreground drop-shadow-md text-center mb-4">
         Format and Download Resume
       </h1>
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mb-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="h-8 w-8"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Page {currentPage} of {totalPages}
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="h-8 w-8"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-      <div
-        className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
-      dark:bg-neutral-900 dark:border-neutral-800"
-      >
+
+      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
+      dark:bg-neutral-900 dark:border-neutral-800">
+        {!selectedResume && (
+          <Card className="mb-8 border-2 border-gray-500 bg-gray-50 dark:bg-gray-900/20">
+            <CardContent>
+              <div className="prose dark:prose-invert max-w-none">
+                <p className="text-sm text-foreground">
+                  Choose from multiple formats and templates to create the perfect version of your resume.
+                  Download your resume in various formats to suit different application requirements.
+                </p>
+                <ul className="mt-4 text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>Select from multiple format options (PDF, HTML, Markdown, Text)</li>
+                  <li>Choose from professional LaTeX templates for PDF format</li>
+                  <li>Preview and download your formatted resume</li>
+                  <li>Get a polished, professional-looking document</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {resumes.length === 0 ? (
           <p className="text-xl text-foreground mb-6 drop-shadow-sm text-center">
             No resumes generated yet.

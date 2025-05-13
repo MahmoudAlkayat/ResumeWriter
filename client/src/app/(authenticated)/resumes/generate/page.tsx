@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import JobDescriptionCard from '@/components/JobDescriptionCard';
 import { JobDescription } from '@/lib/types';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function GenerateResumePage() {
   const [jobs, setJobs] = useState<JobDescription[]>([]);
@@ -92,6 +93,23 @@ export default function GenerateResumePage() {
 
       <div className="w-full max-w-7xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
       dark:bg-neutral-900 dark:border-neutral-800">
+        {!selectedJobId && (
+          <Card className="mb-8 border-2 border-gray-500 bg-gray-50 dark:bg-gray-900/20">
+            <CardContent>
+              <div className="prose dark:prose-invert max-w-none">
+                <p className="text-sm text-foreground">
+                  Select a job description to generate a tailored resume that highlights your relevant skills and experience.
+                  Our AI will analyze the job requirements and take into account your education and career entries to create a professional resume optimized for the position.
+                </p>
+                <ul className="mt-4 text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>Choose from your saved job descriptions</li>
+                  <li>Optionally provide a custom title for your resume</li>
+                  <li>Get a professionally formatted resume in minutes</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {jobs.length === 0 ? (
           <div className="text-center">
             <p className="text-xl text-foreground mb-6 drop-shadow-sm">

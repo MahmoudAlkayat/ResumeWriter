@@ -114,6 +114,24 @@ export default function JobAdvicePage() {
         className="w-full max-w-7xl bg-white shadow-xl rounded-2xl p-10 border border-gray-200 mb-8 
       dark:bg-neutral-900 dark:border-neutral-800"
       >
+        {!advice && (
+          <Card className="mb-8 border-2 border-gray-500 bg-gray-50 dark:bg-gray-900/20">
+            <CardContent>
+              <div className="prose dark:prose-invert max-w-none">
+                <p className="text-sm text-foreground">
+                  Receive tailored advice on how well your resume matches specific job requirements and get suggestions
+                  for improvement. Our AI analyzes both your resume and the job description to provide actionable insights.
+                </p>
+                <ul className="mt-4 text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>Compare your resume against job requirements</li>
+                  <li>Get specific improvement suggestions</li>
+                  <li>Identify skills gaps and opportunities</li>
+                  <li>Receive actionable advice for better applications</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {/* Advice Display */}
         {advice && (
           <Card className="mb-8 border-2 border-green-500 bg-green-50 dark:bg-green-900/20">
@@ -126,18 +144,6 @@ export default function JobAdvicePage() {
               <div className="prose dark:prose-invert max-w-none -mt-4">
                 <p className="whitespace-pre-wrap break-words text-gray-700 dark:text-gray-300">
                   {advice}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {!advice && (
-          <Card className="mb-8 border-2 border-gray-500 bg-gray-50 dark:bg-gray-900/20">
-            <CardContent>
-              <div className="prose dark:prose-invert max-w-none">
-                Please select a job description and generated resume then click the "Get Advice" button
-                <p className="mt-4 text-sm text-muted-foreground">
-                  The advice will help you understand how well your resume matches the job requirements and provide suggestions for improvement.
                 </p>
               </div>
             </CardContent>
