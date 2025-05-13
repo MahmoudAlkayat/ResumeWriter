@@ -274,6 +274,42 @@ public class ResumeGenerationService {
             String contentJson = gptResponseObj.getChoices().get(0).getMessage().getContent();
             ResumeGenerationResult result = objectMapper.readValue(contentJson, ResumeGenerationResult.class);
 
+            // Sort work experiences by date (most recent first)
+            if (result.getWorkExperienceList() != null) {
+                result.getWorkExperienceList().sort((a, b) -> {
+                    // Handle "Present" dates
+                    String aEnd = a.getEndDate() != null && a.getEndDate().equals("Present") ? "9999-12-31" : a.getEndDate();
+                    String bEnd = b.getEndDate() != null && b.getEndDate().equals("Present") ? "9999-12-31" : b.getEndDate();
+                    
+                    // Compare end dates first
+                    int endDateCompare = bEnd.compareTo(aEnd);
+                    if (endDateCompare != 0) {
+                        return endDateCompare;
+                    }
+                    
+                    // If end dates are equal, compare start dates
+                    return b.getStartDate().compareTo(a.getStartDate());
+                });
+            }
+
+            // Sort education entries by date (most recent first)
+            if (result.getEducationList() != null) {
+                result.getEducationList().sort((a, b) -> {
+                    // Handle "Present" dates
+                    String aEnd = a.getEndDate() != null && a.getEndDate().equals("Present") ? "9999-12-31" : a.getEndDate();
+                    String bEnd = b.getEndDate() != null && b.getEndDate().equals("Present") ? "9999-12-31" : b.getEndDate();
+                    
+                    // Compare end dates first
+                    int endDateCompare = bEnd.compareTo(aEnd);
+                    if (endDateCompare != 0) {
+                        return endDateCompare;
+                    }
+                    
+                    // If end dates are equal, compare start dates
+                    return b.getStartDate().compareTo(a.getStartDate());
+                });
+            }
+
             ResumeGenerationResult.PersonalInfo personalInfo = new ResumeGenerationResult.PersonalInfo();
             personalInfo.setFirstName(user.getFirstName());
             personalInfo.setLastName(user.getLastName());

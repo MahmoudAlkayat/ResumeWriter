@@ -26,7 +26,7 @@ public class FormattedResume {
     @Column(name = "pdf_content", columnDefinition = "LONGBLOB")
     private byte[] pdfContent;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "generated_resume_id", nullable = false)
     private GeneratedResume generatedResume;
 

@@ -3,6 +3,7 @@ package ninjas.cs490Project.entity;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "generated_resumes")
@@ -30,6 +31,9 @@ public class GeneratedResume {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_description_id", nullable = false)
     private JobDescription jobDescription;
+
+    @OneToMany(mappedBy = "generatedResume", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FormattedResume> formattedResumes;
 
     public Long getId() {
         return id;

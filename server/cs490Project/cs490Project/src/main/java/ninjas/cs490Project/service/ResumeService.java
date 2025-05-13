@@ -33,7 +33,7 @@ public class ResumeService {
     }
 
     public List<GeneratedResume> getGeneratedResumesByUser(User user) {
-        return generatedResumeRepository.findByUser(user);
+        return generatedResumeRepository.findByUserOrderByCreatedAtDesc(user);
     }
 
     public GeneratedResume getGeneratedResumeById(Long id) {

@@ -46,7 +46,7 @@ public class JobDescriptionService {
     }
 
     public List<Map<String, Object>> getJobDescriptions(User user) {
-        List<JobDescription> jobDescriptions = jobDescriptionRepository.findByUserId(Long.valueOf(user.getId()));
+        List<JobDescription> jobDescriptions = jobDescriptionRepository.findByUserOrderByCreatedAtDesc(user);
         List<Map<String, Object>> response = new ArrayList<>();
 
         for (JobDescription job : jobDescriptions) {

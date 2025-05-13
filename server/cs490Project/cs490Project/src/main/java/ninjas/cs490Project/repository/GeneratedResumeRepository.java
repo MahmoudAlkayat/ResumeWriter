@@ -10,4 +10,5 @@ import java.util.List;
 public interface GeneratedResumeRepository extends JpaRepository<GeneratedResume, Long> {
     List<GeneratedResume> findByUser(User user);
     List<GeneratedResume> findByUserAndJobDescriptionId(User user, Long jobDescriptionId);
+    List<GeneratedResume> findByUserOrderByCreatedAtDesc(User user);
 } 
