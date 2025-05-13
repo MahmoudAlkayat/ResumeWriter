@@ -17,7 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ninjas.cs490Project.service.ResumeService;
@@ -36,7 +36,6 @@ import java.util.*;
 public class ResumeController {
     private static final Logger logger = LoggerFactory.getLogger(ResumeController.class);
 
-    private final UserRepository userRepository;
     private final JobDescriptionRepository jobDescriptionRepository;
     private final UploadedResumeRepository uploadedResumeRepository;
     private final ResumeParsingService resumeParsingService;
@@ -59,7 +58,6 @@ public class ResumeController {
                           ResumeFormattingService resumeFormattingService,
                           FormattedResumeRepository formattedResumeRepository,
                           ResumeTemplateService templateService) {
-        this.userRepository = userRepository;
         this.jobDescriptionRepository = jobDescriptionRepository;
         this.uploadedResumeRepository = uploadedResumeRepository;
         this.resumeParsingService = resumeParsingService;
@@ -79,21 +77,12 @@ public class ResumeController {
      * Education or WorkExperience referencing the User.
      */
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile file,
-                                        Authentication authentication) {
+    public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile file, @AuthenticationPrincipal User user) {
         if (file.isEmpty()) {
             logger.warn("Attempted to upload an empty file.");
             return ResponseEntity.badRequest().body("No file selected.");
         }
         try {
-            String email = authentication.getName();
-            User currentUser = userRepository.findByEmail(email);
-            if (currentUser == null) {
-                logger.error("User not found");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("User not found");
-            }
-
             // Extract text via Tika and parse key information via GPT
             String extractedText = resumeParsingService.extractTextFromFile(file);
 
@@ -104,14 +93,14 @@ public class ResumeController {
             resume.setFileData(file.getBytes());
             resume.setCreatedAt(Instant.now());
             resume.setUpdatedAt(Instant.now());
-            resume.setUser(currentUser);
+            resume.setUser(user);
 
             UploadedResume savedResume = uploadedResumeRepository.save(resume);
             logger.info("Resume uploaded and stored successfully with id: {}", savedResume.getId());
 
             // Create processing status
             ProcessingStatus status = processingStatusService.createProcessingStatus(
-                currentUser,
+                user,
                 ProcessingStatus.ProcessingType.UPLOADED_RESUME,
                 savedResume.getId()
             );
@@ -134,14 +123,8 @@ public class ResumeController {
     }
 
     @GetMapping("/upload/history")
-    public ResponseEntity<?> getUploadHistory(Authentication authentication) {
-        String email = authentication.getName();
-        User currentUser = userRepository.findByEmail(email);
-        if (currentUser == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        List<UploadedResume> resumes = uploadedResumeRepository.findByUser(currentUser);
+    public ResponseEntity<?> getUploadHistory(@AuthenticationPrincipal User user) {
+        List<UploadedResume> resumes = uploadedResumeRepository.findByUser(user);
 
         List<Map<String, Object>> response = new ArrayList<>();
         for (UploadedResume resume : resumes) {
@@ -157,14 +140,8 @@ public class ResumeController {
     }
 
     @GetMapping("/generate/history")
-    public ResponseEntity<?> getGeneratedHistory(Authentication authentication) {
-        String email = authentication.getName();
-        User currentUser = userRepository.findByEmail(email);
-        if (currentUser == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        List<GeneratedResume> resumes = resumeService.getGeneratedResumesByUser(currentUser);
+    public ResponseEntity<?> getGeneratedHistory(@AuthenticationPrincipal User user) {
+        List<GeneratedResume> resumes = resumeService.getGeneratedResumesByUser(user);
 
         List<Map<String, Object>> response = new ArrayList<>();
         for (GeneratedResume resume : resumes) {
@@ -183,19 +160,13 @@ public class ResumeController {
     }
 
     @GetMapping("/upload/{resumeId}/original")
-    public ResponseEntity<?> getOriginalFile(@PathVariable Long resumeId, Authentication authentication) {
+    public ResponseEntity<?> getOriginalFile(@PathVariable Long resumeId, @AuthenticationPrincipal User user) {
         try {
-            String email = authentication.getName();
-            User currentUser = userRepository.findByEmail(email);
-            if (currentUser == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-            }
-
             UploadedResume resume = uploadedResumeRepository.findById(resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("Resume not found"));
 
             // Check if the current user owns this resume
-            if (resume.getUser().getId() != currentUser.getId()) {
+            if (resume.getUser().getId() != user.getId()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You don't have permission to access this file");
             }
 
@@ -235,16 +206,8 @@ public class ResumeController {
     }
 
     @PostMapping("/generate")
-    public ResponseEntity<?> generateResume(@RequestBody GenerateResumeRequest request,
-                                          Authentication authentication) {
+    public ResponseEntity<?> generateResume(@AuthenticationPrincipal User user, @RequestBody GenerateResumeRequest request) {
         try {
-            String email = authentication.getName();
-            User currentUser = userRepository.findByEmail(email);
-            if (currentUser == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("User not found");
-            }
-
             if (request.getJobId() == null) {
                 return ResponseEntity.badRequest().body("jobId is required");
             }
@@ -252,7 +215,7 @@ public class ResumeController {
             JobDescription jobDescription = jobDescriptionRepository.findById(request.getJobId())
                     .orElseThrow(() -> new IllegalArgumentException("Job description not found"));
 
-            if (currentUser.getId() != jobDescription.getUser().getId()) {
+            if (user.getId() != jobDescription.getUser().getId()) {
                 return ResponseEntity.badRequest().body("User does not have access to this job description");
             }
 
@@ -261,7 +224,7 @@ public class ResumeController {
             resume.setCreatedAt(Instant.now());
             resume.setUpdatedAt(Instant.now());
             resume.setJobDescription(jobDescription);
-            resume.setUser(currentUser);
+            resume.setUser(user);
             resume.setTitle(request.getTitle());
 
             GeneratedResume savedResume = resumeService.storeGeneratedResume(resume);
@@ -269,12 +232,12 @@ public class ResumeController {
 
             // Create processing status
             ProcessingStatus status = processingStatusService.createProcessingStatus(
-                currentUser,
+                user,
                 ProcessingStatus.ProcessingType.GENERATED_RESUME,
                 savedResume.getId()
             );
             
-            resumeGenerationService.generateResume(currentUser, request.getJobId(), savedResume, status);
+            resumeGenerationService.generateResume(user, request.getJobId(), savedResume, status);
             
             // Return the resume ID and processing status
             Map<String, Object> response = new HashMap<>();
@@ -321,16 +284,8 @@ public class ResumeController {
     }
 
     @PostMapping("/format")
-    public ResponseEntity<?> formatResume(@RequestBody FormatResumeRequest request,
-                                        Authentication authentication) {
+    public ResponseEntity<?> formatResume(@AuthenticationPrincipal User user, @RequestBody FormatResumeRequest request) {
         try {
-            String email = authentication.getName();
-            User currentUser = userRepository.findByEmail(email);
-            if (currentUser == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("User not found");
-            }
-
             if (request.getResumeId() == null) {
                 return ResponseEntity.badRequest().body("resumeId is required");
             }
@@ -341,7 +296,7 @@ public class ResumeController {
                         .body("Resume not found");
             }
 
-            if (currentUser.getId() != generatedResume.getUser().getId()) {
+            if (user.getId() != generatedResume.getUser().getId()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("You don't have permission to access this resume");
             }
@@ -350,7 +305,7 @@ public class ResumeController {
             FormattedResume formattedResume = resumeFormattingService.formatResume(
                 generatedResume,
                 formatType,
-                currentUser,
+                user,
                 request.getTemplateId()
             );
 
@@ -371,20 +326,12 @@ public class ResumeController {
     }
 
     @GetMapping("/download/{formattedResumeId}")
-    public ResponseEntity<?> downloadFormattedResume(@PathVariable Long formattedResumeId,
-                                                   Authentication authentication) {
+    public ResponseEntity<?> downloadFormattedResume(@AuthenticationPrincipal User user, @PathVariable Long formattedResumeId) {
         try {
-            String email = authentication.getName();
-            User currentUser = userRepository.findByEmail(email);
-            if (currentUser == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("User not found");
-            }
-
             FormattedResume formattedResume = formattedResumeRepository.findById(formattedResumeId)
                     .orElseThrow(() -> new IllegalArgumentException("Formatted resume not found"));
 
-            if (currentUser.getId() != formattedResume.getUser().getId()) {
+            if (user.getId() != formattedResume.getUser().getId()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("You don't have permission to access this file");
             }
@@ -420,27 +367,18 @@ public class ResumeController {
             return new ResponseEntity<>(formattedResume.getContent(), headers, HttpStatus.OK);
 
         } catch (IllegalArgumentException e) {
-            logger.error("Error finding formatted resume: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(e.getMessage());
+            logger.error("Invalid request: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            logger.error("Error downloading formatted resume: {}", e.getMessage());
+            logger.error("Error downloading resume: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error downloading resume: " + e.getMessage());
         }
     }
 
     @DeleteMapping("/generate/{resumeId}")
-    public ResponseEntity<?> deleteGeneratedResume(@PathVariable Long resumeId,
-                                                 Authentication authentication) {
+    public ResponseEntity<?> deleteGeneratedResume(@AuthenticationPrincipal User user, @PathVariable Long resumeId) {
         try {
-            String email = authentication.getName();
-            User currentUser = userRepository.findByEmail(email);
-            if (currentUser == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("User not found");
-            }
-
             GeneratedResume resume = resumeService.getGeneratedResumeById(resumeId);
             if (resume == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -448,7 +386,7 @@ public class ResumeController {
             }
 
             // Check if the current user owns this resume
-            if (resume.getUser().getId() != currentUser.getId()) {
+            if (resume.getUser().getId() != user.getId()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("You don't have permission to delete this resume");
             }

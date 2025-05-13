@@ -3,64 +3,76 @@ package ninjas.cs490Project.controller;
 import ninjas.cs490Project.entity.Skill;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.service.SkillService;
-import ninjas.cs490Project.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/skills")
 public class SkillController {
-    private final SkillService skillService;
-    private final UserRepository userRepository;
+    @Autowired
+    private SkillService skillService;
 
-    public SkillController(SkillService skillService, UserRepository userRepository) {
-        this.skillService = skillService;
-        this.userRepository = userRepository;
+    // DTO for Skill responses
+    public static class SkillDTO {
+        private Long id;
+        private String name;
+
+        public SkillDTO(Long id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 
     @GetMapping
-    public ResponseEntity<List<Skill>> getUserSkills(Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName());
-        return ResponseEntity.ok(skillService.getUserSkills(user));
+    public ResponseEntity<List<SkillDTO>> getUserSkills(@AuthenticationPrincipal User user) {
+        List<Skill> skills = skillService.getUserSkills(user);
+        List<SkillDTO> skillDTOs = skills.stream()
+            .map(skill -> new SkillDTO(skill.getId(), skill.getName()))
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(skillDTOs);
     }
 
     @PostMapping
-    public ResponseEntity<?> addSkill(@RequestBody Map<String, String> request, Authentication authentication) {
+    public ResponseEntity<SkillDTO> addSkill(@AuthenticationPrincipal User user, @RequestBody Map<String, String> request) {
         String skillName = request.get("name");
         if (skillName == null || skillName.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Skill name is required");
+            return ResponseEntity.badRequest().build();
         }
-
-        User user = userRepository.findByEmail(authentication.getName());
         Skill skill = skillService.addSkill(skillName, user);
-        return ResponseEntity.ok(skill);
+        return ResponseEntity.ok(new SkillDTO(skill.getId(), skill.getName()));
     }
 
     @DeleteMapping("/{skillId}")
-    public ResponseEntity<?> deleteSkill(@PathVariable Long skillId, Authentication authentication) {
-        try {
-            User user = userRepository.findByEmail(authentication.getName());
-            skillService.deleteSkill(skillId, user);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> deleteSkill(@AuthenticationPrincipal User user, @PathVariable Long skillId) {
+        skillService.deleteSkill(skillId, user);
+        return ResponseEntity.ok().build();
     }
 
     // Batch add skills endpoint
     @PostMapping("/batch")
-    public ResponseEntity<?> addSkills(@RequestBody Map<String, List<String>> request, Authentication authentication) {
+    public ResponseEntity<List<SkillDTO>> addSkills(@RequestBody Map<String, List<String>> request, @AuthenticationPrincipal User user) {
         List<String> skillNames = request.get("skills");
         if (skillNames == null || skillNames.isEmpty()) {
-            return ResponseEntity.badRequest().body("Skills list is required");
+            return ResponseEntity.badRequest().build();
         }
-
-        User user = userRepository.findByEmail(authentication.getName());
         List<Skill> skills = skillService.addSkills(skillNames, user);
-        return ResponseEntity.ok(skills);
+        List<SkillDTO> skillDTOs = skills.stream()
+            .map(skill -> new SkillDTO(skill.getId(), skill.getName()))
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(skillDTOs);
     }
-} 
+}

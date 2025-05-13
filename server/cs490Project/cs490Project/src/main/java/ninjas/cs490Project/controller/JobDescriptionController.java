@@ -3,8 +3,8 @@ package ninjas.cs490Project.controller;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.service.JobDescriptionService;
-import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,12 +14,10 @@ import java.util.Map;
 @RequestMapping("/api/jobs")
 public class JobDescriptionController {
 
-    private final UserRepository userRepository;
     private final JobDescriptionService jobDescriptionService;
 
     public JobDescriptionController(UserRepository userRepository,
                                   JobDescriptionService jobDescriptionService) {
-        this.userRepository = userRepository;
         this.jobDescriptionService = jobDescriptionService;
     }
 
@@ -45,28 +43,13 @@ public class JobDescriptionController {
     }
 
     @PostMapping("/submit")
-    public ResponseEntity<?> submitJobDescription(Authentication authentication,
-                                                 @RequestBody JobDescriptionRequest jobDescription) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            Map<String, String> response = jobDescriptionService.submitJobDescription(user, jobDescription);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> submitJobDescription(@AuthenticationPrincipal User user, @RequestBody JobDescriptionRequest jobDescription) {
+        Map<String, String> response = jobDescriptionService.submitJobDescription(user, jobDescription);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/history")
-    public ResponseEntity<?> getJobDescriptions(Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
+    public ResponseEntity<?> getJobDescriptions(@AuthenticationPrincipal User user) {
         try {
             List<Map<String, Object>> response = jobDescriptionService.getJobDescriptions(user);
             return ResponseEntity.ok(response);

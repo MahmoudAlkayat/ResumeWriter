@@ -1,8 +1,5 @@
 package ninjas.cs490Project.controller;
 
-
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import ninjas.cs490Project.entity.EmailVerificationToken;
 import ninjas.cs490Project.entity.User;
@@ -13,37 +10,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-
     @Autowired
     private EmailVerificationTokenRepository tokenRepository;
-
 
     @Autowired
     private UserRepository userRepository;
 
-
     @Autowired
     private JWTService jwtService;
 
-
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
-
 
     @GetMapping("/verify-email")
     public void verifyEmail(@RequestParam("token") String token, HttpServletResponse response) throws IOException {
@@ -62,7 +52,6 @@ public class AuthController {
         tokenRepository.delete(verificationToken);
         response.sendRedirect("http://localhost:3000/login?verified=true");
     }
-
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
@@ -97,25 +86,19 @@ public class AuthController {
                 .body(userData);
     }
 
-
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
-        String token = extractTokenFromCookies(request);
-        if (token != null && jwtService.validateToken(token)) {
-            String email = jwtService.extractUsername(token);
-            User user = userRepository.findByEmail(email);
-            Map <String, String> userData = new HashMap<>();
-            userData.put("id", String.valueOf(user.getId()));
-            userData.put("email", user.getUsername());
-            userData.put("firstName", user.getFirstName());
-            userData.put("lastName", user.getLastName());
-            userData.put("profilePictureUrl", user.getProfilePictureUrl());
-            return ResponseEntity.ok(userData);
-        } else {
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal User user) {
+        if (user == null) {
             return ResponseEntity.status(401).body("Not authenticated");
         }
+        Map<String, String> userData = new HashMap<>();
+        userData.put("id", String.valueOf(user.getId()));
+        userData.put("email", user.getUsername());
+        userData.put("firstName", user.getFirstName());
+        userData.put("lastName", user.getLastName());
+        userData.put("profilePictureUrl", user.getProfilePictureUrl());
+        return ResponseEntity.ok(userData);
     }
-
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
@@ -129,25 +112,10 @@ public class AuthController {
                 .body("Logged out");
     }
 
-
-    // Helper method to extract the JWT from cookies
-    private String extractTokenFromCookies(HttpServletRequest request) {
-        if (request.getCookies() != null) {
-            return Arrays.stream(request.getCookies())
-                    .filter(cookie -> "jwt".equals(cookie.getName()))
-                    .findFirst()
-                    .map(Cookie::getValue)
-                    .orElse(null);
-        }
-        return null;
-    }
-
-
     // DTO for login requests
     public static class LoginRequest {
         private String email;
         private String password;
-
 
         // Getters and setters
         public String getEmail() {

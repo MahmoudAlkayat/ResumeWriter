@@ -7,12 +7,11 @@ import ninjas.cs490Project.entity.UploadedResume;
 import ninjas.cs490Project.service.ProcessingStatusService;
 import ninjas.cs490Project.repository.UploadedResumeRepository;
 import ninjas.cs490Project.repository.GeneratedResumeRepository;
-import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.entity.User;
 import ninjas.cs490Project.repository.FreeformEntryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -37,23 +36,14 @@ public class ProcessingStatusController {
     @Autowired
     private FreeformEntryRepository freeformEntryRepository;
 
-    @Autowired
-    private UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getLatestStatuses(
-            @RequestParam(defaultValue = "5") int limit,
-            Authentication authentication) {
+    public ResponseEntity<List<Map<String, Object>>> getLatestStatuses(@AuthenticationPrincipal User user, @RequestParam(defaultValue = "5") int limit) {
         if (limit <= 0 || limit > 100) {
             limit = 5; // Default to 5 if invalid limit is provided
         }
 
-        User currentUser = userRepository.findByEmail(authentication.getName());
-        if (currentUser == null) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        List<ProcessingStatus> statuses = processingStatusService.getLatestStatusesForUser(currentUser, limit);
+        List<ProcessingStatus> statuses = processingStatusService.getLatestStatusesForUser(user, limit);
         List<Map<String, Object>> response = new ArrayList<>();
         
         for (ProcessingStatus status : statuses) {
@@ -99,18 +89,11 @@ public class ProcessingStatusController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getStatusById(
-            @PathVariable Long id,
-            Authentication authentication) {
-        User currentUser = userRepository.findByEmail(authentication.getName());
-        if (currentUser == null) {
-            return ResponseEntity.badRequest().build();
-        }
-
+    public ResponseEntity<Map<String, Object>> getStatusById(@AuthenticationPrincipal User user, @PathVariable Long id) {
         ProcessingStatus status = processingStatusService.getStatusById(id);
         
         // Check if the status belongs to the current user
-        if (status.getUser().getId() != currentUser.getId()) {
+        if (status.getUser().getId() != user.getId()) {
             return ResponseEntity.notFound().build();
         }
 

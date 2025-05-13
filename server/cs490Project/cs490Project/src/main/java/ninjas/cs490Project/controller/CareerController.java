@@ -1,10 +1,10 @@
 package ninjas.cs490Project.controller;
 
 import ninjas.cs490Project.entity.User;
-import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.service.CareerService;
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,14 +14,8 @@ import java.util.Map;
 @RequestMapping("/api/resumes/career")
 public class CareerController {
 
-    private final UserRepository userRepository;
-    private final CareerService careerService;
-
-    public CareerController(UserRepository userRepository,
-                          CareerService careerService) {
-        this.userRepository = userRepository;
-        this.careerService = careerService;
-    }
+    @Autowired
+    private CareerService careerService;
 
     // ------------------------------
     // Data Transfer Object (DTO)
@@ -60,8 +54,7 @@ public class CareerController {
 
     // 1. GET all WorkExperience records for a user
     @GetMapping
-    public ResponseEntity<?> getCareerHistory(Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName());
+    public ResponseEntity<?> getCareerHistory(@AuthenticationPrincipal User user) {
         if (user == null) {
             return ResponseEntity.ok(Map.of("jobs", List.of()));
         }
@@ -70,101 +63,40 @@ public class CareerController {
 
     // 2. CREATE a new WorkExperience record for a user
     @PostMapping
-    public ResponseEntity<?> createCareer(Authentication authentication,
-                                          @RequestBody CareerRequest req) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            careerService.createCareer(user, req);
-            return ResponseEntity.ok("Created new career record");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> createCareer(@AuthenticationPrincipal User user, @RequestBody CareerRequest req) {
+        careerService.createCareer(user, req);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/freeform")
-    public ResponseEntity<?> createFreeformCareer(Authentication authentication,
-                                                 @RequestBody Map<String, String> request) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            Map<String, Object> response = careerService.createFreeformCareer(user, request.get("text"));
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> createFreeformCareer(@AuthenticationPrincipal User user, @RequestBody Map<String, String> request) {
+        careerService.createFreeformCareer(user, request.get("text"));
+        return ResponseEntity.ok().build();
     }
 
     // 3. UPDATE an existing WorkExperience record for a user
     @PutMapping("/{jobId}")
-    public ResponseEntity<?> updateCareer(Authentication authentication,
-                                          @PathVariable("jobId") int jobId,
-                                          @RequestBody CareerRequest req) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            careerService.updateCareer(user, jobId, req);
-            return ResponseEntity.ok("Updated career record");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> updateCareer(@AuthenticationPrincipal User user, @PathVariable int jobId, @RequestBody CareerRequest req) {
+        careerService.updateCareer(user, jobId, req);
+        return ResponseEntity.ok().build();
     }
 
     // 4. DELETE an existing WorkExperience record
     @DeleteMapping("/{jobId}")
-    public ResponseEntity<?> deleteCareer(Authentication authentication,
-                                          @PathVariable("jobId") int jobId) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            careerService.deleteCareer(user, jobId);
-            return ResponseEntity.ok("Deleted career record");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> deleteCareer(@AuthenticationPrincipal User user, @PathVariable int jobId) {
+        careerService.deleteCareer(user, jobId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/freeform")
-    public ResponseEntity<?> getFreeformCareer(Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            List<Map<String, String>> response = careerService.getFreeformCareer(user);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> getFreeformCareer(@AuthenticationPrincipal User user) {
+        List<Map<String, String>> freeformCareer = careerService.getFreeformCareer(user);
+        return ResponseEntity.ok(freeformCareer);
     }
 
     @PutMapping("/freeform/{freeformId}")
-    public ResponseEntity<?> updateFreeformCareer(Authentication authentication,
-                                                @PathVariable("freeformId") int freeformId,
-                                                @RequestBody Map<String, String> request) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            Map<String, Object> response = careerService.updateFreeformCareer(user, freeformId, request.get("text"));
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> updateFreeformCareer(@AuthenticationPrincipal User user, @PathVariable("freeformId") int freeformId, @RequestBody Map<String, String> request) {
+        Map<String, Object> response = careerService.updateFreeformCareer(user, freeformId, request.get("text"));
+        return ResponseEntity.ok(response);
     }
 }

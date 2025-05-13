@@ -1,27 +1,20 @@
 package ninjas.cs490Project.controller;
 
 import ninjas.cs490Project.entity.User;
-import ninjas.cs490Project.repository.UserRepository;
 import ninjas.cs490Project.service.EducationService;
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/resumes/education")
 public class EducationController {
 
-    private final UserRepository userRepository;
-    private final EducationService educationService;
-
-    public EducationController(UserRepository userRepository,
-                             EducationService educationService) {
-        this.userRepository = userRepository;
-        this.educationService = educationService;
-    }
+    @Autowired
+    private EducationService educationService;
 
     // ------------------------------
     // Data Transfer Object (DTO)
@@ -64,68 +57,29 @@ public class EducationController {
 
     // 1. GET all education for a user
     @GetMapping
-    public ResponseEntity<?> getAllEducation(Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.ok(Map.of("education", List.of()));
-        }
-
-        try {
-            return ResponseEntity.ok(educationService.getAllEducation(user));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> getAllEducation(@AuthenticationPrincipal User user) {
+        Map<String, Object> education = educationService.getAllEducation(user);
+        return ResponseEntity.ok(education);
     }
 
     // 2. CREATE a new Education record
     @PostMapping
-    public ResponseEntity<?> createEducation(Authentication authentication,
-                                           @RequestBody EducationRequest req) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            educationService.createEducation(user, req);
-            return ResponseEntity.ok("Created new education record");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> createEducation(@AuthenticationPrincipal User user, @RequestBody EducationRequest req) {
+        educationService.createEducation(user, req);
+        return ResponseEntity.ok().build();
     }
 
     // 3. UPDATE an Education record
     @PutMapping("/{eduId}")
-    public ResponseEntity<?> updateEducation(Authentication authentication,
-                                           @PathVariable("eduId") int eduId,
-                                           @RequestBody EducationRequest req) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            educationService.updateEducation(user, eduId, req);
-            return ResponseEntity.ok("Updated education record");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> updateEducation(@AuthenticationPrincipal User user, @PathVariable int eduId, @RequestBody EducationRequest req) {
+        educationService.updateEducation(user, eduId, req);
+        return ResponseEntity.ok().build();
     }
 
     // 4. DELETE an Education record
     @DeleteMapping("/{eduId}")
-    public ResponseEntity<?> deleteEducation(Authentication authentication,
-                                           @PathVariable("eduId") int eduId) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        try {
-            educationService.deleteEducation(user, eduId);
-            return ResponseEntity.ok("Deleted education record");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> deleteEducation(@AuthenticationPrincipal User user, @PathVariable int eduId) {
+        educationService.deleteEducation(user, eduId);
+        return ResponseEntity.ok().build();
     }
 }

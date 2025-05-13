@@ -10,7 +10,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -25,10 +25,7 @@ public class ProfileController {
     private UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<?> getProfile(Authentication authentication) {
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email);
-        
+    public ResponseEntity<?> getProfile(@AuthenticationPrincipal User user) {
         Profile profile = profileRepository.findByUser(user);
         
         if (profile == null) {
@@ -52,11 +49,8 @@ public class ProfileController {
     @PutMapping
     public ResponseEntity<?> updateProfile(
             @RequestBody Map<String, String> profileUpdate,
-            Authentication authentication) {
+            @AuthenticationPrincipal User user) {
         try {
-            String email = authentication.getName();
-            User user = userRepository.findByEmail(email);
-            
             Profile existingProfile = profileRepository.findByUser(user);
             
             if (existingProfile == null) {
