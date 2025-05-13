@@ -130,11 +130,32 @@ public class ResumeParsingService {
         
         6. If certain fields cannot be determined, use the default values provided.
         
-        7. For work experience:
-           - Responsibilities should be an array of strings, each describing a daily task or duty
-           - Accomplishments should be an array of strings, each highlighting a specific achievement, metric, or impact
-           - Each responsibility and accomplishment should be a complete, standalone statement
-           - Keep responsibilities and accomplishments separate and distinct
+        7. For work experience, carefully distinguish between responsibilities and accomplishments:
+           Responsibilities:
+           - Daily tasks, duties, and ongoing responsibilities
+           - Regular job functions that are part of the role
+           - General areas of responsibility
+           - DO NOT include statements with metrics, improvements, or achievements
+           - Examples:
+             * "Develop and maintain RESTful APIs using Java and Spring Framework"
+             * "Collaborate with cross-functional teams to deliver features"
+             * "Conduct code reviews and mentor junior developers"
+           
+           Accomplishments:
+           - Specific achievements with measurable impact
+           - Projects completed or goals achieved
+           - Improvements made to processes or systems
+           - Recognition or awards received
+           - MUST include metrics, improvements, or specific outcomes when available
+           - Examples:
+             * "Reduced system downtime by 40% through implementation of automated monitoring"
+             * "Led a team of 5 developers to deliver a critical project 2 weeks ahead of schedule"
+             * "Optimized database queries resulting in 50% faster response times"
+             * "Received 'Employee of the Year' award for outstanding contributions"
+        
+        8. Each responsibility and accomplishment should be a complete, standalone statement.
+        
+        9. If a statement contains metrics or achievements, it MUST go in accomplishments, not responsibilities.
         
         Now parse the following resume text and produce only a valid JSON response (no extra text or formatting):
         """ + resumeText;
@@ -209,14 +230,34 @@ public class ResumeParsingService {
         Rules:
         1. Extract dates in YYYY-MM-DD format. If only year is available, use YYYY-01-01.
         2. If end date is not specified but context suggests current position, use "Present".
-        3. Responsibilities should be an array of strings, each describing a daily task or duty
-        4. Accomplishments should be an array of strings, each highlighting a specific achievement, metric, or impact
-        5. Each responsibility and accomplishment should be a complete, standalone statement
-        6. Keep responsibilities and accomplishments separate and distinct
-        7. If certain fields cannot be determined, use the default values provided.
-        8. Always include all specified keys. Do not add extra properties. No null values.
-        9. You may reformat text to ensure clarity but must not omit relevant information.
-        10. Location should be in the format "City, State" or "City, Country" when available.
+        3. Carefully distinguish between responsibilities and accomplishments:
+           Responsibilities:
+           - Daily tasks, duties, and ongoing responsibilities
+           - Regular job functions that are part of the role
+           - General areas of responsibility
+           - DO NOT include statements with metrics, improvements, or achievements
+           - Examples:
+             * "Develop and maintain RESTful APIs using Java and Spring Framework"
+             * "Collaborate with cross-functional teams to deliver features"
+             * "Conduct code reviews and mentor junior developers"
+           
+           Accomplishments:
+           - Specific achievements with measurable impact
+           - Projects completed or goals achieved
+           - Improvements made to processes or systems
+           - Recognition or awards received
+           - MUST include metrics, improvements, or specific outcomes when available
+           - Examples:
+             * "Reduced system downtime by 40% through implementation of automated monitoring"
+             * "Led a team of 5 developers to deliver a critical project 2 weeks ahead of schedule"
+             * "Optimized database queries resulting in 50% faster response times"
+             * "Received 'Employee of the Year' award for outstanding contributions"
+        4. Each responsibility and accomplishment should be a complete, standalone statement.
+        5. If a statement contains metrics or achievements, it MUST go in accomplishments, not responsibilities.
+        6. If certain fields cannot be determined, use the default values provided.
+        7. Always include all specified keys. Do not add extra properties. No null values.
+        8. You may reformat text to ensure clarity but must not omit relevant information.
+        9. Location should be in the format "City, State" or "City, Country" when available.
         
         Now parse the following career text and produce only a valid JSON response (no extra text or formatting):
         """ + text;
@@ -299,4 +340,3 @@ class GPTMessage {
     private String role;
     private String content; // The JSON we really want is here
 }
-

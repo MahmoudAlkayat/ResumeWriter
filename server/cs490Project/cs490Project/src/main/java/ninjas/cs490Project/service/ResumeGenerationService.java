@@ -218,14 +218,37 @@ public class ResumeGenerationService {
                - DO NOT simply copy the original responsibilities and accomplishments
                - Rewrite and tailor each responsibility to highlight relevant skills and experiences that match the job requirements
                - Transform accomplishments to emphasize achievements that align with the job's needs
-               - Use action verbs and quantifiable metrics where possible
-               - Prioritize experiences that directly relate to the job description
-               - Keep responsibilities and accomplishments separate and distinct
-               - Include location for each work experience
-               - Each responsibility and accomplishment should be a separate string in the array
+               - When including metrics and percentages:
+                 * ALWAYS use real numbers from the original experience or reasonable estimates
+                 * NEVER use placeholder values like 'X' or generic percentages
+                 * If the original experience doesn't have specific numbers, either:
+                   - Use the actual numbers from the original experience
+                   - Make a reasonable estimate based on the context
+                   - Focus on qualitative achievements if no numbers are available
+                 * Examples of good metrics:
+                   - "Reduced system downtime by 40 percent through implementation of automated monitoring"
+                   - "Increased team productivity by five percentage points through process optimization"
+                   - "Led a team of 12 developers to deliver a critical project two weeks ahead of schedule"
+                   - "Optimized database queries resulting in 50 percent faster response times"
+                 * Examples of what NOT to do:
+                   - "Improved performance by X percent" (BAD - uses placeholder)
+                   - "Reduced costs by X%%" (BAD - uses placeholder and %% symbol)
+                   - "Increased efficiency by a significant amount" (BAD - too vague)
+               - You may exclude work experience entries that are:
+                 * Not relevant to the job requirements
+                 * Too old (typically more than 10-15 years unless highly relevant)
+                 * Redundant with more recent or more relevant experience
+                 * Too numerous (aim for 3-5 most relevant experiences)
+               - For each included experience:
+                 * Keep responsibilities and accomplishments separate and distinct
+                 * Responsibilities should describe daily tasks and duties
+                 * Accomplishments should highlight specific achievements with metrics
+                 * Include location for each work experience
+                 * Each responsibility and accomplishment should be a separate string in the array
             3. For education:
                - Include location for each education entry
                - Format dates as YYYY-MM-DD
+               - Include all education entries unless they are very old and irrelevant
             4. For skills:
                - Prioritize skills mentioned in the job description
                - Include both technical and soft skills that are relevant
@@ -235,10 +258,9 @@ public class ResumeGenerationService {
                - Maintain original job titles, company names, and date ranges
                - Ensure all dates maintain YYYY-MM-DD format
                - Use industry-specific terminology from the job description
-               - Quantify achievements with numbers and percentages where possible
                - Focus on transferable skills and experiences
                - Remove or de-emphasize irrelevant experiences
-            6. Return ONLY the JSON with no additional commentary.
+            6. Return ONLY the JSON with no additional commentary, markdown, or backticks.
             7. Use empty strings or 0 for any missing data, never null values.
             """,
                 jobTitle,

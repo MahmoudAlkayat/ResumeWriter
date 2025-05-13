@@ -106,15 +106,15 @@ export default function GeneratedResumeCard({
                           <p className="text-sm text-muted-foreground">
                             {edu.startDate} – {edu.endDate}
                           </p>
-                          {edu.location && (
+                          {edu.location && edu.location !== "N/A" && (
                             <p className="text-sm text-muted-foreground italic">
                               {edu.location}
                             </p>
                           )}
-                          {edu.description && (
+                          {edu.description && edu.description !== "N/A" && (
                             <p className="text-sm mt-1">{edu.description}</p>
                           )}
-                          {edu.gpa && (
+                          {edu.gpa != null && edu.gpa > 0 && (
                             <p className="text-sm">GPA: {edu.gpa}</p>
                           )}
                         </div>
@@ -134,7 +134,7 @@ export default function GeneratedResumeCard({
                           <p className="text-sm text-muted-foreground">
                             {job.startDate} – {job.endDate}
                           </p>
-                          {job.location && (
+                          {job.location && job.location !== "N/A" && (
                             <p className="text-sm text-muted-foreground italic">
                               {job.location}
                             </p>

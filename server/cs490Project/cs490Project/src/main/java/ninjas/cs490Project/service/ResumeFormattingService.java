@@ -150,7 +150,7 @@ public class ResumeFormattingService {
                 if (edu.getGpa() > 0) {
                     markdown.append("GPA: ").append(edu.getGpa()).append("\n");
                 }
-                if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
+                if (edu.getDescription() != null && !edu.getDescription().isEmpty() && !edu.getDescription().equals("N/A")) {
                     markdown.append(edu.getDescription()).append("\n");
                 }
                 markdown.append("\n");
@@ -249,7 +249,7 @@ public class ResumeFormattingService {
                     html.append("<p>GPA: ").append(edu.getGpa()).append("</p>\n");
                 }
                 
-                if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
+                if (edu.getDescription() != null && !edu.getDescription().isEmpty()  && !edu.getDescription().equals("N/A")) {
                     html.append("<p>").append(edu.getDescription()).append("</p>\n");
                 }
                 
@@ -332,7 +332,7 @@ public class ResumeFormattingService {
                     text.append("GPA: ").append(edu.getGpa()).append("\n");
                 }
                 
-                if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
+                if (edu.getDescription() != null && !edu.getDescription().isEmpty()  && !edu.getDescription().equals("N/A")) {
                     text.append(edu.getDescription()).append("\n");
                 }
                 text.append("\n");
@@ -379,22 +379,21 @@ public class ResumeFormattingService {
                     .append(dateToString(edu.getStartDate())).append(" -- ").append(edu.getEndDate() != null ? dateToString(edu.getEndDate()) : "Present").append("}\n")
                     .append("      {").append(sanitize(edu.getDegree())).append(" in ").append(sanitize(edu.getFieldOfStudy())).append("}{")
                     .append(sanitize(edu.getLocation())).append("}");
-                educationContent.append("  \\resumeSubHeadingListEnd\n");
-                educationContent.append("\\vspace{-12pt}\n");
                 
-                if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty())) {
+                if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty() && !edu.getDescription().equals("N/A"))) {
                     educationContent.append("\\resumeItemListStart\n");
                     if (edu.getGpa() > 0) {
                         educationContent.append("\\resumeItem{\\textbf{GPA: ").append(sanitize(String.valueOf(edu.getGpa()))).append("}}\n");
                         educationContent.append("\\vspace{-6pt}\n");
                     }
-                    if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
+                    if (edu.getDescription() != null && !edu.getDescription().isEmpty() && !edu.getDescription().equals("N/A")) {
                         educationContent.append("\\resumeItem{").append(sanitize(edu.getDescription())).append("}\n");
                         educationContent.append("\\vspace{-6pt}\n");
                     }
                     educationContent.append("\\resumeItemListEnd");
                 }
             }
+            educationContent.append("  \\resumeSubHeadingListEnd\n");
         }
         templateContent = templateContent.replace("{{EDUCATION_SECTION}}", educationContent.toString());
 
@@ -439,6 +438,8 @@ public class ResumeFormattingService {
         }
         templateContent = templateContent.replace("{{SKILLS_SECTION}}", skillsContent.toString());
 
+        System.out.println(templateContent);
+
         return templateContent;
     }
 
@@ -472,18 +473,20 @@ public class ResumeFormattingService {
                     .append(edu.getLocation() != null ? " \\hfill " + sanitize(edu.getLocation()) : "")
                     .append("}\n");
 
-                educationContent.append("\\begin{itemize}\n");
-                if (edu.getGpa() > 0) {
-                    educationContent.append("    \\item GPA: ")
-                        .append(sanitize(String.valueOf(edu.getGpa())))
-                        .append("/4.0\n");
+                if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty() && !edu.getDescription().equals("N/A"))) {
+                    educationContent.append("\\begin{itemize}\n");
+                    if (edu.getGpa() > 0) {
+                        educationContent.append("    \\item GPA: ")
+                            .append(sanitize(String.valueOf(edu.getGpa())))
+                            .append("/4.0\n");
+                    }
+                    if (edu.getDescription() != null && !edu.getDescription().isEmpty() && !edu.getDescription().equals("N/A")) {
+                        educationContent.append("    \\item ")
+                            .append(sanitize(edu.getDescription()))
+                            .append("\n");
+                    }
+                    educationContent.append("\\end{itemize}\n\n");
                 }
-                if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
-                    educationContent.append("    \\item ")
-                        .append(sanitize(edu.getDescription()))
-                        .append("\n");
-                }
-                educationContent.append("\\end{itemize}\n\n");
             }
         }
         templateContent = templateContent.replace("{{EDUCATION_SECTION}}", educationContent.toString());
@@ -610,14 +613,14 @@ public class ResumeFormattingService {
                     .append("}")
                     .append("\\textit{").append(edu.getLocation() != null ? edu.getLocation() : "N/A").append("}\n");
 
-                if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty())) {
+                if (edu.getGpa() > 0 || (edu.getDescription() != null && !edu.getDescription().isEmpty() && !edu.getDescription().equals("N/A"))) {
                     educationContent.append("\\begin{itemize}[noitemsep,leftmargin=3.5mm,rightmargin=0mm,topsep=6pt]\n");
                     if (edu.getGpa() > 0) {
                         educationContent.append("  \\item GPA: ")
                             .append(sanitize(String.valueOf(edu.getGpa())))
                             .append("/4.0\n");
                     }
-                    if (edu.getDescription() != null && !edu.getDescription().isEmpty()) {
+                    if (edu.getDescription() != null && !edu.getDescription().isEmpty() && !edu.getDescription().equals("N/A")) {
                         educationContent.append("  \\item ")
                             .append(sanitize(edu.getDescription()))
                             .append("\n");

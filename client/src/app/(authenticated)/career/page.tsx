@@ -455,10 +455,10 @@ export default function CareerPage() {
                           <p className="text-lg text-gray-700 dark:text-white font-semibold">
                             {job.company}
                           </p>
-                          <p className="text-md text-gray-500 dark:text-muted-foreground italic mb-4">
+                          <p className="text-md text-gray-500 dark:text-muted-foreground italic mb-2">
                             {job.location}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                             {job.startDate} - {job.endDate || "Present"}
                           </p>
                           {Array.isArray(job.responsibilities) && job.responsibilities.length > 0 && (
